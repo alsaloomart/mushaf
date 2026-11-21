@@ -33,6 +33,8 @@
   const after = d => AFTER[d] || cnt(d, 'day', true);
 
   /* ---------- أدوات ---------- */
+  const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, base: { idx: 0, skip: 0 }, E: [], prog: 0, why: '' };
   function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
   const sName = s => chapters[s - 1] ? chapters[s - 1].name_arabic : ('سورة ' + s);
   function keyLabel(k) { const [s, a] = k.split(':'); return sName(+s) + ' ' + ar(a); }
@@ -238,6 +240,7 @@
     if (changed) noteClose();
     cur = p; ST.setLastPage(p); leaf(p); gc(); prefetch(p); updateTitle(); $('#qjR').value = p;
     if (changed) requestAnimationFrame(() => notesPaint(p));
+    if (changed && TM.on) tmLoad(p);
   }
   async function updateTitle() {
     const p = cur;
@@ -320,6 +323,7 @@
     const s = e.target.closest('path[data-k]');
     if (!s) { if (sel && !rangeMode) clearSel(); return; }   // الصفحة نظيفة: لا أشرطة تظهر باللمس
     const k = s.dataset.k;
+    if (TM.on) { if (!TM.rv.has(k)) tmReveal(k, 'tap'); return; }
     if (rangeMode && sel) { rangeMode = false; $('#btnRange').classList.remove('on'); $('#rangeHint').hidden = true; select(sel.a, k); return; }
     if (sel && sel.list.length === 1 && sel.a === k) { clearSel(); return; }
     select(k);
@@ -387,7 +391,7 @@
       (today.hidden ? '' : `<div class="card hubToday">${today.innerHTML}</div>`) +
       hi('plan', 'plan', 'الخطة وورد اليوم', ST.get().plan ? 'ورد اليوم وتقدّمك' : 'أنشئ خطة حفظ') +
       hi('review', 'review', 'المراجعة', n ? `اليوم: ${cnt(n)} للمراجعة` : 'ليست لديك مراجعة مستحقة اليوم.') +
-      hi('mic', 'tasmee', 'التسميع', 'قريبًا'), 'wird');
+      hi('mic', 'tasmee', 'التسميع', 'تُخفى آيات الصفحة وتنكشف كل آية عند تلاوتها'), 'wird');
   }
   const openHub = openWirdPanel;
   function openTilawa() {
@@ -456,7 +460,7 @@
     if (h === 'plan') openPlan(false);
     if (h === 'review') openReview();
     if (h === 'repeat') { if (!sel) await selectFirst(); openRepeat(); }
-    if (h === 'tasmee') toast('التسميع قريبًا.');
+    if (h === 'tasmee') tmStart();
     if (h === 'theme') { $('#btnTheme').click(); openSettings(); }
     if (h === 'listen') { if (!sel) await selectFirst(); closeSheets(); $('#aListen').click(); }
     if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
@@ -486,7 +490,7 @@
       if (y == null) y = sr.top - pr.top + 4 + 26 * free++;
       while (used.some(u => Math.abs(u - y) < 24)) y += 24;
       used.push(y);
-      return `<button data-id="${n.id}" style="top:${Math.round(y - 4)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
+      return `<button data-id="${n.id}" style="top:${Math.round(y - 2)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
     }).join('');
   }
   function noteMeta(n) { return `<bdi>صفحة ${ar(n.p)}</bdi>${n.k ? ' · <bdi>' + esc(n.kb && n.kb !== n.k ? rangeLabel(n.k, n.kb) : keyLabel(n.k)) + '</bdi>' : ''} · <bdi>${dLabel(n.u || n.t)}</bdi>`; }
@@ -1030,6 +1034,113 @@
     setTimeout(() => showInstall(false), 1500);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
-  window.__app = { openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  /* ---------- التسميع: الآيات مخفية، وتنكشف كل آية عند تلاوتها صحيحة أو باللمس ---------- */
+  // المطابقة على نص Tanzil (Simple Clean) بعد التطبيع، بسماحية خطأ حرف واحد في الكلمة. لا يُعرض أي نص: الكشف يكون على صورة الصفحة نفسها.
+  const lev1 = (a, b) => { if (a === b) return true; if (Math.abs(a.length - b.length) > 1) return false; let i = 0, j = 0, d = 0; while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } } return d + (a.length - i) + (b.length - j) <= 1; };
+  const strip = w => w.replace(/^(و|ف)?(ال)?/, '');
+  const wsim = (w, e) => w === e || strip(w) === strip(e) || (e.length >= 4 && lev1(w, e)) || (e.length >= 5 && lev1(strip(w), strip(e)));
+  function tmMatch(words, E) {
+    let j = 0, last = -1;
+    for (let x = 0; x < words.length && j < E.length; x++) {
+      if (wsim(words[x], E[j])) { j++; last = x; }
+      else if (j + 1 < E.length && wsim(words[x], E[j + 1])) { j += 2; last = x; }
+    }
+    return { j, last };
+  }
+  async function tmExpect() {
+    const k = TM.keys[TM.i]; if (!k) { TM.E = []; return; }
+    try { const rows = await loadText(); const r = rows.find(x => x.k === k); TM.E = r ? r.n.trim().split(' ') : []; } catch (e) { TM.E = []; }
+  }
+  function tmPaint() {
+    const el = leaves.get(TM.p);
+    book.querySelectorAll('.hot path.rv,.hot path.rvt,.hot path.nx,.hot path.fl').forEach(s => s.classList.remove('rv', 'rvt', 'nx', 'fl'));
+    if (TM.on && el) el.querySelectorAll('.hot path').forEach(s => { const v = TM.rv.get(s.dataset.k); if (v) s.classList.add(v === 'tap' ? 'rvt' : 'rv'); else if (s.dataset.k === TM.keys[TM.i]) s.classList.add('nx'); });
+    const done = TM.i >= TM.keys.length, nv = [...TM.rv.values()], bySpeech = nv.filter(v => v === 'speech').length, byTap = nv.length - bySpeech;
+    $("#tmPg").textContent = `صفحة ${ar(TM.p)} — كُشفت ${ar(TM.rv.size)} من ${ar(TM.keys.length)}`;
+    let st;
+    if (done) st = `أتممت الصفحة: ${ar(bySpeech)} بالتلاوة، ${ar(byTap)} باللمس.`;
+    else if (TM.why) st = TM.why;
+    else if (TM.listening) st = `أسمعك… الآية ${ar(TM.keys[TM.i].split(':')[1])}` + (TM.prog ? ` · ${ar(TM.prog)} من ${ar(TM.E.length)} كلمة` : '');
+    else st = SRC ? 'اضغط «سمّع» وابدأ التلاوة، أو المس الآية لكشفها.' : 'المس الآية بعد تلاوتها لتنكشف. التعرف على الصوت غير متاح في هذا المتصفح.';
+    $('#tmSt').textContent = st;
+    $('#tmMic').hidden = !SRC || done; $('#tmMic').classList.toggle('on', TM.listening);
+    $('#tmMic span').textContent = TM.listening ? 'إيقاف' : 'سمّع';
+    $('#tmRev').hidden = done; $('#tmHint').hidden = done;
+    $('#tmNext').hidden = !done || TM.p >= N; $('#tmAgain').hidden = !done;
+  }
+  async function tmLoad(p) {
+    const pd = await QD.page(p);
+    TM.p = p; TM.keys = pd.ayat.map(a => a.k); TM.i = 0; TM.rv = new Map(); TM.prog = 0; TM.why = '';
+    await tmExpect(); tmPaint();
+    if (TM.listening) { tmListen(false); tmListen(true); }
+  }
+  async function tmStart() {
+    if (TM.on) return;
+    closeSheets(); noteClose(); if (sel) clearSel(); AU.stop && AU.stop();
+    TM.on = true; document.body.classList.add('tm'); $('#tm').hidden = false; layout(); refit();
+    notesPaint(cur); await tmLoad(cur);
+    loadText().catch(() => { TM.why = 'تعذّر تحميل النص للمطابقة. يمكنك الكشف باللمس.'; tmPaint(); });
+  }
+  function tmEnd() {
+    tmListen(false); TM.on = false; document.body.classList.remove('tm'); $('#tm').hidden = true; tmPaint(); layout(); refit(); notesPaint(cur); navOn('mushaf');
+  }
+  async function tmReveal(k, how) {
+    if (!TM.on || TM.rv.has(k)) return;
+    TM.rv.set(k, how);
+    if (k === TM.keys[TM.i]) { while (TM.i < TM.keys.length && TM.rv.has(TM.keys[TM.i])) TM.i++; TM.prog = 0; TM.why = ''; await tmExpect(); }
+    tmPaint();
+    if (TM.i >= TM.keys.length) tmListen(false);
+  }
+  function tmHint() {
+    const k = TM.keys[TM.i]; if (!k) return;
+    const s = leaves.get(TM.p) && leaves.get(TM.p).querySelector(`.hot path[data-k="${k}"]`); if (!s) return;
+    s.classList.add('fl'); setTimeout(() => s.classList.remove('fl'), 1200);
+  }
+  // يستقبل نص التعرّف (من المتصفح أو من الاختبار) ويطابقه بالآية التالية
+  async function tmFeed(text, final) {
+    if (!TM.on || TM.i >= TM.keys.length) return;
+    if (!TM.E.length) await tmExpect();
+    const words = norm(text).split(' ').filter(Boolean); if (!words.length) return;
+    const { j, last } = tmMatch(words, TM.E), need = TM.E.length <= 3 ? TM.E.length : TM.E.length - 1;
+    TM.prog = j;
+    if (j >= need && j >= 1) {
+      TM.base.skip += last + 1;
+      await tmReveal(TM.keys[TM.i], 'speech');
+      const rest = words.slice(last + 1).join(' '); if (rest) await tmFeed(rest, final);
+      return;
+    }
+    TM.why = (final && words.length >= TM.E.length + 3 && j < TM.E.length / 2) ? 'لم تطابق الآية التالية. أعد تلاوتها، أو المسها لكشفها.' : '';
+    tmPaint();
+  }
+  function tmListen(on) {
+    if (!SRC) return;
+    if (!on) { TM.listening = false; if (TM.rec) { try { TM.rec.abort(); } catch (e) {} TM.rec = null; } if (TM.on) tmPaint(); return; }
+    const r = new SRC(); r.lang = 'ar-SA'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+    TM.rec = r; TM.listening = true; TM.base = { idx: 0, skip: 0 }; TM.why = '';
+    r.onresult = ev => {
+      if (TM.rec !== r) return;
+      let txt = '', fin = true;
+      for (let x = TM.base.idx; x < ev.results.length; x++) { txt += ' ' + ev.results[x][0].transcript; if (!ev.results[x].isFinal) fin = false; }
+      const all = norm(txt).split(' ').filter(Boolean);
+      // كل ما بعد آخر نتيجة نهائية مستهلكة يُطابَق من جديد؛ ونتجاوز الكلمات التي كشفت آيات سابقة
+      tmFeed(all.slice(TM.base.skip).join(' '), fin);
+      if (fin) { TM.base.idx = ev.results.length; TM.base.skip = 0; }
+    };
+    r.onerror = ev => {
+      if (TM.rec !== r) return;
+      const m = { 'not-allowed': 'لم يُسمح باستخدام الميكروفون. اكشف الآيات باللمس، أو اسمح بالميكروفون من إعدادات المتصفح.', 'service-not-allowed': 'التعرف على الصوت غير متاح هنا. اكشف الآيات باللمس.', 'network': 'التعرف على الصوت يحتاج إنترنت. اكشف الآيات باللمس.', 'audio-capture': 'لم يُعثر على ميكروفون.' }[ev.error];
+      if (m) { TM.why = m; tmListen(false); }
+    };
+    r.onend = () => { if (TM.rec === r && TM.listening && TM.on) { TM.base = { idx: 0, skip: 0 }; setTimeout(() => { if (TM.rec === r && TM.listening) try { r.start(); } catch (e) { tmListen(false); } }, 250); } };
+    try { r.start(); } catch (e) { TM.why = 'تعذّر تشغيل الميكروفون. اكشف الآيات باللمس.'; tmListen(false); }
+    tmPaint();
+  }
+  $('#tmMic').onclick = () => tmListen(!TM.listening);
+  $('#tmRev').onclick = () => { const k = TM.keys[TM.i]; if (k) tmReveal(k, 'tap'); };
+  $('#tmHint').onclick = tmHint;
+  $('#tmEnd').onclick = tmEnd;
+  $('#tmAgain').onclick = () => tmLoad(TM.p);
+  $('#tmNext').onclick = () => { if (TM.p < N) goPage(TM.p + 1, true, true); };
+  window.__app = { tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

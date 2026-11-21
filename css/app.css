@@ -306,3 +306,43 @@ html.dark .ph .pnote{background:#2a2419;border-color:#7c6638;color:#e0c27f}
 .notecard .ncf b{flex:1;font-size:.95rem;color:#8A2D1C}
 .notecard .ncf .btn{margin:0;padding:8px 16px;width:auto}
 .notecard .btn.danger{background:#B3261E;color:#fff;border-color:#B3261E}
+/* right gutter for note markers: the page keeps its text and line order, only the display width shrinks a little */
+.pg{padding-left:10px;padding-right:26px}
+.pg .nmk button{right:5px;width:15px;height:32px;border-radius:8px;background:#B7832F;box-shadow:0 0 0 1.5px #fff,0 1px 4px rgba(90,60,20,.45)}
+.pg .nmk button::before{inset:-6px -5px -6px -4px}
+.pg .nmk button::after{left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px}
+html[data-paper=blue] .pg .nmk button{background:#3F6E99}
+html.dark .pg .nmk button{background:#D9A54A;box-shadow:0 0 0 1.5px #222,0 1px 4px rgba(0,0,0,.6)}
+/* التسميع */
+:root{--tmh:108px}
+body.tm #reader{bottom:calc(var(--sab) + var(--tmh))}
+body.tm #botbar,body.tm #qj{visibility:hidden}
+.tmbar{position:fixed;left:0;right:0;bottom:0;z-index:34;height:calc(var(--sab) + var(--tmh));padding:4px 12px calc(var(--sab) + 6px);box-sizing:border-box;background:var(--bar);border-top:1px solid var(--barline);font-family:'Thmanyah Sans',system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.tmbar[hidden]{display:none}
+.tmh{display:flex;align-items:center;gap:10px;height:30px}
+.tmh b{font-size:16px;color:var(--acc)}
+.tmh span{flex:1;font-size:14px;color:var(--ic);font-weight:700}
+.tmx{width:44px;height:44px;margin:-7px -10px -7px 0;display:grid;place-items:center;background:none;border:0;touch-action:manipulation}
+.tmx svg{width:20px;height:20px;stroke:var(--ic);stroke-width:2;fill:none}
+.tmst{font-size:13.5px;line-height:20px;min-height:20px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmb{display:flex;gap:8px;margin-top:2px}
+.tmb .btn{flex:1;height:44px;padding:0 10px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;touch-action:manipulation;border:0;color:var(--ink)}
+.tmb .btn[hidden]{display:none}
+.tmb .btn.pri{background:var(--acc);color:#fff}
+.tmb .btn.pri.on{background:#A8432F}
+.tmb .btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none}
+html.dark .tmb .btn{background:#2a2b2b;color:#e8e6e1}
+html.dark .tmb .btn.pri{background:var(--acc);color:#151515}
+html.dark .tmst{color:#e8e6e1}
+/* إخفاء الآيات: لون الورق فوق الآية، والمكشوفة شفافة. لا يتغير شيء في صورة الصفحة */
+body.tm .hot{mix-blend-mode:normal}
+body.tm .hot path{fill:var(--hidc,#F3ECE2);transition:fill .25s}
+body.tm .hot path.nx{fill:var(--hidn,#EFE4D3)}
+body.tm .hot path.rv,body.tm .hot path.fl{fill:transparent}
+body.tm .hot path.rvt{fill:rgba(214,178,110,.16)}
+html[data-paper=white]{--hidc:#F4F3F1;--hidn:#ECEAE6}
+html[data-paper=cream]{--hidc:#F4EBD8;--hidn:#EDE0C7}
+html[data-paper=grey]{--hidc:#CFCBC6;--hidn:#C6C1BB}
+html[data-paper=blue]{--hidc:#E6F0F8;--hidn:#D8E6F2}
+html.dark{--hidc:#ECECEC;--hidn:#DADADA}
+html.dark body.tm .hot path.rvt{fill:rgba(60,90,160,.22)}
