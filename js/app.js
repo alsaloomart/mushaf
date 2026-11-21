@@ -143,7 +143,7 @@
     }
     const ss = pd.surahs;
     return `<div class="pg">
-      <div class="ph"><span class="pj">الجزء ${ar(pd.juz)}</span><span class="ps">${esc(surahsTitle(ss))}</span></div>
+      <div class="ph"><span class="pj">الجزء ${ar(pd.juz)}</span><span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
         <g class="hot"${clip ? ` clip-path="url(#cc${p})"` : ''}>${pd.ayat.map(a => `<path data-k="${a.k}" d="${a.d}"/>`).join('')}</g>
       </svg>
