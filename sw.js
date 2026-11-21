@@ -4,7 +4,7 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-shell-v17';
+const SHELL = 'mushaf-shell-v18';
 const TAFSIR = 'mushaf-tafsir-v1';
 const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v1';
@@ -63,8 +63,11 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       const c = await caches.open(SHELL);
       // الشبكة أولًا (التحديثات تظهر مباشرة)، والنسخة المخزنة بدون إنترنت
-      const net = await fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
-      return net || (await c.match(req, { ignoreSearch: true })) || (await c.match('index.html'));
+      // مع مهلة: إن كانت الشبكة ضعيفة جدًا تُعرض النسخة المخزنة بعد 4 ثوانٍ بدل الانتظار الطويل
+      const netP = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
+      const cached = await c.match(req, { ignoreSearch: true });
+      if (!cached) return (await netP) || (await c.match('index.html')) || Response.error();
+      return (await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 4000))])) || cached;
     })());
     return;
   }
