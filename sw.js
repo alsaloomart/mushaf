@@ -4,12 +4,12 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-shell-v16';
+const SHELL = 'mushaf-shell-v17';
 const TAFSIR = 'mushaf-tafsir-v1';
 const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v1';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
-const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/app.js', 'js/cloud.js', 'manifest.json',
+const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js', 'manifest.json',
   'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/quran-simple-clean.txt',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/thmanyah-sans-Regular.woff2', 'fonts/thmanyah-sans-Bold.woff2', 'fonts/thmanyah-serif-display-Bold.woff2'];

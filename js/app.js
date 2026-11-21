@@ -34,7 +34,7 @@
 
   /* ---------- أدوات ---------- */
   const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, heard: [], cut: 0, heardTxt: '', restarts: [], wd: 0, E: [], prog: 0, why: '' };
+  const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, heard: [], cut: 0, jBase: 0, heardTxt: '', restarts: [], wd: 0, E: [], prog: 0, why: '' };
   function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
   const sName = s => chapters[s - 1] ? chapters[s - 1].name_arabic : ('سورة ' + s);
   function keyLabel(k) { const [s, a] = k.split(':'); return sName(+s) + ' ' + ar(a); }
@@ -1040,23 +1040,10 @@
   }
   /* ---------- التسميع: الآيات مخفية، وتنكشف كل آية عند تلاوتها صحيحة أو باللمس ---------- */
   // المطابقة على نص Tanzil (Simple Clean) بعد التطبيع، بسماحية خطأ حرف واحد في الكلمة. لا يُعرض أي نص: الكشف يكون على صورة الصفحة نفسها.
-  // مسافة تحرير صغيرة (حتى حدّين) لمطابقة متسامحة مع أخطاء التعرف
-  const levN = (a, b, k) => { if (a === b) return true; if (Math.abs(a.length - b.length) > k) return false; let prev = Array.from({ length: b.length + 1 }, (_, j) => j); for (let i = 1; i <= a.length; i++) { const cur = [i]; let mn = i; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (cur[j] < mn) mn = cur[j]; } if (mn > k) return false; prev = cur; } return prev[b.length] <= k; };
-  const strip = w => w.replace(/^(و|ف)?(ب|ل|ك)?(ال)?/, '').replace(/ا$/, '');
-  const tol = e => e.length >= 7 ? 2 : e.length >= 4 ? 1 : 0;
-  const wsim = (w, e) => { if (w === e) return true; const sw = strip(w), se = strip(e); if (sw && sw === se) return true; const k = tol(e); return k > 0 && (levN(w, e, k) || (se.length >= 3 && levN(sw, se, Math.min(k, tol(se) || 1)))); };
-  // يطابق كلمات مسموعة بكلمات الآية بالترتيب؛ يتجاهل الكلمات الزائدة، ويتسامح مع سقوط حتى كلمتين متتاليتين
-  function tmMatch(words, E) {
-    let j = 0, last = -1;
-    for (let x = 0; x < words.length && j < E.length; x++) {
-      for (let s = 0; s <= 2 && j + s < E.length; s++) if (wsim(words[x], E[j + s])) { j += s + 1; last = x; break; }
-    }
-    return { j, last };
-  }
-  const tmNeed = n => n <= 3 ? n : n <= 6 ? n - 1 : Math.ceil(n * 0.7);
+  // المطابقة في js/tmatch.js (TMM): تطبيع، تسامح مع أخطاء التعرف، الحروف المقطعة، البسملة والاستعاذة، وخاتمة الآية شرط
   async function tmExpect() {
     const k = TM.keys[TM.i]; if (!k) { TM.E = []; return; }
-    try { const rows = await loadText(); const r = rows.find(x => x.k === k); TM.E = r ? norm(r.n).split(' ').filter(Boolean) : []; } catch (e) { TM.E = []; }
+    try { const rows = await loadText(); const r = rows.find(x => x.k === k); TM.E = r ? TMM.expect(r.t, k) : []; } catch (e) { TM.E = []; }
   }
   const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -1081,7 +1068,7 @@
   }
   async function tmLoad(p) {
     const pd = await QD.page(p);
-    TM.p = p; TM.keys = pd.ayat.map(a => a.k); TM.i = 0; TM.rv = new Map(); TM.prog = 0; TM.why = ''; TM.cut = TM.heard.length;
+    TM.p = p; TM.keys = pd.ayat.map(a => a.k); TM.i = 0; TM.rv = new Map(); TM.prog = 0; TM.jBase = 0; TM.why = ''; TM.cut = TM.heard.length;
     await tmExpect(); tmPaint();
   }
   async function tmStart() {
@@ -1101,7 +1088,7 @@
     if (!TM.on || TM.rv.has(k)) return;
     TM.rv.set(k, how);
     if (how === 'tap') TM.cut = TM.heard.length;   // ما سُمع قبل الكشف باللمس لا يُطابَق بالآيات التالية
-    if (k === TM.keys[TM.i]) { while (TM.i < TM.keys.length && TM.rv.has(TM.keys[TM.i])) TM.i++; TM.prog = 0; TM.why = ''; await tmExpect(); }
+    if (k === TM.keys[TM.i]) { while (TM.i < TM.keys.length && TM.rv.has(TM.keys[TM.i])) TM.i++; TM.prog = 0; TM.jBase = 0; TM.why = ''; await tmExpect(); }
     tmPaint();
     if (TM.i >= TM.keys.length) tmListen(false);
   }
@@ -1114,24 +1101,24 @@
   async function tmFeed(text, final) {
     if (!TM.on || TM.i >= TM.keys.length) return 0;
     if (!TM.E.length) await tmExpect();
-    const words = norm(text || '').split(' ').filter(Boolean); if (!words.length || !TM.E.length) return 0;
-    const { j, last } = tmMatch(words, TM.E);
-    TM.prog = j;
-    if (j >= tmNeed(TM.E.length) && j >= 1) {
+    const W = TMM.words(text); if (!W.length || !TM.E.length) return 0;
+    const r = TMM.judge(W, TM.E, TM.keys[TM.i], TM.jBase);
+    TM.prog = Math.min(r.j, TM.E.length);
+    if (r.done) {
       await tmReveal(TM.keys[TM.i], 'speech');
-      const rest = words.slice(last + 1).join(' ');
-      return last + 1 + (rest ? await tmFeed(rest, final) : 0);
+      const rest = W.slice(r.used).join(' ');
+      return r.used + (rest ? await tmFeed(rest, final) : 0);
     }
-    TM.why = (final && words.length >= TM.E.length + 4 && j < TM.E.length / 2) ? 'لم تطابق الآية التالية. أعد تلاوتها، أو المسها لكشفها.' : '';
+    TM.why = (final && W.length >= TM.E.length + 4 && r.j < TM.E.length / 2) ? 'لم تطابق الآية التالية. أعد تلاوتها، أو المسها لكشفها.' : '';
     tmPaint();
     return 0;
   }
   // نص الجلسة كاملًا (يعمل مع سفاري الآيفون الذي يعيد النص تراكميًا أو يصفّر قائمة النتائج)
   let tmQ = Promise.resolve();
   function tmHeardUpdate(raw, fin) {
-    const W = norm(raw).split(' ').filter(Boolean);
+    const W = TMM.words(raw);
     const H = TM.heard, same = TM.cut <= W.length && W.slice(0, TM.cut).join(' ') === H.slice(0, TM.cut).join(' ');
-    if (!same) TM.cut = 0;
+    if (!same) { TM.cut = 0; TM.jBase = TM.prog; }   // سفاري صفّر النتائج: نحفظ التقدّم في الآية الطويلة
     TM.heard = W; TM.heardTxt = raw.replace(/\s+/g, ' ').trim().split(' ').slice(-8).join(' ');
     tmQ = tmQ.then(async () => { const from = Math.min(TM.cut, TM.heard.length); const used = await tmFeed(TM.heard.slice(from).join(' '), fin); if (used) TM.cut = from + used; tmPaint(); }).catch(() => {});
     tmPaint();
@@ -1145,7 +1132,7 @@
       if (TM.on) tmPaint(); return;
     }
     if (TM.rec) tmListen(false);
-    TM.why = ''; TM.heard = []; TM.cut = 0; TM.heardTxt = ''; TM.restarts = [];
+    TM.why = ''; TM.heard = []; TM.cut = 0; TM.jBase = TM.prog; TM.heardTxt = ''; TM.restarts = [];
     TM.listening = true; tmSession();
   }
   function tmSession() {
@@ -1174,7 +1161,8 @@
       if ((IOS && STANDALONE && !got) || quick && TM.restarts.length >= 1 || TM.restarts.length >= 4) {
         return fail(IOS && STANDALONE && !got ? 'لم يصل صوت من الميكروفون. في وضع التطبيق على الآيفون قد لا يعمل التعرف؛ افتح الرابط في Safari، أو اكشف الآيات باللمس.' : 'توقف الاستماع. اضغط «سمّع» للمتابعة.');
       }
-      TM.restarts.push(now); TM.heard = []; TM.cut = 0;
+      r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null;
+      TM.restarts.push(now); TM.heard = []; TM.cut = 0; TM.jBase = TM.prog;   // جلسة جديدة تكمل الآية من حيث وقفت
       setTimeout(() => { if (TM.rec === r && TM.listening && TM.on) { try { tmSession(); } catch (e) { fail('توقف الاستماع. اضغط «سمّع» للمتابعة.'); } } }, 300);
     };
     TM.wd = setTimeout(() => { if (TM.rec === r && !started && !got) fail('لم يبدأ الميكروفون. اسمح بالميكروفون والتعرف على الكلام، أو اكشف الآيات باللمس.'); }, 6000);
@@ -1256,6 +1244,6 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__app = { openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, heard: TM.heard.slice(), cut: TM.cut, heardTxt: TM.heardTxt }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, jBase: TM.jBase, why: TM.why, listening: TM.listening, sr: !!SRC, heard: TM.heard.slice(), cut: TM.cut, heardTxt: TM.heardTxt }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
