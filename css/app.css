@@ -292,3 +292,17 @@ button,[role=switch],.sw-row,.qj input{touch-action:manipulation}
 .switch::before{content:"";position:absolute;inset:-8px -6px}
 .tbar button,.bbar button{min-height:44px;min-width:44px}
 .switch,.switch::after{transition:background .15s,right .15s}
+
+/* ملاحظات: مؤشر واضح في ترويسة الصفحة، وعلامة أوضح بجانب الآية */
+.ph{position:relative}
+.ph .pnote{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:24px;padding:0 10px;border-radius:999px;border:1px solid #C9A45C;background:#FFF6E3;color:#8A5A1C;display:flex;align-items:center;gap:4px;font:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;z-index:2}
+.ph .pnote::before{content:"";position:absolute;inset:-10px -4px}
+.ph .pnote svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pg .nmk button{width:8px;height:30px;background:#B7832F;border-radius:6px 0 0 6px;box-shadow:0 0 0 1.5px #fff,0 1px 4px rgba(90,60,20,.45)}
+.pg .nmk button::after{content:"";position:absolute;left:2px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:#fff}
+html[data-paper=blue] .ph .pnote{border-color:#7FA2C4;background:#EAF3FB;color:#3F6F9A}
+html.dark .ph .pnote{background:#2a2419;border-color:#7c6638;color:#e0c27f}
+.notecard .ncf{display:flex;align-items:center;gap:8px;margin-top:8px}
+.notecard .ncf b{flex:1;font-size:.95rem;color:#8A2D1C}
+.notecard .ncf .btn{margin:0;padding:8px 16px;width:auto}
+.notecard .btn.danger{background:#B3261E;color:#fff;border-color:#B3261E}

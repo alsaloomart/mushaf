@@ -143,7 +143,7 @@
     }
     const ss = pd.surahs;
     return `<div class="pg">
-      <div class="ph"><span class="pj">الجزء ${ar(pd.juz)}</span><span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
+      <div class="ph"><span class="pj">الجزء ${ar(pd.juz)}</span><button class="pnote" hidden aria-label="ملاحظات هذه الصفحة"></button><span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
         <g class="hot"${clip ? ` clip-path="url(#cc${p})"` : ''}>${pd.ayat.map(a => `<path data-k="${a.k}" d="${a.d}"/>`).join('')}</g>
       </svg>
@@ -312,7 +312,8 @@
   }
   function clearSel() { sel = null; rangeMode = false; $('#btnRange').classList.remove('on'); $('#rangeHint').hidden = true; $('#tool').hidden = true; paint(); reserve(); }
   book.addEventListener('click', e => {
-    const na = e.target.closest('.nadd'), nm = e.target.closest('.nmk button');
+    const na = e.target.closest('.nadd'), nm = e.target.closest('.nmk button'), np = e.target.closest('.pnote');
+    if (np) { e.stopPropagation(); if (suppressClick || busy) return; const ns = notesAll().filter(n => n.p === cur); if (ns.length === 1) noteOpen(ns[0].id); else openNotes(cur); return; }
     if (na || nm) { e.stopPropagation(); if (suppressClick || busy) return; na ? noteNew() : noteOpen(nm.dataset.id); return; }
     if (suppressClick || busy) return;
     AU.unlock();
@@ -474,7 +475,8 @@
   function notesPaint(p) {
     const el = leaves.get(p); if (!el) return;
     const box = el.querySelector('.nmk'), pg = el.querySelector('.pg'), svg = el.querySelector('svg.tx'); if (!box || !svg) return;
-    const ns = notesAll().filter(n => n.p === p);
+    const ns = notesAll().filter(n => n.p === p), pn = el.querySelector('.pnote');
+    if (pn) { pn.hidden = !ns.length; pn.innerHTML = ns.length ? `<svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>${ns.length === 1 ? 'ملاحظة' : ar(ns.length) + ' ' + (ns.length === 2 ? 'ملاحظتان' : ns.length <= 10 ? 'ملاحظات' : 'ملاحظة')}</span>` : ''; }
     if (!ns.length) { box.innerHTML = ''; return; }
     const pr = pg.getBoundingClientRect(), sr = svg.getBoundingClientRect();
     const used = []; let free = 0;
@@ -484,7 +486,7 @@
       if (y == null) y = sr.top - pr.top + 4 + 26 * free++;
       while (used.some(u => Math.abs(u - y) < 24)) y += 24;
       used.push(y);
-      return `<button data-id="${n.id}" style="top:${Math.round(y)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
+      return `<button data-id="${n.id}" style="top:${Math.round(y - 4)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
     }).join('');
   }
   function noteMeta(n) { return `<bdi>صفحة ${ar(n.p)}</bdi>${n.k ? ' · <bdi>' + esc(n.kb && n.kb !== n.k ? rangeLabel(n.k, n.kb) : keyLabel(n.k)) + '</bdi>' : ''} · <bdi>${dLabel(n.u || n.t)}</bdi>`; }
@@ -499,14 +501,24 @@
     const c = $('#noteCard');
     c.innerHTML = `<div class="nh"><small>${noteMeta(n)}</small><button class="x" data-nclose aria-label="إغلاق">×</button></div>
       <textarea id="noteTx" rows="5" placeholder="اكتب ملاحظتك على هذه الصفحة…">${esc(n.text)}</textarea>
-      <div class="nf"><small id="noteSt">${fresh ? '' : 'محفوظة'}</small>${fresh ? '' : '<button class="btn" id="noteDel">حذف</button>'}<button class="btn gold" data-nclose>تم</button></div>`;
+      <div class="nf"><small id="noteSt">${fresh ? '' : 'محفوظة'}</small>${fresh ? '' : '<button class="btn" id="noteDel">حذف</button>'}<button class="btn gold" data-nclose>تم</button></div>
+      <div class="ncf" hidden><b>حذف هذه الملاحظة؟</b><button class="btn danger" id="noteDelYes">حذف</button><button class="btn" id="noteDelNo">إلغاء</button></div>`;
     c.hidden = false;
     const tx = $('#noteTx');
     tx.oninput = () => { clearTimeout(noteT); $('#noteSt').textContent = ''; noteT = setTimeout(noteCommit, 400); };
-    if ($('#noteDel')) $('#noteDel').onclick = async () => {
-      if (!(await ask('حذف هذه الملاحظة؟', 'حذف'))) return;
-      notesSave(notesAll().filter(x => x.id !== n.id)); noteCur = null; c.hidden = true; notesPaint(n.p); toast('حُذفت الملاحظة.');
+    /* الحذف بتأكيد داخل البطاقة نفسها: على الآيفون تبقى لوحة المفاتيح مفتوحة وتغطي أي نافذة سفلية */
+    const delNote = () => {
+      clearTimeout(noteT);
+      notesSave(notesAll().filter(x => x.id !== n.id)); noteCur = null; c.hidden = true; c.innerHTML = '';
+      notesPaint(n.p); toast('حُذفت الملاحظة.');
     };
+    if ($('#noteDel')) $('#noteDel').onclick = () => {
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      $('#noteCard .nf').hidden = true; $('#noteCard .ncf').hidden = false;
+    };
+    const cy = c.querySelector('#noteDelYes'), cn = c.querySelector('#noteDelNo');
+    if (cy) cy.onclick = delNote;
+    if (cn) cn.onclick = () => { $('#noteCard .ncf').hidden = true; $('#noteCard .nf').hidden = false; };
     c.querySelectorAll('[data-nclose]').forEach(b => b.onclick = noteClose);
     if (fresh) setTimeout(() => tx.focus(), 50);
   }
@@ -524,8 +536,9 @@
     if (!noteCur) { $('#noteCard').hidden = true; return; }
     noteCommit(); noteCur = null; $('#noteCard').hidden = true;
   }
-  function openNotes() {
-    const all = notesAll().sort((a, b) => (b.u || b.t) - (a.u || a.t));
+  function openNotes(page) {
+    const all = notesAll().filter(n => !page || n.p === page).sort((a, b) => (b.u || b.t) - (a.u || a.t));
+    $('#sh-notes .sh-h b').textContent = page ? `ملاحظات صفحة ${ar(page)}` : 'ملاحظاتي';
     $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${n.id}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
       : '<p class="muted">لا توجد ملاحظات بعد. اضغط زر القلم أسفل الصفحة لتكتب ملاحظة عليها.</p>';
     openSheet('notes');
