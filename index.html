@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow">
+<title>مصحف الحفظ</title>
+<meta name="theme-color" content="#FFFBF7">
+<script>/* الوضع الليلي قبل الرسم */(function(){try{var s=JSON.parse(localStorage.getItem('mushaf.v1')||'{}'),t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');if(s.darkPage)document.documentElement.classList.add('darkpage');if(s.view==='full')document.documentElement.classList.add('vfull')}catch(e){}})()</script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="مصحف الحفظ">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://api.quran.com" crossorigin>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fCream" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.984 0 0 0 0  0 0.965 0 0 0  0 0 0.925 0 0  0 0 0 1 0"/></filter>
+</svg>
+
+<main id="reader">
+  <div id="book" class="book" aria-label="صفحات المصحف"><div id="fold" class="fold"></div></div>
+  <button class="nav prev" id="navPrev" aria-label="الصفحة السابقة">›</button>
+  <button class="nav next" id="navNext" aria-label="الصفحة التالية">‹</button>
+</main>
+
+<!-- أدوات تظهر باللمس -->
+<header class="top cx">
+  <button class="ib" id="btnIndex" aria-label="الفهرس"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
+  <div class="ttl"><b id="tSurah"></b><small id="tSub"></small></div>
+  <button class="ib" id="btnTheme" aria-label="الوضع الليلي"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg></button>
+  <button class="ib" id="btnGo" aria-label="انتقل إلى صفحة"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button>
+</header>
+<div id="today" class="today cx" hidden></div>
+
+<!-- شريط أدوات الآية -->
+<div id="tool" class="tool" hidden>
+  <div class="tool-h">
+    <span id="selLbl"></span>
+    <button class="chip" id="btnRange">حدّد آخر آية</button>
+    <button class="x" id="btnSelClose" aria-label="إلغاء التحديد">×</button>
+  </div>
+  <div class="tool-b">
+    <button id="aListen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>استماع</span></button>
+    <button id="aRepeat"><svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 014-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 01-4 4H4"/></svg><span>تكرار</span></button>
+    <button id="aMem"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg><span>حفظ</span></button>
+    <button id="aRev"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/></svg><span>مراجعة</span></button>
+  </div>
+  <div id="rangeHint" class="hint" hidden>اضغط على آخر آية في المقطع. يمكنك تقليب الصفحات.</div>
+</div>
+
+<!-- شريط التشغيل -->
+<div id="player" class="player" hidden>
+  <button class="ib" id="pToggle" aria-label="إيقاف مؤقت"><svg viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></button>
+  <div class="pinfo"><b id="pNow"></b><small id="pRep"></small></div>
+  <button class="ib" id="pStop" aria-label="إيقاف"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+</div>
+<button id="autoChip" class="autochip" hidden>اضغط لسماع تلاوة الصفحة</button>
+
+<nav class="tabs cx">
+  <button data-tab="mushaf" class="on"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>المصحف</span></button>
+  <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>الخطة</span></button>
+  <button data-tab="review"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/></svg><span>المراجعة</span><i id="dueBadge" hidden></i></button>
+  <button data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>المزيد</span></button>
+</nav>
+
+<section class="sheet" id="sh-index" hidden>
+  <div class="sh-h"><b>الفهرس</b><button class="x" data-close>×</button></div>
+  <div class="seg"><button class="on" data-ix="s">السور</button><button data-ix="j">الأجزاء</button></div>
+  <div class="sh-b" id="ixList"></div>
+</section>
+<section class="sheet" id="sh-plan" hidden>
+  <div class="sh-h"><b>خطة الحفظ</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="planBody"></div>
+</section>
+<section class="sheet" id="sh-review" hidden>
+  <div class="sh-h"><b>المراجعة</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="revBody"></div>
+</section>
+<section class="sheet" id="sh-more" hidden>
+  <div class="sh-h"><b>المزيد</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="moreBody"></div>
+</section>
+<section class="sheet" id="sh-sources" hidden>
+  <div class="sh-h"><b>المصادر</b><button class="x" data-close>×</button></div>
+  <div class="sh-b prose" id="srcBody"></div>
+</section>
+<section class="sheet small" id="sh-repeat" hidden>
+  <div class="sh-h"><b>التكرار</b><button class="x" data-close>×</button></div>
+  <div class="sh-b">
+    <label class="lbl">عدد المرات</label>
+    <div class="seg wrap" id="repCount"></div>
+    <label class="lbl">طريقة التكرار</label>
+    <div class="seg" id="repMode"><button data-m="range">المقطع كامل</button><button data-m="ayah">كل آية على حدة</button></div>
+    <button class="btn gold full" id="repGo">ابدأ التكرار</button>
+  </div>
+</section>
+<section class="sheet" id="sh-go" hidden>
+  <div class="sh-h"><b>بحث</b><button class="x" data-close>×</button></div>
+  <div class="seg" id="goSeg"><button class="on" data-m="t">الآية</button><button data-m="s">السورة</button><button data-m="j">الجزء</button><button data-m="p">الصفحة</button></div>
+  <div class="sh-b" id="goBody">
+    <div data-pane="t">
+      <input id="qText" type="search" placeholder="اكتب كلمات من الآية" autocomplete="off" enterkeyhint="search">
+      <p class="muted sm" id="qInfo">البحث يتجاهل التشكيل والهمزات</p>
+      <div id="qRes"></div>
+    </div>
+    <div data-pane="s" hidden>
+      <input id="qSurah" type="search" placeholder="اسم السورة أو رقمها" autocomplete="off">
+      <div id="sList"></div>
+      <label class="lbl">سورة وآية</label>
+      <div class="row"><select id="goSurah"></select><input id="goAyah" type="number" min="1" inputmode="numeric" placeholder="الآية" style="max-width:96px"><button class="btn gold" id="goKeyBtn">اذهب</button></div>
+    </div>
+    <div data-pane="j" hidden><div id="jList" class="grid"></div></div>
+    <div data-pane="p" hidden>
+      <label class="lbl">رقم الصفحة (1–604)</label>
+      <div class="row"><input id="goPage" type="number" min="1" max="604" inputmode="numeric" enterkeyhint="go"><button class="btn gold" id="goPageBtn">اذهب</button></div>
+      <p class="muted sm" id="goPageInfo"></p>
+    </div>
+  </div>
+</section>
+<section class="sheet small" id="sh-confirm" hidden>
+  <div class="sh-b cf"><p id="cfMsg"></p>
+    <div class="row"><button class="btn" id="cfNo">رجوع</button><button class="btn danger" id="cfYes">نعم</button></div>
+  </div>
+</section>
+
+<div id="install" class="install" hidden></div>
+<div id="toast" class="toast" role="status"></div>
+<div id="scrim" class="scrim" hidden></div>
+
+<script src="js/quran-data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
