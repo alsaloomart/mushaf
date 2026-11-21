@@ -34,7 +34,7 @@
 
   /* ---------- أدوات ---------- */
   const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, base: { idx: 0, skip: 0 }, E: [], prog: 0, why: '' };
+  const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, heard: [], cut: 0, heardTxt: '', restarts: [], wd: 0, E: [], prog: 0, why: '' };
   function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
   const sName = s => chapters[s - 1] ? chapters[s - 1].name_arabic : ('سورة ' + s);
   function keyLabel(k) { const [s, a] = k.split(':'); return sName(+s) + ' ' + ar(a); }
@@ -287,7 +287,7 @@
     const dx = (e ? e.clientX : d.x0) - d.x0, dt = performance.now() - d.t0;
     const prog = Math.abs(dx) / (PW * 0.95), vel = Math.abs(dx) / Math.max(1, dt);
     const complete = e && e.type !== 'pointercancel' && (prog > 0.33 || vel > 0.45);
-    AU.unlock();
+    if (!TM.on) AU.unlock();
     finishFlip(d.f, d.th, complete, true);
   }
   book.addEventListener('pointerup', endDrag);
@@ -319,7 +319,7 @@
     if (np) { e.stopPropagation(); if (suppressClick || busy) return; const ns = notesAll().filter(n => n.p === cur); if (ns.length === 1) noteOpen(ns[0].id); else openNotes(cur); return; }
     if (na || nm) { e.stopPropagation(); if (suppressClick || busy) return; na ? noteNew() : noteOpen(nm.dataset.id); return; }
     if (suppressClick || busy) return;
-    AU.unlock();
+    if (!TM.on) AU.unlock();
     const s = e.target.closest('path[data-k]');
     if (!s) { if (sel && !rangeMode) clearSel(); return; }   // الصفحة نظيفة: لا أشرطة تظهر باللمس
     const k = s.dataset.k;
@@ -401,9 +401,7 @@
       hi('repeat', 'repeat', 'التكرار', 'كرّر الآية أو المقطع بعدد تختاره') +
       hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
   }
-  function openTafsirPanel() {
-    openList('التفسير', `<p class="muted">التفسير المختصر وتفسير السعدي قيد الإضافة بعد التحقق من ترخيص المصدر. سيظهر هنا تفسير الآية المحددة.</p>`, 'tafsir');
-  }
+  function openTafsirPanel() { return openTafsir(sel ? sel.list.slice() : null); }
   const PAPERS = [['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E']];
   function openSettings() {
     const s = ST.get(), dark = document.documentElement.classList.contains('dark'), cur = dark ? 'night' : (s.paper || 'beige'), rid = s.reciter;
@@ -975,6 +973,10 @@
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
+      <h4>التفسير</h4>
+      <p><b>المختصر في تفسير القرآن الكريم</b>، إعداد مركز تفسير للدراسات القرآنية. منقول كما ورد دون تعديل من موسوعة القرآن الكريم ${L('QuranEnc.com')} (المفتاح ${L('arabic_mokhtasar')})، عبر واجهتها البرمجية. رقم الإصدار غير منشور في المصدر، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_mokhtasar" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_mokhtasar</a>')}</p>
+      <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات ${L('QuranEnc.com')} (${L('arabic_saadi')})، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
+      <p>شروط ${L('QuranEnc.com')} لإعادة النشر: عدم التعديل أو الإضافة أو الحذف، والإشارة إلى الناشر والمصدر، وذكر الإصدار، وتحديث النص وفق الإصدارات الجديدة، وعدم عرض إعلانات. التطبيق مجاني وبلا إعلانات.</p>
       <h4>الخصوصية وشروط الاستخدام</h4>
       <p><a href="privacy.html" target="_blank">سياسة الخصوصية</a> · <a href="terms.html" target="_blank">شروط الاستخدام</a></p>`;
   }
@@ -1022,7 +1024,7 @@
   /* ---------- البدء ---------- */
   async function boot() {
     applyTheme(); layout(); navOn('mushaf');
-    document.addEventListener('touchend', () => AU.unlock(), { capture: true, passive: true });
+    document.addEventListener('touchend', () => { if (!TM.on) AU.unlock(); }, { capture: true, passive: true });
     try { chapters = await QD.chapters(); } catch (e) { toast('تحقّق من اتصالك بالإنترنت.'); }
     badge();
     const params = new URLSearchParams(location.search);
@@ -1038,21 +1040,26 @@
   }
   /* ---------- التسميع: الآيات مخفية، وتنكشف كل آية عند تلاوتها صحيحة أو باللمس ---------- */
   // المطابقة على نص Tanzil (Simple Clean) بعد التطبيع، بسماحية خطأ حرف واحد في الكلمة. لا يُعرض أي نص: الكشف يكون على صورة الصفحة نفسها.
-  const lev1 = (a, b) => { if (a === b) return true; if (Math.abs(a.length - b.length) > 1) return false; let i = 0, j = 0, d = 0; while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } } return d + (a.length - i) + (b.length - j) <= 1; };
-  const strip = w => w.replace(/^(و|ف)?(ال)?/, '');
-  const wsim = (w, e) => w === e || strip(w) === strip(e) || (e.length >= 4 && lev1(w, e)) || (e.length >= 5 && lev1(strip(w), strip(e)));
+  // مسافة تحرير صغيرة (حتى حدّين) لمطابقة متسامحة مع أخطاء التعرف
+  const levN = (a, b, k) => { if (a === b) return true; if (Math.abs(a.length - b.length) > k) return false; let prev = Array.from({ length: b.length + 1 }, (_, j) => j); for (let i = 1; i <= a.length; i++) { const cur = [i]; let mn = i; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (cur[j] < mn) mn = cur[j]; } if (mn > k) return false; prev = cur; } return prev[b.length] <= k; };
+  const strip = w => w.replace(/^(و|ف)?(ب|ل|ك)?(ال)?/, '').replace(/ا$/, '');
+  const tol = e => e.length >= 7 ? 2 : e.length >= 4 ? 1 : 0;
+  const wsim = (w, e) => { if (w === e) return true; const sw = strip(w), se = strip(e); if (sw && sw === se) return true; const k = tol(e); return k > 0 && (levN(w, e, k) || (se.length >= 3 && levN(sw, se, Math.min(k, tol(se) || 1)))); };
+  // يطابق كلمات مسموعة بكلمات الآية بالترتيب؛ يتجاهل الكلمات الزائدة، ويتسامح مع سقوط حتى كلمتين متتاليتين
   function tmMatch(words, E) {
     let j = 0, last = -1;
     for (let x = 0; x < words.length && j < E.length; x++) {
-      if (wsim(words[x], E[j])) { j++; last = x; }
-      else if (j + 1 < E.length && wsim(words[x], E[j + 1])) { j += 2; last = x; }
+      for (let s = 0; s <= 2 && j + s < E.length; s++) if (wsim(words[x], E[j + s])) { j += s + 1; last = x; break; }
     }
     return { j, last };
   }
+  const tmNeed = n => n <= 3 ? n : n <= 6 ? n - 1 : Math.ceil(n * 0.7);
   async function tmExpect() {
     const k = TM.keys[TM.i]; if (!k) { TM.E = []; return; }
-    try { const rows = await loadText(); const r = rows.find(x => x.k === k); TM.E = r ? r.n.trim().split(' ') : []; } catch (e) { TM.E = []; }
+    try { const rows = await loadText(); const r = rows.find(x => x.k === k); TM.E = r ? norm(r.n).split(' ').filter(Boolean) : []; } catch (e) { TM.E = []; }
   }
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
   function tmPaint() {
     const el = leaves.get(TM.p);
     book.querySelectorAll('.hot path.rv,.hot path.rvt,.hot path.nx,.hot path.fl').forEach(s => s.classList.remove('rv', 'rvt', 'nx', 'fl'));
@@ -1062,9 +1069,11 @@
     let st;
     if (done) st = `أتممت الصفحة: ${ar(bySpeech)} بالتلاوة، ${ar(byTap)} باللمس.`;
     else if (TM.why) st = TM.why;
-    else if (TM.listening) st = `أسمعك… الآية ${ar(TM.keys[TM.i].split(':')[1])}` + (TM.prog ? ` · ${ar(TM.prog)} من ${ar(TM.E.length)} كلمة` : '');
-    else st = SRC ? 'اضغط «سمّع» وابدأ التلاوة، أو المس الآية لكشفها.' : 'المس الآية بعد تلاوتها لتنكشف. التعرف على الصوت غير متاح في هذا المتصفح.';
+    else if (TM.listening) st = `أسمعك… الآية ${ar(TM.keys[TM.i].split(':')[1])}` + (TM.prog ? ` · طابقت ${ar(TM.prog)} من ${ar(TM.E.length)} كلمة` : '');
+    else if (!SRC) st = IOS && STANDALONE ? 'التعرف على الصوت غير متاح في وضع التطبيق على الآيفون. افتح الرابط في Safari، أو المس الآية بعد تلاوتها لتنكشف.' : 'المس الآية بعد تلاوتها لتنكشف. التعرف على الصوت غير متاح في هذا المتصفح.';
+    else st = IOS && STANDALONE ? 'اضغط «سمّع» وابدأ التلاوة. إن لم يعمل الصوت في وضع التطبيق فافتح الرابط في Safari، أو المس الآية لكشفها.' : 'اضغط «سمّع» وابدأ التلاوة، أو المس الآية لكشفها.';
     $('#tmSt').textContent = st;
+    const hd = $('#tmHeard'); hd.hidden = !SRC || done || !(TM.listening || TM.heardTxt); hd.textContent = TM.heardTxt ? 'سُمع: ' + TM.heardTxt : 'سُمع: …';
     $('#tmMic').hidden = !SRC || done; $('#tmMic').classList.toggle('on', TM.listening);
     $('#tmMic span').textContent = TM.listening ? 'إيقاف' : 'سمّع';
     $('#tmRev').hidden = done; $('#tmHint').hidden = done;
@@ -1072,23 +1081,26 @@
   }
   async function tmLoad(p) {
     const pd = await QD.page(p);
-    TM.p = p; TM.keys = pd.ayat.map(a => a.k); TM.i = 0; TM.rv = new Map(); TM.prog = 0; TM.why = '';
+    TM.p = p; TM.keys = pd.ayat.map(a => a.k); TM.i = 0; TM.rv = new Map(); TM.prog = 0; TM.why = ''; TM.cut = TM.heard.length;
     await tmExpect(); tmPaint();
-    if (TM.listening) { tmListen(false); tmListen(true); }
   }
   async function tmStart() {
     if (TM.on) return;
     closeSheets(); noteClose(); if (sel) clearSel(); AU.stop && AU.stop();
-    TM.on = true; document.body.classList.add('tm'); $('#tm').hidden = false; layout(); refit();
+    TM.on = true; TM.heardTxt = ''; document.body.classList.add('tm'); $('#tm').hidden = false; layout(); refit();
     notesPaint(cur); await tmLoad(cur);
     loadText().catch(() => { TM.why = 'تعذّر تحميل النص للمطابقة. يمكنك الكشف باللمس.'; tmPaint(); });
   }
+  // الإغلاق يعمل دائمًا: نوقف التعرف أولًا ونخفي الشريط حتى لو تعثّر أي جزء آخر
   function tmEnd() {
-    tmListen(false); TM.on = false; document.body.classList.remove('tm'); $('#tm').hidden = true; tmPaint(); layout(); refit(); notesPaint(cur); navOn('mushaf');
+    try { tmListen(false); } catch (e) {}
+    TM.on = false; document.body.classList.remove('tm'); $('#tm').hidden = true;
+    try { tmPaint(); layout(); refit(); notesPaint(cur); navOn('mushaf'); } catch (e) {}
   }
   async function tmReveal(k, how) {
     if (!TM.on || TM.rv.has(k)) return;
     TM.rv.set(k, how);
+    if (how === 'tap') TM.cut = TM.heard.length;   // ما سُمع قبل الكشف باللمس لا يُطابَق بالآيات التالية
     if (k === TM.keys[TM.i]) { while (TM.i < TM.keys.length && TM.rv.has(TM.keys[TM.i])) TM.i++; TM.prog = 0; TM.why = ''; await tmExpect(); }
     tmPaint();
     if (TM.i >= TM.keys.length) tmListen(false);
@@ -1098,51 +1110,152 @@
     const s = leaves.get(TM.p) && leaves.get(TM.p).querySelector(`.hot path[data-k="${k}"]`); if (!s) return;
     s.classList.add('fl'); setTimeout(() => s.classList.remove('fl'), 1200);
   }
-  // يستقبل نص التعرّف (من المتصفح أو من الاختبار) ويطابقه بالآية التالية
+  // يطابق نصًّا مسموعًا بالآية التالية فما بعدها، ويعيد عدد الكلمات المستهلكة في كشف آيات
   async function tmFeed(text, final) {
-    if (!TM.on || TM.i >= TM.keys.length) return;
+    if (!TM.on || TM.i >= TM.keys.length) return 0;
     if (!TM.E.length) await tmExpect();
-    const words = norm(text).split(' ').filter(Boolean); if (!words.length) return;
-    const { j, last } = tmMatch(words, TM.E), need = TM.E.length <= 3 ? TM.E.length : TM.E.length - 1;
+    const words = norm(text || '').split(' ').filter(Boolean); if (!words.length || !TM.E.length) return 0;
+    const { j, last } = tmMatch(words, TM.E);
     TM.prog = j;
-    if (j >= need && j >= 1) {
-      TM.base.skip += last + 1;
+    if (j >= tmNeed(TM.E.length) && j >= 1) {
       await tmReveal(TM.keys[TM.i], 'speech');
-      const rest = words.slice(last + 1).join(' '); if (rest) await tmFeed(rest, final);
-      return;
+      const rest = words.slice(last + 1).join(' ');
+      return last + 1 + (rest ? await tmFeed(rest, final) : 0);
     }
-    TM.why = (final && words.length >= TM.E.length + 3 && j < TM.E.length / 2) ? 'لم تطابق الآية التالية. أعد تلاوتها، أو المسها لكشفها.' : '';
+    TM.why = (final && words.length >= TM.E.length + 4 && j < TM.E.length / 2) ? 'لم تطابق الآية التالية. أعد تلاوتها، أو المسها لكشفها.' : '';
+    tmPaint();
+    return 0;
+  }
+  // نص الجلسة كاملًا (يعمل مع سفاري الآيفون الذي يعيد النص تراكميًا أو يصفّر قائمة النتائج)
+  let tmQ = Promise.resolve();
+  function tmHeardUpdate(raw, fin) {
+    const W = norm(raw).split(' ').filter(Boolean);
+    const H = TM.heard, same = TM.cut <= W.length && W.slice(0, TM.cut).join(' ') === H.slice(0, TM.cut).join(' ');
+    if (!same) TM.cut = 0;
+    TM.heard = W; TM.heardTxt = raw.replace(/\s+/g, ' ').trim().split(' ').slice(-8).join(' ');
+    tmQ = tmQ.then(async () => { const from = Math.min(TM.cut, TM.heard.length); const used = await tmFeed(TM.heard.slice(from).join(' '), fin); if (used) TM.cut = from + used; tmPaint(); }).catch(() => {});
     tmPaint();
   }
   function tmListen(on) {
-    if (!SRC) return;
-    if (!on) { TM.listening = false; if (TM.rec) { try { TM.rec.abort(); } catch (e) {} TM.rec = null; } if (TM.on) tmPaint(); return; }
+    if (!SRC) { if (on) { TM.why = 'التعرف على الصوت غير متاح في هذا المتصفح. اكشف الآيات باللمس.'; tmPaint(); } return; }
+    clearTimeout(TM.wd);
+    if (!on) {
+      TM.listening = false; const r = TM.rec; TM.rec = null;
+      if (r) { r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null; try { r.abort(); } catch (e) {} try { r.stop(); } catch (e) {} }
+      if (TM.on) tmPaint(); return;
+    }
+    if (TM.rec) tmListen(false);
+    TM.why = ''; TM.heard = []; TM.cut = 0; TM.heardTxt = ''; TM.restarts = [];
+    TM.listening = true; tmSession();
+  }
+  function tmSession() {
     const r = new SRC(); r.lang = 'ar-SA'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
-    TM.rec = r; TM.listening = true; TM.base = { idx: 0, skip: 0 }; TM.why = '';
+    TM.rec = r; const t0 = Date.now(); let started = false, got = false;
+    const fail = m => { if (TM.rec !== r) return; TM.why = m; tmListen(false); };
+    r.onstart = r.onaudiostart = () => { started = true; };
     r.onresult = ev => {
       if (TM.rec !== r) return;
-      let txt = '', fin = true;
-      for (let x = TM.base.idx; x < ev.results.length; x++) { txt += ' ' + ev.results[x][0].transcript; if (!ev.results[x].isFinal) fin = false; }
-      const all = norm(txt).split(' ').filter(Boolean);
-      // كل ما بعد آخر نتيجة نهائية مستهلكة يُطابَق من جديد؛ ونتجاوز الكلمات التي كشفت آيات سابقة
-      tmFeed(all.slice(TM.base.skip).join(' '), fin);
-      if (fin) { TM.base.idx = ev.results.length; TM.base.skip = 0; }
+      got = true; let txt = '', fin = true;
+      for (let x = 0; x < ev.results.length; x++) { const a = ev.results[x]; if (a && a[0]) txt += ' ' + a[0].transcript; if (a && !a.isFinal) fin = false; }
+      tmHeardUpdate(txt, fin);
     };
     r.onerror = ev => {
       if (TM.rec !== r) return;
-      const m = { 'not-allowed': 'لم يُسمح باستخدام الميكروفون. اكشف الآيات باللمس، أو اسمح بالميكروفون من إعدادات المتصفح.', 'service-not-allowed': 'التعرف على الصوت غير متاح هنا. اكشف الآيات باللمس.', 'network': 'التعرف على الصوت يحتاج إنترنت. اكشف الآيات باللمس.', 'audio-capture': 'لم يُعثر على ميكروفون.' }[ev.error];
-      if (m) { TM.why = m; tmListen(false); }
+      const e = ev && ev.error;
+      if (e === 'no-speech' || e === 'aborted') return;   // onend يقرر المتابعة
+      const m = { 'not-allowed': 'لم يُسمح باستخدام الميكروفون أو التعرف على الكلام. اسمح بهما من الإعدادات، أو اكشف الآيات باللمس.', 'service-not-allowed': IOS && STANDALONE ? 'التعرف على الصوت لا يعمل في وضع التطبيق على الآيفون. افتح الرابط في Safari، أو اكشف الآيات باللمس.' : 'التعرف على الصوت غير متاح هنا. اكشف الآيات باللمس.', 'network': 'التعرف على الصوت يحتاج إنترنت. اكشف الآيات باللمس.', 'audio-capture': 'لم يُعثر على ميكروفون. اكشف الآيات باللمس.', 'language-not-supported': 'التعرف على العربية غير متاح في هذا الجهاز. اكشف الآيات باللمس.' }[e];
+      fail(m || `تعذّر التعرف على الصوت (${e || 'خطأ'}). اكشف الآيات باللمس.`);
     };
-    r.onend = () => { if (TM.rec === r && TM.listening && TM.on) { TM.base = { idx: 0, skip: 0 }; setTimeout(() => { if (TM.rec === r && TM.listening) try { r.start(); } catch (e) { tmListen(false); } }, 250); } };
-    try { r.start(); } catch (e) { TM.why = 'تعذّر تشغيل الميكروفون. اكشف الآيات باللمس.'; tmListen(false); }
+    // المحرك ينهي الجلسة عند الصمت: نعيد تشغيله بحدود، ولا ندخل في حلقة إعادة سريعة (كانت تحجب الأزرار على الآيفون)
+    r.onend = () => {
+      if (TM.rec !== r || !TM.listening || !TM.on) return;
+      const now = Date.now(); TM.restarts = TM.restarts.filter(t => now - t < 15000);
+      const quick = now - t0 < 1500 && !got;
+      if ((IOS && STANDALONE && !got) || quick && TM.restarts.length >= 1 || TM.restarts.length >= 4) {
+        return fail(IOS && STANDALONE && !got ? 'لم يصل صوت من الميكروفون. في وضع التطبيق على الآيفون قد لا يعمل التعرف؛ افتح الرابط في Safari، أو اكشف الآيات باللمس.' : 'توقف الاستماع. اضغط «سمّع» للمتابعة.');
+      }
+      TM.restarts.push(now); TM.heard = []; TM.cut = 0;
+      setTimeout(() => { if (TM.rec === r && TM.listening && TM.on) { try { tmSession(); } catch (e) { fail('توقف الاستماع. اضغط «سمّع» للمتابعة.'); } } }, 300);
+    };
+    TM.wd = setTimeout(() => { if (TM.rec === r && !started && !got) fail('لم يبدأ الميكروفون. اسمح بالميكروفون والتعرف على الكلام، أو اكشف الآيات باللمس.'); }, 6000);
+    try { r.start(); } catch (e) { fail('تعذّر تشغيل الميكروفون. اكشف الآيات باللمس.'); return; }
     tmPaint();
   }
-  $('#tmMic').onclick = () => tmListen(!TM.listening);
-  $('#tmRev').onclick = () => { const k = TM.keys[TM.i]; if (k) tmReveal(k, 'tap'); };
-  $('#tmHint').onclick = tmHint;
-  $('#tmEnd').onclick = tmEnd;
-  $('#tmAgain').onclick = () => tmLoad(TM.p);
-  $('#tmNext').onclick = () => { if (TM.p < N) goPage(TM.p + 1, true, true); };
-  window.__app = { reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  // أزرار شريط التسميع: تستجيب للمس مباشرة (touchend) وللنقر، مرة واحدة لكل لمسة
+  function tmBtn(id, fn) {
+    const el = $(id); let tt = 0;
+    el.addEventListener('touchend', e => { if (el.hidden) return; e.preventDefault(); e.stopPropagation(); tt = Date.now(); fn(); }, { passive: false });
+    el.addEventListener('click', e => { e.stopPropagation(); if (Date.now() - tt < 700) return; fn(); });
+  }
+  tmBtn('#tmMic', () => tmListen(!TM.listening));
+  tmBtn('#tmRev', () => { const k = TM.keys[TM.i]; if (k) tmReveal(k, 'tap'); });
+  tmBtn('#tmHint', tmHint);
+  tmBtn('#tmEnd', tmEnd);
+  tmBtn('#tmAgain', () => tmLoad(TM.p));
+  tmBtn('#tmNext', () => { if (TM.p < N) goPage(TM.p + 1, true, true); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && TM.listening) { tmListen(false); TM.why = 'توقف الاستماع. اضغط «سمّع» للمتابعة.'; tmPaint(); } });
+  /* ---------- التفسير: المختصر والسعدي، كما وردا في المصدر بلا أي تعديل ---------- */
+  // الملفات لكل سورة في tafsir/{mukhtasar|saadi}/NNN.json، تُحمَّل عند الحاجة وتُخزَّن بعد أول فتح (sw.js)
+  const TF = {
+    mukhtasar: { name: 'المختصر', title: 'المختصر في تفسير القرآن الكريم', pub: 'مركز تفسير للدراسات القرآنية', key: 'arabic_mokhtasar' },
+    saadi: { name: 'السعدي', title: 'تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)', pub: 'الشيخ عبد الرحمن بن ناصر السعدي', key: 'arabic_saadi' }
+  };
+  const tfCache = new Map();
+  function tfLoad(t, s) {
+    const id = t + s;
+    if (!tfCache.has(id)) tfCache.set(id, fetch(`tafsir/${t}/${String(s).padStart(3, '0')}.json`).then(r => { if (!r.ok) throw new Error('tafsir'); return r.json(); }).catch(e => { tfCache.delete(id); throw e; }));
+    return tfCache.get(id);
+  }
+  let tfKeys = [], tfScope = '';
+  const tfWhich = () => (ST.get().tafsir === 'saadi' ? 'saadi' : 'mukhtasar');
+  const segHTML = x => x.map(([c, t]) => c ? `<span class="tq-${c}">${esc(t)}</span>` : esc(t)).join('');
+  function tfDate(iso) { try { return new Date(iso).toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso.slice(0, 10); } }
+  function tfSource(t, d, s) {
+    const m = TF[t];
+    return `<p class="tfsrc"><b>${esc(m.title)}</b> · ${esc(m.pub)}<br>المصدر: موسوعة القرآن الكريم ${L('QuranEnc.com')} (${L(m.key)})، منقول كما ورد دون تعديل. ${t === 'mukhtasar' ? 'رقم الإصدار غير منشور في المصدر؛ ' : ''}تاريخ النقل: ${tfDate(d.fetched)}.<br>${L(`<a href="${esc(d.src)}" target="_blank" rel="noopener">${esc(d.src.replace('https://', ''))}</a>`)}</p>`;
+  }
+  async function tfRender() {
+    const t = tfWhich(), body = $('#tfBody');
+    $$('#tfSeg [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    $('#tfScope').textContent = tfScope;
+    if (!tfKeys.length) { body.innerHTML = ''; return; }
+    body.innerHTML = '<p class="muted">جارٍ التحميل…</p>';
+    const bySura = new Map(); for (const k of tfKeys) { const [s, a] = k.split(':').map(Number); if (!bySura.has(s)) bySura.set(s, []); bySura.get(s).push(a); }
+    let html = '';
+    try {
+      for (const [s, ayat] of bySura) {
+        const d = await tfLoad(t, s);
+        if (t === 'mukhtasar') {
+          for (const a of ayat) {
+            const tx = d.t[String(a)];
+            html += `<article class="tfa" data-k="${s}:${a}"><h5>${esc(sName(s))} · الآية ${ar(a)}</h5>${tx != null ? `<div class="tftx">${esc(tx)}</div>` : `<p class="muted">لا يوجد نص لهذه الآية في المصدر.</p>`}</article>`;
+          }
+        } else {
+          const B = d.blocks, want = new Set(ayat), used = new Set();
+          const hit = i => B[i].k === 'a' && ayat.some(a => a >= B[i].a && a <= B[i].b);
+          const shown = new Set();
+          for (let i = 0; i < B.length; i++) {
+            if (!hit(i)) continue;
+            let j = i; while (j > 0 && B[j - 1].k !== 'a') j--;   // ما قبل الفقرة من تمهيد أو نص الآيات يُعرض معها كما في المصدر
+            for (let q = j; q <= i; q++) if (!used.has(q)) { used.add(q); const b = B[q];
+              if (b.k === 'a') for (let a = b.a; a <= b.b; a++) shown.add(a);
+              html += `<article class="tfa tfs-${b.k}" data-k="${s}:${b.k === 'i' ? '' : b.a}">${b.l ? `<h5>${esc(sName(s))} · ${esc(b.l)}</h5>` : ''}<div class="tftx">${segHTML(b.x)}</div></article>`; }
+          }
+          for (const a of ayat) if (!shown.has(a)) html += `<article class="tfa tfgap" data-k="${s}:${a}"><h5>${esc(sName(s))} · الآية ${ar(a)}</h5><p class="muted">لا توجد في المصدر فقرة مستقلة لهذه الآية.</p></article>`;
+        }
+        html += tfSource(t, d, s);
+      }
+      if (tfWhich() === t) body.innerHTML = html;
+    } catch (e) { body.innerHTML = '<p class="muted">تعذّر تحميل التفسير. أول فتح لتفسير سورة يحتاج اتصالًا بالإنترنت، ثم يبقى متاحًا بدونه.</p>'; }
+  }
+  async function openTafsir(keys) {
+    if (keys && keys.length) { tfKeys = keys; tfScope = keys.length === 1 ? keyLabel(keys[0]) : rangeLabel(keys[0], keys[keys.length - 1]); }
+    else { const pd = await QD.page(cur); tfKeys = pd.ayat.map(a => a.k); tfScope = `صفحة ${ar(cur)} · ${surahsTitle(pd.surahs, 40)}`; }
+    openSheet('tafsir'); navOn('tafsir'); $('#tfBody').scrollTop = 0; $('#sh-tafsir .sh-b').scrollTop = 0;
+    return tfRender();
+  }
+  $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
+  $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
+  window.__app = { openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, heard: TM.heard.slice(), cut: TM.cut, heardTxt: TM.heardTxt }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

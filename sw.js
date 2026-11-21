@@ -4,7 +4,8 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-shell-v13';
+const SHELL = 'mushaf-shell-v15';
+const TAFSIR = 'mushaf-tafsir-v1';
 const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v1';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
@@ -16,7 +17,7 @@ const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css',
 self.addEventListener('install', e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (![SHELL, PAGES, DATA].includes(k)) await caches.delete(k);
+    for (const k of await caches.keys()) if (![SHELL, PAGES, DATA, TAFSIR].includes(k)) await caches.delete(k);
     await purge();
     await self.clients.claim();
   })());
@@ -35,6 +36,18 @@ async function stamp(res) {
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);
+  if (u.origin === location.origin && u.pathname.includes('/tafsir/')) {
+    // التفسير: يُحمَّل لكل سورة عند أول فتح ثم يبقى بدون إنترنت
+    e.respondWith((async () => {
+      const c = await caches.open(TAFSIR);
+      const hit = await c.match(req.url);
+      if (hit) return hit;
+      const r = await fetch(req);
+      if (r.ok) c.put(req.url, r.clone());
+      return r;
+    })());
+    return;
+  }
   if (u.origin === location.origin && (u.pathname.includes('/pages/') || u.pathname.includes('/lines/'))) {
     e.respondWith((async () => {
       const c = await caches.open(PAGES);
