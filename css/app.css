@@ -314,12 +314,12 @@ html.dark .ph .pnote{background:#2a2419;border-color:#7c6638;color:#e0c27f}
 html[data-paper=blue] .pg .nmk button{background:#3F6E99}
 html.dark .pg .nmk button{background:#D9A54A;box-shadow:0 0 0 1.5px #222,0 1px 4px rgba(0,0,0,.6)}
 /* التسميع */
-:root{--tmh:128px}
+:root{--tmh:152px}
 body.tm #reader{bottom:calc(var(--sab) + var(--tmh))}
 body.tm #botbar,body.tm #qj{visibility:hidden}
 .tmbar{position:fixed;left:0;right:0;bottom:0;z-index:34;height:calc(var(--sab) + var(--tmh));padding:4px 12px calc(var(--sab) + 6px);box-sizing:border-box;background:var(--bar);border-top:1px solid var(--barline);font-family:'Thmanyah Sans',system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;gap:2px}
 .tmbar[hidden]{display:none}
-.tmheard{font-size:13px;line-height:18px;height:18px;color:var(--barink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl}
+.tmheard{flex:none;font-size:13px;line-height:18px;height:18px;color:var(--barink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl}
 .tmheard[hidden]{display:block;visibility:hidden}
 html.dark .tmheard{color:#B9B5AD}
 .tmh{display:flex;align-items:center;gap:10px;height:30px}
@@ -327,7 +327,7 @@ html.dark .tmheard{color:#B9B5AD}
 .tmh span{flex:1;font-size:14px;color:var(--ic);font-weight:700}
 .tmx{width:44px;height:44px;margin:-7px -10px -7px 0;display:grid;place-items:center;background:none;border:0;touch-action:manipulation}
 .tmx svg{width:20px;height:20px;stroke:var(--ic);stroke-width:2;fill:none}
-.tmst{font-size:13.5px;line-height:20px;min-height:20px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmst{font-size:13.5px;line-height:19px;height:38px;flex:none;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .tmb{display:flex;gap:8px;margin-top:2px}
 .tmb .btn{flex:1;height:44px;padding:0 10px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;touch-action:manipulation;border:0;color:var(--ink)}
 .tmb .btn[hidden]{display:none}
@@ -391,7 +391,7 @@ html.dark .tq-c{color:#C3A6E0}
 html.dark .tq-d{color:#8FD0AE}
 html.dark .tfsrc{background:#202121;color:#B9B5AD}
 html.dark .tfsrc b{color:#E6E2DA}
-body:has(#sh-tafsir:not([hidden])) .tool{display:none}
+body:has(#sh-tafsir:not([hidden])) .tool{display:none}body:has(#sh-tafsir:not([hidden])) #qj{visibility:hidden}
 .tfsrc a{color:var(--tfh,#7A5220)}
 html[data-paper=blue]{--tfh:#2C577D}html[data-paper=grey]{--tfh:#6A4618}html.dark{--tfh:#D8B86A}
 html[data-paper=grey] .tfsrc{color:#4f4b46}
