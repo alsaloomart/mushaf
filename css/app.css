@@ -392,7 +392,7 @@ html.dark .tq-c{color:#C3A6E0}
 html.dark .tq-d{color:#8FD0AE}
 html.dark .tfsrc{background:#202121;color:#B9B5AD}
 html.dark .tfsrc b{color:#E6E2DA}
-body:has(#sh-tafsir:not([hidden])) .tool{display:none}body:has(#sh-tafsir:not([hidden])) #qj{visibility:hidden}
+body:has(#sh-tafsir:not([hidden])) .tool{display:none}body:has(.sheet:not(.small):not([hidden])) #qj{visibility:hidden}
 .tfsrc a{color:var(--tfh,#7A5220)}
 html[data-paper=blue]{--tfh:#2C577D}html[data-paper=grey]{--tfh:#6A4618}html.dark{--tfh:#D8B86A}
 html[data-paper=grey] .tfsrc{color:#4f4b46}
