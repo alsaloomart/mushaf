@@ -415,7 +415,8 @@
        <label class="lbl">القارئ</label>` +
       AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
-       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()), 'settings');
+       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : ''), 'settings');
+    if (window.CLOUD) CLOUD.prep();
   }
   /* ---------- الأشرطة ---------- */
   function navOn(k) { $$('[data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === (k || 'mushaf'))); }
@@ -513,6 +514,7 @@
     /* الحذف بتأكيد داخل البطاقة نفسها: على الآيفون تبقى لوحة المفاتيح مفتوحة وتغطي أي نافذة سفلية */
     const delNote = () => {
       clearTimeout(noteT);
+      try { const dl = JSON.parse(localStorage.getItem('mushaf.notes.del') || '{}'); dl[n.id] = Date.now(); localStorage.setItem('mushaf.notes.del', JSON.stringify(dl)); } catch (e) {}
       notesSave(notesAll().filter(x => x.id !== n.id)); noteCur = null; c.hidden = true; c.innerHTML = '';
       notesPaint(n.p); toast('حُذفت الملاحظة.');
     };
@@ -1141,6 +1143,6 @@
   $('#tmEnd').onclick = tmEnd;
   $('#tmAgain').onclick = () => tmLoad(TM.p);
   $('#tmNext').onclick = () => { if (TM.p < N) goPage(TM.p + 1, true, true); };
-  window.__app = { tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

@@ -346,3 +346,17 @@ html[data-paper=grey]{--hidc:#CFCBC6;--hidn:#C6C1BB}
 html[data-paper=blue]{--hidc:#E6F0F8;--hidn:#D8E6F2}
 html.dark{--hidc:#ECECEC;--hidn:#DADADA}
 html.dark body.tm .hot path.rvt{fill:rgba(60,90,160,.22)}
+/* الحساب والمزامنة */
+#clBox{padding:2px 4px 6px}
+.cl-g{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;border-radius:12px;border:1px solid var(--barline);background:var(--sheet,#fff);color:var(--ink);font:inherit;font-weight:700;font-size:15px;touch-action:manipulation}
+.cl-g svg{width:20px;height:20px}
+.cl-u{display:flex;align-items:center;gap:10px;min-width:0}
+.cl-u img,.cl-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;display:grid;place-items:center;background:var(--bar);color:var(--acc);font-weight:700}
+.cl-u div{min-width:0}.cl-u b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-u small{display:block;direction:ltr;text-align:right;color:var(--ic);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-st{font-size:13px;margin:8px 0 0;display:flex;align-items:center;gap:6px;color:var(--ic)}
+.cl-st::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none;opacity:.7}
+.cl-st.ok{color:#3E7D4F}.cl-st.bad{color:#A8432F}.cl-st.busy{color:var(--acc)}
+.cl-out{margin-top:8px;min-height:44px;padding:0 4px;background:none;border:0;color:var(--acc);font:inherit;font-weight:700;touch-action:manipulation}
+html.dark .cl-g{background:#222323;color:#e8e6e1}
+html.dark .cl-st.ok{color:#7FC08F}html.dark .cl-st.bad{color:#E08B78}

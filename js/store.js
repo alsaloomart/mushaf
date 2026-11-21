@@ -10,6 +10,7 @@ const ST = (() => {
   const today0 = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t.getTime(); };
   return {
     get: () => d, save,
+    replace(o) { d = Object.assign(def(), o || {}); save(); },
     setLastPage(p) { d.lastPage = p; save(); },
     setReciter(id) { d.reciter = id; save(); },
     setTheme(t) { d.theme = t; save(); },
