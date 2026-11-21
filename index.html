@@ -7,7 +7,7 @@
 <meta name="googlebot" content="noindex,nofollow">
 <title>مصحف الحفظ</title>
 <meta name="theme-color" content="#FFFBF7">
-<script>/* الوضع الليلي قبل الرسم */(function(){try{var s=JSON.parse(localStorage.getItem('mushaf.v1')||'{}'),t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');if(s.darkPage)document.documentElement.classList.add('darkpage');if(s.view==='full')document.documentElement.classList.add('vfull')}catch(e){}})()</script>
+<script>/* الوضع الليلي قبل الرسم */(function(){try{var s=JSON.parse(localStorage.getItem('mushaf.v1')||'{}'),t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.classList.add('darkpage')}if(s.view==='full')document.documentElement.classList.add('vfull')}catch(e){}})()</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -60,7 +60,6 @@
   <div class="pinfo"><b id="pNow"></b><small id="pRep"></small></div>
   <button class="ib" id="pStop" aria-label="إيقاف"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
 </div>
-<button id="autoChip" class="autochip" hidden>اضغط لسماع تلاوة الصفحة</button>
 
 <nav class="tabs cx">
   <button data-tab="mushaf" class="on"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>المصحف</span></button>

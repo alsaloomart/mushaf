@@ -45,10 +45,7 @@ html.vfull svg.tx .pimg{filter:none}
 html.vfull .leaf,html.vfull #reader{background:#fff}
 /* صفحة داكنة تجريبية (عرض فقط) */
 html.darkpage #reader,html.darkpage .leaf{background:#0b0b0b}
-html.darkpage svg.tx .pimg{filter:invert(1) hue-rotate(180deg) brightness(.9)}
-html.darkpage .hot{mix-blend-mode:screen}
-html.darkpage .hot path.sel{fill:rgba(242,194,48,.30)}
-html.darkpage .hot path.play{fill:rgba(242,194,48,.45)}
+html.darkpage svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.9)}
 html.darkpage .ph{color:#cdb680}
 html.darkpage .pn{filter:invert(1) hue-rotate(180deg)}
 html.darkpage{--leafback:rgba(11,11,11,.95)}
@@ -179,3 +176,8 @@ html.dark .toast{background:#e8e6e1;color:#1F2120}
 html.dark .scrim{background:rgba(0,0,0,.6)}
 html.dark .prose a{color:var(--gold)}
 html.dark .nav{background:rgba(255,255,255,.06)}
+
+/* الوضع الليلي بلمسة واحدة على الآيفون */
+button{touch-action:manipulation}
+.ib{width:44px;height:44px}
+html.dark .tabs,html.dark .top,html.dark .today{background:#0c0d0d}

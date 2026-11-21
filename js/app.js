@@ -233,7 +233,6 @@
   function setCurrent(p, user) {
     const changed = p !== cur;
     cur = p; ST.setLastPage(p); leaf(p); gc(); prefetch(p); updateTitle();
-    if (changed && user) onUserOpenedPage(p);
   }
   async function updateTitle() {
     const p = cur;
@@ -323,26 +322,10 @@
   /* ---------- الصوت ---------- */
   function startPlay(count = 1, mode = 'range') {
     if (!sel) return;
-    hideChip();
     AU.play(sel.list.slice(), ST.get().reciter, count, mode, { kind: 'sel' });
   }
-  function hideChip() { $('#autoChip').hidden = true; }
-  /* تلاوة الصفحة عند فتحها، ثم المتابعة للصفحة التالية مع تقليبها */
-  function playPage(p) {
-    hideChip();
-    const pd = pageData.get(p);
-    const go = d => AU.play(d.ayat.map(a => a.k), ST.get().reciter, 1, 'range', {
-      kind: 'page',
-      onEnd: async () => { if (cur >= N) { AU.stop(); return; } await flip(1, false); playPage(cur); }
-    });
-    if (pd) go(pd); else QD.page(p).then(go);
-  }
-  function onUserOpenedPage(p) {
-    if (!ST.get().autoplay) { const st = AU.state(); if (st && st.kind === 'page') AU.stop(); return; }
-    playPage(p);
-  }
-  AU.on('blocked', () => { $('#autoChip').hidden = false; });
-  $('#autoChip').onclick = () => { AU.unlock(); playPage(cur); };
+  /* لا تشغيل تلقائي: التلاوة تبدأ فقط من «استماع» أو «تكرار» بعد الضغط على آية */
+  AU.on('blocked', () => toast('تعذّر تشغيل هذه الآية.'));
   $('#aListen').onclick = () => startPlay(1, 'range');
   AU.on('ayah', async (k, st) => {
     playingKey = k; paint();
@@ -661,7 +644,7 @@
     const dark = t === 'dark' || (t === 'system' && mqDark.matches);
     const H = document.documentElement;
     H.classList.toggle('dark', dark);
-    H.classList.toggle('darkpage', !!s.darkPage);
+    H.classList.toggle('darkpage', dark);   // الوضع الليلي: الأشرطة والصفحة معًا (عكس ألوان للعرض فقط)
     H.classList.toggle('vfull', s.view === 'full');
     document.querySelector('meta[name="theme-color"]').content = dark ? '#121313' : '#FFFBF7';
   }
@@ -678,10 +661,8 @@
     $('#moreBody').innerHTML = `<label class="lbl">القارئ</label>` +
       AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
       `<label class="lbl">التلاوة عند فتح الصفحة</label>
-       <button class="li" id="mAuto"><span class="n">${s.autoplay ? CK : ''}</span><span class="m"><b>تشغيل تلقائي عند تقليب الصفحة</b><small>تبدأ التلاوة من أول آية في الصفحة وتكمل إلى الصفحة التالية</small></span></button>
        <label class="lbl">الوضع الليلي</label>${seg('mTheme', [['light', 'فاتح'], ['dark', 'ليلي'], ['system', 'حسب الجهاز']], s.theme || 'system')}
        <label class="lbl">عرض الصفحة</label>${seg('mView', [['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']], s.view === 'full' ? 'full' : 'screen')}
-       <button class="li" id="mDarkPage"><span class="n">${s.darkPage ? CK : ''}</span><span class="m"><b>صفحة داكنة (تجريبي)</b><small>عرض فقط: يعكس ألوان الصفحة على الشاشة، والصفحة الأصلية لا تتغير</small></span></button>
        <button class="btn full dl" id="mDl"><b>تنزيل المصحف كاملًا</b><small>للقراءة بدون إنترنت</small></button>
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
@@ -692,8 +673,6 @@
       if (r) { ST.setReciter(+r.dataset.r); openMore(); return; }
       const th = e.target.closest('#mTheme [data-v]'); if (th) { setTheme(th.dataset.v); openMore(); return; }
       const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); rebuildLeaves(); openMore(); return; }
-      if (e.target.closest('#mDarkPage')) { ST.set('darkPage', !ST.get().darkPage); applyTheme(); openMore(); return; }
-      if (e.target.closest('#mAuto')) { ST.setAutoplay(!ST.get().autoplay); if (!ST.get().autoplay) { const st = AU.state(); if (st && st.kind === 'page') AU.stop(); hideChip(); } openMore(); return; }
       if (e.target.closest('#mDl')) downloadAll();
       if (e.target.closest('#mSrc')) openSources();
       if (e.target.closest('#mInst')) { closeSheets(); showInstall(true); }
@@ -701,7 +680,7 @@
   }
   async function downloadAll() {
     const bar = $('#dlBar'), btn = $('#mDl'); bar.hidden = false; btn.disabled = true;
-    const c = await caches.open('mushaf-pages-v1'); let done = 0;
+    const c = await caches.open('mushaf-pages-v2'); let done = 0;
     const ps = [...Array(N).keys()].map(i => i + 1);
     const pad = p => String(p).padStart(3, '0');
     const urls = p => [viewFull() ? `pages/${pad(p)}.webp` : `lines/${pad(p)}.webp`];
@@ -781,10 +760,9 @@
     if (!start && t && pl && isPlanDay(pl) && !(await keysBetween(t.a, t.b)).every(ST.isMem)) start = await pageOfKey(t.a);
     if (!start) start = ST.get().lastPage || 1;
     goPage(start);
-    if (ST.get().autoplay) $('#autoChip').hidden = false;
     setTimeout(() => showInstall(false), 1500);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
-  window.__app = { refit, LS: () => LS, goPage, flip, select, clearSel, playPage, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

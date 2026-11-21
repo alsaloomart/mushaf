@@ -1,7 +1,7 @@
 /* طبقة بيانات المستخدم — الخطة، المحفوظ، المراجعة، آخر صفحة (محليًا على الجهاز فقط) */
 const ST = (() => {
   const KEY = 'mushaf.v1';
-  const def = () => ({ lastPage: 1, reciter: 6, autoplay: true, theme: 'system', repeat: { count: 3, mode: 'range' }, plan: null, mem: {}, rev: {} });
+  const def = () => ({ lastPage: 1, reciter: 6, theme: 'system', repeat: { count: 3, mode: 'range' }, plan: null, mem: {}, rev: {} });
   let d;
   try { d = Object.assign(def(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { d = def(); }
   const save = () => localStorage.setItem(KEY, JSON.stringify(d));
@@ -12,7 +12,6 @@ const ST = (() => {
     get: () => d, save,
     setLastPage(p) { d.lastPage = p; save(); },
     setReciter(id) { d.reciter = id; save(); },
-    setAutoplay(v) { d.autoplay = !!v; save(); },
     setTheme(t) { d.theme = t; save(); },
     set(k, v) { d[k] = v; save(); },
     setRepeat(r) { d.repeat = r; save(); },

@@ -4,8 +4,8 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-shell-v8';
-const PAGES = 'mushaf-pages-v1';
+const SHELL = 'mushaf-shell-v9';
+const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v1';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
 const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/app.js', 'manifest.json',
