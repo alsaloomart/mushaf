@@ -4,7 +4,7 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-shell-v9';
+const SHELL = 'mushaf-shell-v10';
 const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v1';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
@@ -68,4 +68,22 @@ self.addEventListener('fetch', e => {
       return r;
     })());
   }
+});
+
+/* تذكير الورد: يصل عبر Web Push من خادم الإرسال؛ الضغط يفتح ورد اليوم */
+self.addEventListener('push', e => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'ورد اليوم', {
+    body: d.body || 'حان وقت وردك. اضغط لفتح ورد اليوم.', tag: 'wird', renotify: true,
+    icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: './?wird=1' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const c = all.find(w => new URL(w.url).pathname.startsWith(new URL(self.registration.scope).pathname));
+    if (c) { await c.focus(); c.postMessage({ type: 'wird' }); return; }
+    await self.clients.openWindow(new URL('./?wird=1', self.registration.scope).href);
+  })());
 });

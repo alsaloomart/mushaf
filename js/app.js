@@ -15,7 +15,8 @@
     aya:  { one: 'آية واحدة', two: ['آيتان', 'آيتين'], pl: 'آيات', acc: 'آية', sg: 'آية' },
     page: { one: 'صفحة واحدة', two: ['صفحتان', 'صفحتين'], pl: 'صفحات', acc: 'صفحة', sg: 'صفحة' },
     line: { one: 'سطر واحد', two: ['سطران', 'سطرين'], pl: 'أسطر', acc: 'سطرًا', sg: 'سطر' },
-    day:  { one: 'يوم واحد', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' }
+    day:  { one: 'يوم واحد', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
+    note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' }
   };
   /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(15)='15 آية'، cnt(100)='100 آية' */
   function cnt(n, w = 'aya', gen = false) {
@@ -146,7 +147,8 @@
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
         <g class="hot"${clip ? ` clip-path="url(#cc${p})"` : ''}>${pd.ayat.map(a => `<path data-k="${a.k}" d="${a.d}"/>`).join('')}</g>
       </svg>
-      <div class="pf"><span class="pn">${ar(p)}</span></div>
+      <div class="pf"><span class="pn">${ar(p)}</span><button class="nadd" aria-label="ملاحظة جديدة على هذه الصفحة"><svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg></button></div>
+      <div class="nmk"></div>
     </div><div class="shade"></div>`;
   }
   function leaf(p) {
@@ -161,6 +163,7 @@
       el.innerHTML = leafHTML(p, pd);
       fitLeaf(el, p, pd);
       paint(el);
+      if (p === cur) requestAnimationFrame(() => notesPaint(p));
     });
     return el;
   }
@@ -228,11 +231,13 @@
   function goPage(p, anim = false, user = false) {
     p = Math.max(1, Math.min(N, p | 0));
     if (anim && Math.abs(p - cur) === 1 && cur) return flip(p - cur, user);
-    leaf(p); setCurrent(p, user); showOnly(p);
+    leaf(p); setCurrent(p, user); showOnly(p); requestAnimationFrame(() => notesPaint(p));
   }
   function setCurrent(p, user) {
     const changed = p !== cur;
-    cur = p; ST.setLastPage(p); leaf(p); gc(); prefetch(p); updateTitle();
+    if (changed) noteClose();
+    cur = p; ST.setLastPage(p); leaf(p); gc(); prefetch(p); updateTitle(); $('#qjR').value = p;
+    if (changed) requestAnimationFrame(() => notesPaint(p));
   }
   async function updateTitle() {
     const p = cur;
@@ -284,7 +289,7 @@
   }
   book.addEventListener('pointerup', endDrag);
   book.addEventListener('pointercancel', endDrag);
-  addEventListener('resize', () => { layout(); refit(); });
+  addEventListener('resize', () => { layout(); refit(); notesPaint(cur); });
 
   /* ---------- الأدوات تظهر باللمس ---------- */
   let chromeT = 0;
@@ -307,10 +312,12 @@
   }
   function clearSel() { sel = null; rangeMode = false; $('#btnRange').classList.remove('on'); $('#rangeHint').hidden = true; $('#tool').hidden = true; paint(); reserve(); }
   book.addEventListener('click', e => {
+    const na = e.target.closest('.nadd'), nm = e.target.closest('.nmk button');
+    if (na || nm) { e.stopPropagation(); if (suppressClick || busy) return; na ? noteNew() : noteOpen(nm.dataset.id); return; }
     if (suppressClick || busy) return;
     AU.unlock();
     const s = e.target.closest('path[data-k]');
-    if (!s) { if (sel && !rangeMode) clearSel(); else chrome(!document.body.classList.contains('chrome')); return; }
+    if (!s) { if (sel && !rangeMode) clearSel(); return; }   // الصفحة نظيفة: لا أشرطة تظهر باللمس
     const k = s.dataset.k;
     if (rangeMode && sel) { rangeMode = false; $('#btnRange').classList.remove('on'); $('#rangeHint').hidden = true; select(sel.a, k); return; }
     if (sel && sel.list.length === 1 && sel.a === k) { clearSel(); return; }
@@ -324,7 +331,7 @@
     if (!sel) return;
     AU.play(sel.list.slice(), ST.get().reciter, count, mode, { kind: 'sel' });
   }
-  /* لا تشغيل تلقائي: التلاوة تبدأ فقط من «استماع» أو «تكرار» بعد الضغط على آية */
+  // لا تشغيل تلقائي: التلاوة تبدأ فقط عندما يضغط على آية ويختار «استماع» أو «تكرار».
   AU.on('blocked', () => toast('تعذّر تشغيل هذه الآية.'));
   $('#aListen').onclick = () => startPlay(1, 'range');
   AU.on('ayah', async (k, st) => {
@@ -349,6 +356,254 @@
   AU.on('error', e => toast(e && e.message && /^[\u0600-\u06FF]/.test(e.message) ? e.message : 'تعذّر تشغيل هذه الآية.'));
   $('#pToggle').onclick = () => { const st = AU.state(); if (!st) return; AU.el.paused ? AU.resume() : AU.pause(); };
   $('#pStop').onclick = () => AU.stop();
+
+
+  /* ---------- القائمة (التبويبة الوحيدة أعلى الصفحة) ---------- */
+  const IC = {
+    search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+    index: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    plan: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    review: '<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/>',
+    repeat: '<path d="M17 2l3 3-3 3M4 11V9a4 4 0 014-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 01-4 4H4"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',
+    book: '<path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/>',
+    more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    moon: '<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
+    note: '<path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/>',
+    play: '<path d="M8 5l11 7-11 7z"/>',
+    range: '<path d="M4 7h16M4 12h10M4 17h16"/><path d="M17 10l3 2-3 2"/>',
+    bell: '<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15zM10 20a2 2 0 004 0"/>'
+  };
+  const hi = (k, id, t, sub, extra = '') => `<button class="li hub" data-h="${id}"><span class="n"><svg viewBox="0 0 24 24">${IC[k]}</svg></span><span class="m"><b>${t}</b><small>${sub}</small></span>${extra}</button>`;
+  /* لوحة قائمة عامة (وردي، التلاوة، التفسير، الإعدادات) داخل #sh-hub */
+  function openList(title, html, nav) {
+    $('#sh-hub .sh-h b').textContent = title; $('#hubBody').innerHTML = html; openSheet('hub'); navOn(nav);
+  }
+  async function openWirdPanel() {
+    await refreshToday().catch(() => null);
+    const today = $('#today'), n = ST.due().length;
+    openList('وردي',
+      (today.hidden ? '' : `<div class="card hubToday">${today.innerHTML}</div>`) +
+      hi('plan', 'plan', 'الخطة وورد اليوم', ST.get().plan ? 'ورد اليوم وتقدّمك' : 'أنشئ خطة حفظ') +
+      hi('review', 'review', 'المراجعة', n ? `اليوم: ${cnt(n)} للمراجعة` : 'ليست لديك مراجعة مستحقة اليوم.') +
+      hi('mic', 'tasmee', 'التسميع', 'قريبًا'), 'wird');
+  }
+  const openHub = openWirdPanel;
+  function openTilawa() {
+    openList('التلاوة',
+      `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ من أول آية في هذه الصفحة، أو اضغط على آية في الصفحة أولًا.'}</p>` +
+      hi('play', 'listen', 'استماع', 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
+      hi('repeat', 'repeat', 'التكرار', 'كرّر الآية أو المقطع بعدد تختاره') +
+      hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
+  }
+  function openTafsirPanel() {
+    openList('التفسير', `<p class="muted">التفسير المختصر وتفسير السعدي قيد الإضافة بعد التحقق من ترخيص المصدر. سيظهر هنا تفسير الآية المحددة.</p>`, 'tafsir');
+  }
+  const PAPERS = [['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E']];
+  function openSettings() {
+    const s = ST.get(), dark = document.documentElement.classList.contains('dark'), cur = dark ? 'night' : (s.paper || 'beige'), rid = s.reciter;
+    openList('الإعدادات',
+      `<div class="sw-row" id="sNightRow" role="presentation"><b>الوضع الليلي</b><button class="switch" id="sNight" role="switch" aria-checked="${dark}" aria-label="الوضع الليلي"></button></div>
+       <label class="lbl">لون الصفحة</label>
+       <div class="swatches" id="sPaper">${PAPERS.map(([k, n, c]) => `<button data-paper="${k}" class="${k === cur ? 'on' : ''}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
+       <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
+       <label class="lbl">القارئ</label>` +
+      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
+      `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
+       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()), 'settings');
+  }
+  /* ---------- الأشرطة ---------- */
+  function navOn(k) { $$('[data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === (k || 'mushaf'))); }
+  $$('[data-nav]').forEach(b => b.onclick = () => {
+    AU.unlock(); noteClose();
+    const k = b.dataset.nav;
+    if (k === 'mushaf') { closeSheets(); return; }
+    if (k === 'index') { $('#btnIndex').click(); navOn('index'); }
+    if (k === 'wird') openWirdPanel();
+    if (k === 'notes') { openNotes(); navOn('notes'); }
+    if (k === 'settings') openSettings();
+    if (k === 'search') { $('#btnGo').click(); navOn('search'); }
+    if (k === 'tilawa') openTilawa();
+    if (k === 'tafsir') openTafsirPanel();
+    if (k === 'more') { openMore(); navOn('more'); }
+  });
+  /* خط الانتقال السريع: الصفحة 1 يمينًا */
+  const qjR = $('#qjR'), qjB = $('#qjB');
+  function surahAtPage(p) { let n = ''; for (const c of chapters) { const s0 = c.pages && c.pages[0]; if (s0 && s0 <= p) n = c.name_arabic; } return n; }
+  function qjBubble() {
+    const p = +qjR.value, r = qjR.getBoundingClientRect(), f = (p - 1) / (N - 1);
+    const x = r.right - 7 - f * (r.width - 14);
+    qjB.innerHTML = `${esc(surahAtPage(p))}<small>صفحة ${ar(p)}</small>`; qjB.hidden = false;
+    const w = qjB.offsetWidth / 2; qjB.style.left = Math.max(w + 6, Math.min(innerWidth - w - 6, x)) + 'px';
+  }
+  qjR.addEventListener('input', qjBubble);
+  qjR.addEventListener('pointerdown', () => setTimeout(qjBubble, 0));
+  qjR.addEventListener('change', () => { setTimeout(() => { qjB.hidden = true; }, 500); const p = +qjR.value; if (p !== cur) { closeSheets(); goPage(p); } });
+  async function selectFirst() { const pd = await QD.page(cur); await select(pd.ayat[0].k); }
+  $('#hubBody').onclick = async e => {
+    const sn = e.target.closest('#sNightRow'); if (sn) { setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'); openSettings(); return; }
+    const sp = e.target.closest('#sPaper [data-paper]');
+    if (sp) { const k = sp.dataset.paper; if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
+    const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
+    const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); rebuildLeaves(); openSettings(); return; }
+    const tb = e.target.closest('.hubToday [data-act]');
+    if (tb) { closeSheets(); $('#today').querySelector(`[data-act="${tb.dataset.act}"]`).click(); return; }
+    const b = e.target.closest('[data-h]'); if (!b) return;
+    const h = b.dataset.h;
+    if (h === 'go') $('#btnGo').click();
+    if (h === 'index') $('#btnIndex').click();
+    if (h === 'plan') openPlan(false);
+    if (h === 'review') openReview();
+    if (h === 'repeat') { if (!sel) await selectFirst(); openRepeat(); }
+    if (h === 'tasmee') toast('التسميع قريبًا.');
+    if (h === 'theme') { $('#btnTheme').click(); openSettings(); }
+    if (h === 'listen') { if (!sel) await selectFirst(); closeSheets(); $('#aListen').click(); }
+    if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
+    if (h === 'more') openMore();
+    if (h === 'rem') openRem();
+    if (h === 'notes') openNotes();
+  };
+
+  /* ---------- ملاحظات الحفظ: تظهر على الصفحة نفسها التي كُتبت فيها ----------
+   * محفوظة على الجهاز فقط (localStorage: mushaf.notes). */
+  const NK = 'mushaf.notes';
+  const notesAll = () => { try { return JSON.parse(localStorage.getItem(NK) || '[]'); } catch (e) { return []; } };
+  const notesSave = a => localStorage.setItem(NK, JSON.stringify(a));
+  const dLabel = t => new Date(t).toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' });
+  let noteCur = null, noteT = 0;
+  function notesPaint(p) {
+    const el = leaves.get(p); if (!el) return;
+    const box = el.querySelector('.nmk'), pg = el.querySelector('.pg'), svg = el.querySelector('svg.tx'); if (!box || !svg) return;
+    const ns = notesAll().filter(n => n.p === p);
+    if (!ns.length) { box.innerHTML = ''; return; }
+    const pr = pg.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    const used = []; let free = 0;
+    box.innerHTML = ns.sort((a, b) => a.t - b.t).map(n => {
+      let y = null;
+      if (n.k) { const pa = el.querySelector(`g.hot path[data-k="${n.k}"]`); if (pa) { const r = pa.getBoundingClientRect(); if (r.height) y = r.top - pr.top + 2; } }
+      if (y == null) y = sr.top - pr.top + 4 + 26 * free++;
+      while (used.some(u => Math.abs(u - y) < 24)) y += 24;
+      used.push(y);
+      return `<button data-id="${n.id}" style="top:${Math.round(y)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
+    }).join('');
+  }
+  function noteMeta(n) { return `<bdi>صفحة ${ar(n.p)}</bdi>${n.k ? ' · <bdi>' + esc(n.kb && n.kb !== n.k ? rangeLabel(n.k, n.kb) : keyLabel(n.k)) + '</bdi>' : ''} · <bdi>${dLabel(n.u || n.t)}</bdi>`; }
+  function noteNew() {
+    const n = { id: 'n' + Date.now().toString(36), p: cur, k: sel ? sel.a : null, kb: sel ? sel.b : null, text: '', t: Date.now() };
+    if (sel) clearSel();
+    noteShow(n, true);
+  }
+  function noteOpen(id) { const n = notesAll().find(x => x.id === id); if (n) noteShow(n, false); }
+  function noteShow(n, fresh) {
+    noteCur = n;
+    const c = $('#noteCard');
+    c.innerHTML = `<div class="nh"><small>${noteMeta(n)}</small><button class="x" data-nclose aria-label="إغلاق">×</button></div>
+      <textarea id="noteTx" rows="5" placeholder="اكتب ملاحظتك على هذه الصفحة…">${esc(n.text)}</textarea>
+      <div class="nf"><small id="noteSt">${fresh ? '' : 'محفوظة'}</small>${fresh ? '' : '<button class="btn" id="noteDel">حذف</button>'}<button class="btn gold" data-nclose>تم</button></div>`;
+    c.hidden = false;
+    const tx = $('#noteTx');
+    tx.oninput = () => { clearTimeout(noteT); $('#noteSt').textContent = ''; noteT = setTimeout(noteCommit, 400); };
+    if ($('#noteDel')) $('#noteDel').onclick = async () => {
+      if (!(await ask('حذف هذه الملاحظة؟', 'حذف'))) return;
+      notesSave(notesAll().filter(x => x.id !== n.id)); noteCur = null; c.hidden = true; notesPaint(n.p); toast('حُذفت الملاحظة.');
+    };
+    c.querySelectorAll('[data-nclose]').forEach(b => b.onclick = noteClose);
+    if (fresh) setTimeout(() => tx.focus(), 50);
+  }
+  function noteCommit() {
+    clearTimeout(noteT);
+    const n = noteCur, tx = $('#noteTx'); if (!n || !tx) return;
+    const text = tx.value.trim(), all = notesAll(), i = all.findIndex(x => x.id === n.id);
+    if (!text) return;            // ملاحظة فارغة لا تُحفظ
+    n.text = text; n.u = Date.now();
+    if (i >= 0) all[i] = n; else all.push(n);
+    notesSave(all); const st = $('#noteSt'); if (st) st.textContent = 'حُفظت';
+    notesPaint(n.p);
+  }
+  function noteClose() {
+    if (!noteCur) { $('#noteCard').hidden = true; return; }
+    noteCommit(); noteCur = null; $('#noteCard').hidden = true;
+  }
+  function openNotes() {
+    const all = notesAll().sort((a, b) => (b.u || b.t) - (a.u || a.t));
+    $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${n.id}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
+      : '<p class="muted">لا توجد ملاحظات بعد. اضغط زر القلم أسفل الصفحة لتكتب ملاحظة عليها.</p>';
+    openSheet('notes');
+  }
+  $('#notesBody').onclick = async e => {
+    const b = e.target.closest('[data-id]'); if (!b) return;
+    const n = notesAll().find(x => x.id === b.dataset.id); if (!n) return;
+    closeSheets(); goPage(n.p);
+    setTimeout(() => { notesPaint(n.p); noteShow(n, false); }, 400);
+  };
+
+  /* ---------- تذكير الورد (Web Push) ----------
+   * الآيفون لا يدعم الإشعارات المجدولة محليًا؛ الإشعار يصل فقط عبر Web Push من خادم إرسال
+   * (iOS 16.4+ وبعد إضافة المصحف إلى الشاشة الرئيسية). الطلب يتم فقط بعد ضغطة صريحة. */
+  const PUSH = {
+    vapid: 'BHH6pOOOgzOLQII78tMpxjXE3AT2Icc_abNMuvFoIMqVJGtTQjHakjP5BtAmG1QGreRBJq3ARBqQcy7BHOBFenQ',
+    live: false,       // يصبح true بعد تشغيل خادم الإرسال
+    endpoint: ''       // عنوان حفظ الاشتراك والأوقات عند تفعيل الخادم
+  };
+  const REM_DEF = { on: false, times: ['06:00', '20:00'] };
+  const rem = () => Object.assign({}, REM_DEF, ST.get().rem || {});
+  const tLabel = t => { let [h, m] = t.split(':').map(Number); const pm = h >= 12; h = h % 12 || 12; return `${h}:${String(m).padStart(2, '0')} ${pm ? 'مساءً' : 'صباحًا'}`; };
+  function remSub() { const r = rem(); return r.on ? `${tLabel(r.times[0])} و${tLabel(r.times[1])}` : 'غير مفعّل'; }
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+  async function remSync() {
+    const r = rem(); if (!PUSH.live || !PUSH.endpoint) return false;
+    try { await fetch(PUSH.endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on: r.on, times: r.times, tz: 'Asia/Riyadh', sub: r.sub || null }) }); return true; } catch (e) { return false; }
+  }
+  function openRem() {
+    const r = rem(), perm = 'Notification' in window ? Notification.permission : 'unsupported';
+    let note = '';
+    if (isIOS && !isStandalone()) note = 'لتصلك الإشعارات على الآيفون: افتح المصحف من الشاشة الرئيسية (مشاركة ← إضافة إلى الشاشة الرئيسية)، ثم فعّل التذكير من هنا.';
+    else if (!pushOK()) note = 'هذا المتصفح لا يدعم الإشعارات.';
+    else if (perm === 'denied') note = 'الإشعارات مرفوضة لهذا التطبيق. فعّلها من إعدادات الجهاز ← الإشعارات، ثم ارجع هنا.';
+    $('#remBody').innerHTML = `
+      <p class="muted sm">تذكير يومي بورد الحفظ. اضغط الإشعار ليفتح لك ورد اليوم.</p>
+      <label class="lbl">التذكير الأول</label><input type="time" id="remT1" value="${r.times[0]}" step="300">
+      <label class="lbl">التذكير الثاني</label><input type="time" id="remT2" value="${r.times[1]}" step="300">
+      <p class="muted sm">بتوقيت الرياض.</p>
+      ${note ? `<p class="muted sm warn" id="remNote">${note}</p>` : ''}
+      ${r.on ? '<button class="btn full" id="remTest">إشعار تجريبي</button><button class="btn full" id="remOff">إيقاف التذكير</button>'
+             : `<button class="btn gold full" id="remOn" ${pushOK() && !(isIOS && !isStandalone()) && perm !== 'denied' ? '' : 'disabled'}>تفعيل التذكير</button>`}
+      ${PUSH.live ? '' : '<p class="muted sm" id="remSrv">الإرسال اليومي من الخادم لم يُفعَّل بعد، لذلك لن تصلك التذكيرات المجدولة حتى يُفعَّل. الإشعار التجريبي يعمل الآن.</p>'}`;
+    openSheet('rem');
+    const saveTimes = () => { const x = rem(); x.times = [$('#remT1').value || '06:00', $('#remT2').value || '20:00']; ST.set('rem', x); remSync(); };
+    $('#remT1').onchange = saveTimes; $('#remT2').onchange = saveTimes;
+    if ($('#remOn')) $('#remOn').onclick = async () => {
+      // يجب أن يُطلب الإذن مباشرة داخل الضغطة
+      let p; try { p = await Notification.requestPermission(); } catch (e) { p = 'default'; }
+      if (p !== 'granted') { toast(p === 'denied' ? 'لم يُسمح بالإشعارات.' : 'لم يُفعَّل التذكير.'); return openRem(); }
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(PUSH.vapid) });
+        const x = rem(); x.on = true; x.sub = sub.toJSON(); ST.set('rem', x);
+      } catch (e) { const x = rem(); x.on = true; x.sub = null; ST.set('rem', x); }
+      await remSync(); toast('فُعِّل التذكير.'); openRem();
+    };
+    if ($('#remOff')) $('#remOff').onclick = async () => {
+      try { const reg = await navigator.serviceWorker.ready; const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); } catch (e) {}
+      const x = rem(); x.on = false; x.sub = null; ST.set('rem', x); await remSync(); toast('أُوقف التذكير.'); openRem();
+    };
+    if ($('#remTest')) $('#remTest').onclick = async () => {
+      try { const reg = await navigator.serviceWorker.ready; await reg.showNotification('ورد اليوم', { body: 'حان وقت وردك. اضغط لفتح ورد اليوم.', tag: 'wird', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: './?wird=1' } }); }
+      catch (e) { toast('تعذّر عرض الإشعار.'); }
+    };
+  }
+  /* فتح ورد اليوم (من الإشعار) */
+  async function openWird() {
+    closeSheets();
+    const t = await refreshToday().catch(() => null), pl = ST.get().plan;
+    if (!pl) { openPlan(false); return; }
+    if (!isPlanDay(pl) || !t || !t.a) { openReview(); return; }
+    goPage(await pageOfKey(t.a)); await select(t.a, t.b);
+  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'wird') openWird(); });
 
   /* ---------- التكرار ---------- */
   const COUNTS = [2, 3, 5, 7, 10, 0];
@@ -644,9 +899,10 @@
     const dark = t === 'dark' || (t === 'system' && mqDark.matches);
     const H = document.documentElement;
     H.classList.toggle('dark', dark);
-    H.classList.toggle('darkpage', dark);   // الوضع الليلي: الأشرطة والصفحة معًا (عكس ألوان للعرض فقط)
+    H.classList.remove('darkpage');
+    H.dataset.paper = s.paper || 'beige';
     H.classList.toggle('vfull', s.view === 'full');
-    document.querySelector('meta[name="theme-color"]').content = dark ? '#121313' : '#FFFBF7';
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#171818' : ({ white: '#F7F7F6', cream: '#F4EAD6', grey: '#CDC9C4', blue: '#E6F0F8' }[s.paper] || '#FBF4EC');
   }
   function setTheme(t) { ST.setTheme(t); applyTheme(); }
   mqDark.addEventListener ? mqDark.addEventListener('change', applyTheme) : mqDark.addListener(applyTheme);
@@ -658,12 +914,8 @@
     openSheet('more');
     const s = ST.get(), rid = s.reciter;
     const seg = (id, opts, val) => `<div class="seg" id="${id}">${opts.map(([v, n]) => `<button data-v="${v}" class="${val === v ? 'on' : ''}">${n}</button>`).join('')}</div>`;
-    $('#moreBody').innerHTML = `<label class="lbl">القارئ</label>` +
-      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
-      `<label class="lbl">التلاوة عند فتح الصفحة</label>
-       <label class="lbl">الوضع الليلي</label>${seg('mTheme', [['light', 'فاتح'], ['dark', 'ليلي'], ['system', 'حسب الجهاز']], s.theme || 'system')}
-       <label class="lbl">عرض الصفحة</label>${seg('mView', [['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']], s.view === 'full' ? 'full' : 'screen')}
-       <button class="btn full dl" id="mDl"><b>تنزيل المصحف كاملًا</b><small>للقراءة بدون إنترنت</small></button>
+    $('#moreBody').innerHTML = `
+       <button class="btn full dl" id="mDl"><b>تنزيل المصحف كاملًا</b><small>نحو ${viewFull() ? 61 : 89} ميجابايت، للقراءة بدون إنترنت</small></button>
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
        <button class="btn full" id="mInst">طريقة التثبيت على الآيفون</button>
@@ -671,7 +923,6 @@
     $('#moreBody').onclick = e => {
       const r = e.target.closest('[data-r]');
       if (r) { ST.setReciter(+r.dataset.r); openMore(); return; }
-      const th = e.target.closest('#mTheme [data-v]'); if (th) { setTheme(th.dataset.v); openMore(); return; }
       const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); rebuildLeaves(); openMore(); return; }
       if (e.target.closest('#mDl')) downloadAll();
       if (e.target.closest('#mSrc')) openSources();
@@ -695,7 +946,7 @@
       <p>المصحف المعروض هو مصحف المدينة النبوية نفسه: النسخة الرقمية الرسمية الصادرة عن مجمع الملك فهد لطباعة المصحف الشريف (رواية حفص، إصدار 1441هـ، 604 صفحات).</p>
       <h4>صفحات المصحف</h4>
       <p>الصفحات من النسخة الرسمية الصادرة عن المجمع، من صفحة «مصحف المدينة النبوية لأعمال الطباعة»:<br>${L('<a href="https://qurancomplex.gov.sa/mushaf-printing" target="_blank" rel="noopener">qurancomplex.gov.sa/mushaf-printing</a>')}</p>
-      <p>وتُعرض كما أصدرها المجمع، بدون تعديل في النص أو ترتيب الأسطر. في عرض «الصفحة بإطارها» تظهر بإطارها وعناوين السور وترويسة الجزء ورقم الصفحة، وفي عرض «ملء الشاشة» تُعرض أسطر الصفحة نفسها بكلماتها وترتيبها، مع توسيع المسافة بين الأسطر لتملأ الشاشة، وتلوين زخرفة فواصل الآيات وأسماء السور بالبيج بدل الأخضر، على خلفية بلون الورق.</p>
+      <p>وتُعرض كما أصدرها المجمع، بدون تعديل في النص أو في ترتيب الأسطر. في عرض «الصفحة بإطارها» تظهر بإطارها وألوانها الرسمية وعناوين السور وترويسة الجزء ورقم الصفحة. وفي عرض «ملء الشاشة» تُعرض أسطر الصفحة نفسها بكلماتها وترتيبها، مع مسافة أوسع بين الأسطر، وزخرفة فواصل الآيات وإطارات أسماء السور باللون الذي تختاره، البيج أو الأزرق، بدلًا من الأخضر.</p>
       <p><b>حقوق الاستخدام (من صفحة المجمع):</b> «يمكن استخدام النسخة المذكورة مجانًا في المجالات الشخصية والأعمال الفردية كافة… ومواقع الإنترنت والبرامج الحاسوبية وغيرها، داخل المملكة وخارجها». والمجمع غير مسؤول عن الأخطاء الفنية الناتجة عن الاستخدام.</p>
       <h4>تحديد الآيات</h4>
       <p>مواضع الآيات طبقة شفافة فوق الصورة، من مشروع ${L('quran-ws/quran-svg')} المستخرج من ملفات المجمع (رخصة ${L('CC BY 4.0')}). التظليل لا يغيّر صورة المصحف.</p>
@@ -711,10 +962,12 @@
 
   /* ---------- الشاشات المنبثقة والتبويب ---------- */
   function openSheet(id) {
+    const was = $$('.sheet').find(s => !s.hidden);
+    if (!was || was.id !== 'sh-' + id) { const t = $('#toast'); t.classList.remove('show'); clearTimeout(t._h); }
     $$('.sheet').forEach(s => s.hidden = s.id !== 'sh-' + id);
     $('#scrim').hidden = false; document.body.classList.add('sheet-open');
   }
-  function closeSheets() { $$('.sheet').forEach(s => s.hidden = true); $('#scrim').hidden = true; document.body.classList.remove('sheet-open'); $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === 'mushaf')); }
+  function closeSheets() { $$('.sheet').forEach(s => s.hidden = true); $('#scrim').hidden = true; document.body.classList.remove('sheet-open'); navOn('mushaf'); }
   $('#scrim').onclick = () => { if (!$('#sh-confirm').hidden) return; closeSheets(); };
   document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheets(); });
   $('.tabs').onclick = e => {
@@ -749,7 +1002,7 @@
 
   /* ---------- البدء ---------- */
   async function boot() {
-    applyTheme(); layout();
+    applyTheme(); layout(); navOn('mushaf');
     document.addEventListener('touchend', () => AU.unlock(), { capture: true, passive: true });
     try { chapters = await QD.chapters(); } catch (e) { toast('تحقّق من اتصالك بالإنترنت.'); }
     badge();
@@ -760,9 +1013,10 @@
     if (!start && t && pl && isPlanDay(pl) && !(await keysBetween(t.a, t.b)).every(ST.isMem)) start = await pageOfKey(t.a);
     if (!start) start = ST.get().lastPage || 1;
     goPage(start);
+    if (params.has('wird')) { history.replaceState(null, '', location.pathname); setTimeout(openWird, 300); }
     setTimeout(() => showInstall(false), 1500);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
-  window.__app = { refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

@@ -5,6 +5,7 @@
 :root{
   --gold:#F2C230;--gold-d:#B8901A;--brown:#8A6A2E;--ink:#1F2120;--gray:#EAEAEA;--paper:#FFFBF7;
   --leafback:rgba(255,251,247,.95);--top:48px;--tabs:58px;
+  --tbh:40px;--bbh:50px;--qjh:22px;--bar:#FBF4EC;--barline:#E9DCCB;--ic:#8C8A86;--acc:#A26F2A;--barink:#5f5a54;
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--reserve:0px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -13,15 +14,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* ---- القارئ: الصفحة بملء الشاشة ---- */
-#reader{position:fixed;inset:0;overflow:hidden;touch-action:none;background:var(--paper)}
+#reader{position:fixed;inset:calc(var(--sat) + var(--tbh)) 0 calc(var(--sab) + var(--bbh) + var(--qjh)) 0;overflow:hidden;touch-action:none;background:var(--paper)}
 .book{position:absolute;inset:0 0 var(--reserve) 0;perspective:2400px;transition:bottom .2s}
 .leaf{position:absolute;inset:0;background:var(--paper);transform-origin:100% 50%;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .leaf.turning{box-shadow:0 2px 6px rgba(0,0,0,.15),0 14px 40px rgba(0,0,0,.18)}
-.pg{position:absolute;inset:0;margin:0 auto;max-width:calc(100vh * 0.58);display:flex;flex-direction:column;padding:calc(var(--sat) + 6px) 8px max(4px,calc(var(--sab) - 2px))}
+.pg{position:absolute;inset:0;margin:0 auto;max-width:calc(100vh * 0.58);display:flex;flex-direction:column;padding:2px 8px 0}
 .ph{flex:none;display:flex;justify-content:space-between;align-items:center;height:26px;padding:0 6px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-weight:700;font-size:16px;color:#7C5731}
 .ph .ps{max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block;stroke:none;overflow:visible}
-.pf{flex:none;height:40px;display:flex;align-items:center;justify-content:center;position:relative}
+.pf{flex:none;height:32px;display:flex;align-items:center;justify-content:center;position:relative}
 /* رقم الصفحة: إطار بيضاوي ذهبي بزخرفة جانبية مثل المطبوع */
 .pn{position:relative;min-width:54px;height:26px;padding:0 14px;border-radius:999px;display:grid;place-items:center;font-size:16px;font-weight:700;color:#111;
   background:#F0E2D2;border:1.3px solid #9A6B34;box-shadow:0 0 0 2.5px #E6D2B8,0 0 0 3.6px #9A6B34}
@@ -45,7 +46,10 @@ html.vfull svg.tx .pimg{filter:none}
 html.vfull .leaf,html.vfull #reader{background:#fff}
 /* صفحة داكنة تجريبية (عرض فقط) */
 html.darkpage #reader,html.darkpage .leaf{background:#0b0b0b}
-html.darkpage svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.9)}
+html.darkpage svg.tx .pimg{filter:invert(1) hue-rotate(180deg) brightness(.9)}
+html.darkpage .hot{mix-blend-mode:screen}
+html.darkpage .hot path.sel{fill:rgba(242,194,48,.30)}
+html.darkpage .hot path.play{fill:rgba(242,194,48,.45)}
 html.darkpage .ph{color:#cdb680}
 html.darkpage .pn{filter:invert(1) hue-rotate(180deg)}
 html.darkpage{--leafback:rgba(11,11,11,.95)}
@@ -72,7 +76,6 @@ body.sheet-open .today,body.sheet-open .top{visibility:hidden}
 
 /* شريط الآية: تحت الصفحة، والصفحة تصغر فوقه */
 .tool{position:fixed;inset-inline:8px;bottom:calc(var(--sab) + 8px);background:var(--ink);color:#fff;border-radius:16px;padding:8px 10px 10px;z-index:25;box-shadow:0 8px 24px rgba(0,0,0,.28);max-width:520px;margin:0 auto}
-body.chrome .tool,body.chrome .player{bottom:calc(var(--tabs) + var(--sab) + 8px)}
 body.chrome{--reserve-extra:var(--tabs)}
 .tool-h{display:flex;align-items:center;gap:8px;font-size:.88rem;padding:0 2px 6px}
 .tool-h span{flex:1;color:var(--gold);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -90,7 +93,6 @@ body.chrome{--reserve-extra:var(--tabs)}
 .player small{font-size:.74rem;color:#cfcfcf;display:block}
 .player .ib{background:rgba(255,255,255,.08)}
 body.playing .tool{display:none}
-.autochip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sab) + 70px);z-index:22;background:var(--ink);color:var(--gold);border-radius:999px;padding:10px 18px;font-size:.92rem;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 
 /* ---- الشاشات: تغطي الشاشة كاملة فلا تتداخل مع شريط الورد أو العنوان ---- */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30}
@@ -153,8 +155,11 @@ input,select{font:inherit;border:1px solid #d5d5d5;border-radius:10px;padding:10
 .prose h4{margin:14px 0 4px;font-size:1rem}
 .prose a{color:#8a6a0c}
 bdi[dir=ltr]{unicode-bidi:isolate;direction:ltr}
-.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-10px);top:calc(var(--sat) + 12px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:.88rem;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-10px);top:calc(var(--sat) + var(--tbh) + 34px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 6px 20px rgba(0,0,0,.18);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:.88rem;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:calc(100vw - 24px);box-sizing:border-box;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* داخل الألواح: أسفل الشاشة حتى لا يغطي العنوان */
+body.sheet-open .toast{top:auto;bottom:calc(var(--sab) + var(--bbh) + 14px);transform:translateX(-50%) translateY(10px)}
+body.sheet-open .toast.show{transform:translateX(-50%) translateY(0)}
 .install{position:fixed;inset-inline:10px;top:calc(var(--sat) + 10px);background:#fff;border:1px solid #e6d9a8;border-radius:14px;padding:12px;z-index:26;font-size:.86rem;line-height:1.6;box-shadow:0 8px 24px rgba(0,0,0,.15);max-width:520px;margin:0 auto}
 
 /* ---- الوضع الليلي: الواجهة فقط ---- */
@@ -177,7 +182,113 @@ html.dark .scrim{background:rgba(0,0,0,.6)}
 html.dark .prose a{color:var(--gold)}
 html.dark .nav{background:rgba(255,255,255,.06)}
 
-/* الوضع الليلي بلمسة واحدة على الآيفون */
-button{touch-action:manipulation}
-.ib{width:44px;height:44px}
-html.dark .tabs,html.dark .top,html.dark .today{background:#0c0d0d}
+/* التبويبة الوحيدة أعلى الصفحة: صغيرة، في منتصف سطر «الجزء/السورة» فلا تغطي النص */
+.hubtab{position:fixed;top:calc(var(--sat) + 7px);left:50%;transform:translateX(-50%);z-index:18;height:24px;padding:0 10px 0 9px;border-radius:999px;display:flex;align-items:center;gap:4px;
+  font-size:12.5px;font-weight:700;color:#7C5731;background:rgba(240,226,210,.75);border:1px solid rgba(154,107,52,.45)}
+.hubtab svg{width:14px;height:14px;stroke-width:2.2}
+body.sheet-open .hubtab{visibility:hidden}
+html.darkpage .hubtab{color:#cdb680;background:rgba(40,36,30,.8);border-color:rgba(205,182,128,.4)}
+.ph .ps,.ph .pj{max-width:36%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* الأشرطة القديمة لا تظهر على صفحة القراءة */
+.top,.today,.tabs{display:none!important}
+.li.hub .n svg{width:20px;height:20px;color:var(--gold-d)}
+.hubToday{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hubToday .sp{flex:1 1 100%}
+.hubToday .chip{border-color:#d9c39a;color:#7C5731}
+html.dark .hubToday .chip{color:var(--gold)}
+.tool-b{grid-template-columns:repeat(3,1fr)}
+
+#remBody input[type=time]{width:100%;font:inherit;font-size:18px;padding:10px 12px;border:1px solid var(--line,#e5d9c8);border-radius:12px;background:var(--card,#fff);color:inherit;direction:ltr;text-align:center}
+#remBody .warn{color:#8a5a1c}
+#remBody .btn{margin-top:10px}
+#remBody .btn[disabled]{opacity:.45}
+
+/* ملاحظات الحفظ على الصفحة */
+.pf .nadd{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:30px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;color:#B08A4A;opacity:.75;-webkit-tap-highlight-color:transparent}
+.pf .nadd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pg .nmk{position:absolute;inset:0;pointer-events:none}
+.pg .nmk button{position:absolute;right:0;width:8px;height:20px;padding:0;border:0;border-radius:5px 0 0 5px;background:#C9A45C;box-shadow:0 0 0 1px rgba(124,87,49,.25);pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.pg .nmk button::before{content:"";position:absolute;inset:-6px -2px -6px -8px}
+.notecard{position:fixed;z-index:25;left:12px;right:12px;top:calc(var(--sat) + var(--tbh) + 32px);margin:0 auto;max-width:520px;background:#FFFDF9;border:1px solid #E3D3B8;border-radius:16px;box-shadow:0 10px 34px rgba(80,55,20,.18);padding:10px 12px 12px}
+.notecard .nh{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#7C5731}
+.notecard .nh small{font-size:.8rem}
+.notecard .x{border:0;background:none;font-size:22px;line-height:1;color:#7C5731;padding:2px 6px}
+.notecard textarea{width:100%;box-sizing:border-box;margin-top:6px;font:inherit;font-size:17px;line-height:1.7;border:1px solid #EADCC6;border-radius:12px;padding:8px 10px;background:#fff;color:inherit;resize:vertical;min-height:110px}
+.notecard .nf{display:flex;align-items:center;gap:8px;margin-top:8px}
+.notecard .nf small{flex:1;color:#8a7a66;font-size:.78rem}
+.notecard .nf .btn{margin:0;padding:8px 16px;width:auto}
+html.dark .notecard{background:#26221c;border-color:#4a3f30;color:#eee}
+html.dark .notecard textarea{background:#1d1a16;border-color:#4a3f30}
+html.darkpage .pf .nadd{color:#cdb680}
+
+/* الوضع الليلي: تُعتَم الواجهة حول الصفحة، ونص الصفحة يبقى بألوان المجمع على ورقته */
+
+/* ===== الأشرطة: علوي (الفهرس، وردي، ملاحظاتي، الإعدادات)، سفلي (المصحف، البحث، التلاوة، التفسير، المزيد)، وخط الانتقال السريع ===== */
+html,body,#reader,.leaf{background:var(--paper)}
+.tbar,.bbar{position:fixed;left:0;right:0;z-index:33;display:flex;justify-content:space-around;align-items:stretch;background:var(--bar);font-family:'Thmanyah Sans',system-ui,sans-serif}
+.tbar{top:0;padding-top:var(--sat);height:calc(var(--sat) + var(--tbh));border-bottom:1px solid var(--barline)}
+.bbar{bottom:0;padding-bottom:var(--sab);height:calc(var(--sab) + var(--bbh));border-top:1px solid var(--barline)}
+.tbar button,.bbar button{flex:1;border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ic);font:inherit;font-size:10.5px;font-weight:700;letter-spacing:0}
+.tbar button{flex-direction:row;gap:5px;font-size:12px}
+.tbar svg,.bbar svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tbar svg{width:18px;height:18px}
+.tbar button.on,.bbar button.on{color:var(--acc)}
+.qj{position:fixed;left:0;right:0;bottom:calc(var(--sab) + var(--bbh));height:var(--qjh);z-index:32;display:flex;align-items:center;padding:0 16px;background:var(--bar)}
+.qj input{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:none;margin:0;direction:rtl}
+.qj input::-webkit-slider-runnable-track{height:2px;background:var(--barline);border-radius:2px}
+.qj input::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-6px;border-radius:50%;background:var(--acc);border:2px solid var(--bar);box-shadow:0 0 0 1px var(--acc)}
+.qj input::-moz-range-track{height:2px;background:var(--barline)}
+.qj input::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--acc);border:2px solid var(--bar)}
+.qjb{position:absolute;bottom:calc(var(--qjh) + 4px);transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.22);pointer-events:none;text-align:center;line-height:1.3}
+.qjb small{display:block;font-size:11px;font-weight:400;opacity:.8}
+/* الألواح بين الشريطين، والأشرطة تبقى ظاهرة */
+.sheet:not(.small){top:calc(var(--sat) + var(--tbh));bottom:calc(var(--sab) + var(--bbh));padding-top:0;padding-bottom:0;background:var(--sheet,#fff)}
+.scrim{top:calc(var(--sat) + var(--tbh))}
+.scrim.top{top:0}
+.tool,.player{z-index:34;bottom:calc(var(--sab) + 8px)}
+.hubtab{display:none!important}
+/* ===== ألوان الصفحة: خلفية عرض فقط؛ الحبر لا يتغير ===== */
+svg.tx .pimg{mix-blend-mode:multiply}
+html[data-paper=cream]{--paper:#FBF3E2;--bar:#F4EAD6;--barline:#E3D4B8}
+html[data-paper=white]{--paper:#FFFFFF;--bar:#F7F7F6;--barline:#E4E3E1;--acc:#9A6B34}
+html[data-paper=grey]{--paper:#D9D6D2;--bar:#CDC9C4;--barline:#BDB8B2;--ic:#6f6b66;--acc:#7A5426;--sheet:#F1EFEC}
+html[data-paper=blue]{--paper:#F2F9FE;--bar:#E6F0F8;--barline:#C9DAE8;--ic:#7F8C97;--acc:#3F6F9A}
+html[data-paper=blue] svg.tx .pimg{filter:url(#fBlue)}
+html[data-paper=blue] .ph{color:#4A6E8F}
+html[data-paper=blue] .pn{background:#E0ECF8;border-color:#5C82A6;box-shadow:0 0 0 2.5px #D2E2F1,0 0 0 3.6px #5C82A6}
+html[data-paper=blue] .pn::before,html[data-paper=blue] .pn::after{border-color:#5C82A6;background:#D2E2F1}
+html[data-paper=blue] .pg .nmk button{background:#6E95BA}
+html[data-paper=blue] .pf .nadd{color:#5C82A6}
+html[data-paper=grey] .ph{color:#5E4529}
+/* ===== الوضع الليلي: الأشرطة والألواح داكنة، والصفحة معكوسة للعرض فقط ===== */
+html.dark{--paper:#0E0E0E;--bar:#171818;--barline:#2B2D2C;--ic:#8F8E8A;--acc:#D8B86A;--sheet:#1a1b1b;--leafback:rgba(14,14,14,.96)}
+html.dark #reader,html.dark .leaf{background:#0E0E0E}
+html.dark svg.tx{background:none!important;box-shadow:none!important}
+html.dark svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.92)}
+html.dark svg.tx .pimg{mix-blend-mode:normal;filter:none}
+html.dark .ph{color:#cdb680}
+html.dark .pn{filter:invert(1) hue-rotate(180deg)}
+html.dark .pf .nadd{color:#cdb680}
+html.dark .qjb{background:#e8e6e1;color:#1F2120}
+/* إعدادات: مفتاح وعينات ألوان */
+.sw-row{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-bottom:1px solid #eee}
+.sw-row b{font-size:1rem}
+.switch{position:relative;width:52px;height:30px;border-radius:999px;border:0;background:#D7D3CD;padding:0;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.switch[aria-checked=true]{background:var(--acc)}
+.switch[aria-checked=true]::after{right:25px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;padding:10px 2px 4px}
+.swatches button{display:flex;flex-direction:column;align-items:center;gap:5px;border:0;background:none;padding:0;font:inherit;font-size:.8rem;color:inherit;min-width:56px}
+.swatches i{width:40px;height:40px;border-radius:50%;border:1px solid rgba(0,0,0,.18);display:block}
+.swatches button.on i{box-shadow:0 0 0 2px var(--sheet,#fff),0 0 0 4px var(--acc)}
+.swatches button.on{font-weight:700}
+html.dark .sw-row{border-color:#2c2e2d}
+.qj input[type=range]{border:0!important;padding:0!important;border-radius:0!important;box-shadow:none!important;background:none!important;outline:none;height:22px}
+
+/* لمسة واحدة على الآيفون: بلا تأخير النقر المزدوج، ومساحة لمس ≥ 44px */
+button,[role=switch],.sw-row,.qj input{touch-action:manipulation}
+.sw-row{min-height:56px;cursor:pointer}
+.switch{position:relative}
+.switch::before{content:"";position:absolute;inset:-8px -6px}
+.tbar button,.bbar button{min-height:44px;min-width:44px}
+.switch,.switch::after{transition:background .15s,right .15s}
