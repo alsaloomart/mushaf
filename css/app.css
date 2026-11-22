@@ -24,12 +24,12 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 .ph{flex:none;display:flex;justify-content:space-between;align-items:center;height:26px;padding:0 6px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-weight:700;font-size:16px;color:#7C5731}
 .ph .ps{max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block;stroke:none;overflow:visible}
-.pf{flex:none;height:32px;display:flex;align-items:center;justify-content:center;position:relative}
+.pf{flex:none;height:32px;display:flex;align-items:flex-end;justify-content:center;position:relative;padding-bottom:6px}
 /* رقم الصفحة: إطار بيضاوي ذهبي بزخرفة جانبية مثل المطبوع */
-.pn{position:relative;min-width:54px;height:26px;padding:0 14px;border-radius:999px;display:grid;place-items:center;font-size:16px;font-weight:700;color:#111;
-  background:#F0E2D2;border:1.3px solid #9A6B34;box-shadow:0 0 0 2.5px #E6D2B8,0 0 0 3.6px #9A6B34}
-.pn::before,.pn::after{content:"";position:absolute;top:50%;width:11px;height:11px;margin-top:-5.5px;border:1.3px solid #9A6B34;background:#E6D2B8;transform:rotate(45deg);border-radius:2px 50% 2px 50%}
-.pn::before{right:-13px}.pn::after{left:-13px}
+.pn{position:relative;min-width:44px;height:22px;padding:0 11px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:700;color:#111;
+  background:#F0E2D2;border:1.1px solid #9A6B34;box-shadow:0 0 0 2px #E6D2B8,0 0 0 2.9px #9A6B34}
+.pn::before,.pn::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border:1.1px solid #9A6B34;background:#E6D2B8;transform:rotate(45deg);border-radius:2px 50% 2px 50%}
+.pn::before{right:-11px}.pn::after{left:-11px}
 .pf .hz{display:none}
 .hot{mix-blend-mode:multiply}
 .hot path{fill:transparent;stroke:none;pointer-events:all;cursor:pointer;transition:fill .15s}
@@ -206,9 +206,9 @@ html.dark .hubToday .chip{color:var(--gold)}
 #remBody .btn[disabled]{opacity:.45}
 
 /* ملاحظات الحفظ على الصفحة */
-.pf .nadd{position:absolute;right:-8px;bottom:0;top:auto;min-width:44px;height:32px;padding:0 10px 0 8px;border:1px solid #C9A45C;border-radius:999px;background:#FFF6E3;color:#6B4418;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:12.5px;font-weight:700;line-height:1;white-space:nowrap;box-shadow:0 1px 2px rgba(90,50,10,.14);opacity:1;z-index:3;-webkit-tap-highlight-color:transparent}
-.pf .nadd svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.pf .nadd::before{content:"";position:absolute;inset:0 -8px}
+.pf .nadd{position:absolute;right:-8px;bottom:6px;top:auto;min-width:44px;height:22px;padding:0 7px 0 6px;border:1px solid #CDB892;border-radius:999px;background:rgba(201,164,92,.10);color:#6B4418;display:flex;align-items:center;justify-content:center;gap:3px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:11px;font-weight:600;line-height:1;white-space:nowrap;box-shadow:none;opacity:1;z-index:3;-webkit-tap-highlight-color:transparent}
+.pf .nadd svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pf .nadd::before{content:"";position:absolute;inset:-4px -10px -6px -10px}
 .pg .nmk{position:absolute;inset:0;pointer-events:none}
 .pg .nmk button{position:absolute;right:0;width:8px;height:20px;padding:0;border:0;border-radius:5px 0 0 5px;background:#C9A45C;box-shadow:0 0 0 1px rgba(124,87,49,.25);pointer-events:auto;-webkit-tap-highlight-color:transparent}
 .pg .nmk button::before{content:"";position:absolute;inset:-6px -2px -6px -8px}
@@ -222,7 +222,7 @@ html.dark .hubToday .chip{color:var(--gold)}
 .notecard .nf .btn{margin:0;padding:8px 16px;width:auto}
 html.dark .notecard{background:#26221c;border-color:#4a3f30;color:#eee}
 html.dark .notecard textarea{background:#1d1a16;border-color:#4a3f30}
-html.darkpage .pf .nadd,html.dark .pf .nadd{background:#2a2419;border-color:#7c6638;color:#e0c27f;box-shadow:0 1px 2px rgba(0,0,0,.45)}
+html.darkpage .pf .nadd,html.dark .pf .nadd{background:rgba(224,194,127,.10);border-color:#8a7344;color:#e0c27f;box-shadow:none}
 
 /* الوضع الليلي: تُعتَم الواجهة حول الصفحة، ونص الصفحة يبقى بألوان المجمع على ورقته */
 
@@ -259,10 +259,10 @@ html[data-paper=grey]{--paper:#D9D6D2;--bar:#CDC9C4;--barline:#BDB8B2;--ic:#6f6b
 html[data-paper=blue]{--paper:#F2F9FE;--bar:#E6F0F8;--barline:#C9DAE8;--ic:#7F8C97;--acc:#3F6F9A}
 html[data-paper=blue] svg.tx .pimg{filter:url(#fBlue)}
 html[data-paper=blue] .ph{color:#4A6E8F}
-html[data-paper=blue] .pn{background:#E0ECF8;border-color:#5C82A6;box-shadow:0 0 0 2.5px #D2E2F1,0 0 0 3.6px #5C82A6}
+html[data-paper=blue] .pn{background:#E0ECF8;border-color:#5C82A6;box-shadow:0 0 0 2px #D2E2F1,0 0 0 2.9px #5C82A6}
 html[data-paper=blue] .pn::before,html[data-paper=blue] .pn::after{border-color:#5C82A6;background:#D2E2F1}
 html[data-paper=blue] .pg .nmk button{background:#6E95BA}
-html[data-paper=blue] .pf .nadd{border-color:#7FA2C4;background:#EAF3FB;color:#2C577D}
+html[data-paper=blue] .pf .nadd{border-color:#A8C2D8;background:rgba(63,111,154,.08);color:#2C577D}
 html[data-paper=grey] .ph{color:#5E4529}
 /* ===== الوضع الليلي: الأشرطة والألواح داكنة، والصفحة معكوسة للعرض فقط ===== */
 html.dark{--paper:#0E0E0E;--bar:#171818;--barline:#2B2D2C;--ic:#8F8E8A;--acc:#D8B86A;--sheet:#1a1b1b;--leafback:rgba(14,14,14,.96)}
