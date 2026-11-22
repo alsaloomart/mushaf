@@ -149,15 +149,15 @@
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
         <g class="hot"${clip ? ` clip-path="url(#cc${p})"` : ''}>${pd.ayat.map(a => `<path data-k="${a.k}" d="${a.d}"/>`).join('')}</g>
       </svg>
-      <div class="pf"><span class="pn">${ar(p)}</span><button class="nadd" aria-label="ملاحظة جديدة على هذه الصفحة"><svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg></button></div>
+      <div class="pf"><span class="pn">${ar(p)}</span><button class="nadd" type="button" aria-label="ملاحظة جديدة على هذه الصفحة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>ملاحظة</span></button></div>
       <div class="nmk"></div>
-    </div><div class="shade"></div>`;
+    </div><div class="leaf-back" aria-hidden="true"></div><div class="shade"></div>`;
   }
   function leaf(p) {
     if (leaves.has(p)) return leaves.get(p);
     const el = document.createElement('div');
     el.className = 'leaf'; el.dataset.p = p; el.style.display = 'none';
-    el.innerHTML = '<div class="pg"></div><div class="shade"></div>';
+    el.innerHTML = '<div class="pg"></div><div class="leaf-back" aria-hidden="true"></div><div class="shade"></div>';
     book.insertBefore(el, fold);
     leaves.set(p, el);
     QD.page(p).then(pd => {
@@ -165,35 +165,57 @@
       el.innerHTML = leafHTML(p, pd);
       fitLeaf(el, p, pd);
       paint(el);
+      decodeLeaf(el);
       if (p === cur) requestAnimationFrame(() => notesPaint(p));
     });
     return el;
   }
   function rebuildLeaves() { for (const [p, el] of leaves) { const pd = pageData.get(p); if (pd) { el.innerHTML = leafHTML(p, pd); fitLeaf(el, p, pd); paint(el); } } }
-  function gc() { for (const [p, el] of leaves) if (Math.abs(p - cur) > 3) { el.remove(); leaves.delete(p); } }
-  function prefetch(p) { [p + 1, p - 1, p + 2].forEach(q => { if (q >= 1 && q <= N) { const i = new Image(); i.src = viewFull() ? QD.pageImg(q) : `lines/${String(q).padStart(3, '0')}.webp`; leaf(q); } }); }
-  function showOnly(p) {
+  function gc() { for (const [q, el] of leaves) if (Math.abs(q - cur) > 3) { el.remove(); leaves.delete(q); } }
+  const decoded = new Set();
+  function pageImgUrl(q) { return viewFull() ? QD.pageImg(q) : ('lines/' + String(q).padStart(3, '0') + '.webp'); }
+  function decodeUrl(u) {
+    if (!u || decoded.has(u)) return Promise.resolve();
+    const i = new Image(); i.src = u;
+    const pr = (i.decode ? i.decode() : new Promise(r => { i.onload = r; i.onerror = r; })).then(() => { decoded.add(u); }).catch(() => {});
+    return pr;
+  }
+  function decodeLeaf(el) {
+    const urls = new Set();
+    el.querySelectorAll('image.pimg').forEach(im => { const u = im.getAttribute('href'); if (u) urls.add(u); });
+    return Promise.all([...urls].map(decodeUrl));
+  }
+  function prefetch(p) {
+    [p - 2, p - 1, p + 1, p + 2].forEach(q => {
+      if (q >= 1 && q <= N) { decodeUrl(pageImgUrl(q)); const el = leaf(q); if (el.style.display === 'none') el.style.display = ''; if (!el.style.visibility) el.style.visibility = 'hidden'; }
+    });
+  }
+  function showOnly(p, also) {
     for (const [q, el] of leaves) {
-      el.style.display = q === p ? '' : 'none';
-      el.style.transform = ''; el.style.zIndex = q === p ? 2 : 0; el.classList.remove('turning', 'back');
-      const sh = el.querySelector('.shade'); if (sh) sh.style.cssText = '';
+      const near = Math.abs(q - p) <= 3, vis = (q === p || q === also);
+      if (near) {
+        el.style.display = '';
+        el.style.visibility = vis ? 'visible' : 'hidden';
+        el.style.pointerEvents = q === p ? '' : 'none';
+      } else {
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+      }
+      if (!vis) { el.style.transform = ''; el.classList.remove('turning'); const sh = el.querySelector('.shade'); if (sh) sh.style.opacity = 0; }
+      el.style.zIndex = q === p ? 2 : (q === also ? 1 : 0);
     }
     fold.style.opacity = 0;
+    fold.style.transform = 'translateX(-48px)';
   }
-  /* زاوية التقليب: الكعب على اليمين (مصحف عربي). 0 = مفرودة، 180 = انقلبت لليمين */
+  /* زاوية التقليب: الكعب على اليمين (مصحف عربي). 0 = مفرودة، 180 = انقلبت لليمين.
+     السحب من اليسار إلى اليمين = الصفحة التالية (كالمصحف الورقي). */
   function setAngle(el, th) {
-    el.style.transform = `rotateY(${th}deg)`;
-    const back = th > 90;
-    el.classList.toggle('back', back);
-    const sh = el.querySelector('.shade'); if (!sh) return;
+    el.style.transform = 'rotateY(' + th + 'deg)';
     const k = Math.sin(th * Math.PI / 180);
-    sh.style.background = back
-      ? `linear-gradient(to left, rgba(0,0,0,${0.18 * k}), rgba(0,0,0,0) 60%), var(--leafback)`
-      : `linear-gradient(to left, rgba(0,0,0,${0.22 * k}), rgba(255,255,255,${0.10 * k}) 40%, rgba(0,0,0,${0.12 * k}))`;
-    sh.style.opacity = 1;
+    const sh = el.querySelector('.shade'); if (sh) sh.style.opacity = (0.42 * k).toFixed(3);
     const x = PW - PW * Math.cos(th * Math.PI / 180);
-    fold.style.opacity = th > 2 && th < 178 ? (0.55 * k).toFixed(3) : 0;
-    fold.style.left = (Math.min(x, PW) - 46) + 'px';
+    fold.style.opacity = (th > 2 && th < 178) ? (0.55 * k).toFixed(3) : 0;
+    fold.style.transform = 'translateX(' + (Math.min(x, PW) - 46) + 'px)';
   }
   const ease = t => 1 - Math.pow(1 - t, 3);
   function animate(el, from, to, ms) {
@@ -203,29 +225,42 @@
       requestAnimationFrame(step);
     });
   }
+  function wantFlip() {
+    const v = ST.get().flip3d;
+    if (v === false) return false;
+    if (v === true) return true;
+    return !(matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
   function prepFlip(dir) {
     const target = cur + dir;
     if (target < 1 || target > N) return null;
     const a = leaf(cur), b = leaf(target);
+    a.style.display = ''; a.style.visibility = 'visible';
+    b.style.display = ''; b.style.visibility = 'visible'; b.style.pointerEvents = 'none';
+    decodeLeaf(b);
     if (dir > 0) {
-      b.style.display = ''; b.style.zIndex = 1; b.style.transform = '';
-      a.style.display = ''; a.style.zIndex = 3; a.classList.add('turning');
+      b.style.zIndex = 1; b.style.transform = '';
+      a.style.zIndex = 3; a.classList.add('turning');
       return { el: a, start: 0, end: 180, target };
-    } else {
-      a.style.display = ''; a.style.zIndex = 1;
-      b.style.display = ''; b.style.zIndex = 3; b.classList.add('turning'); setAngle(b, 180);
-      return { el: b, start: 180, end: 0, target };
     }
+    a.style.zIndex = 1;
+    b.style.zIndex = 3; b.classList.add('turning'); setAngle(b, 180);
+    return { el: b, start: 180, end: 0, target };
   }
   async function finishFlip(f, fromAngle, complete, user) {
     const remain = Math.abs((complete ? f.end : f.start) - fromAngle) / 180;
-    await animate(f.el, fromAngle, complete ? f.end : f.start, 120 + 520 * remain);
+    const ms = Math.max(180, Math.min(400, 360 * remain));
+    await animate(f.el, fromAngle, complete ? f.end : f.start, ms);
     if (complete) setCurrent(f.target, user);
     showOnly(cur);
+    f.el.classList.remove('turning');
     busy = false;
   }
   async function flip(dir, user = true) {
     if (busy) return;
+    const target = cur + dir;
+    if (target < 1 || target > N) return;
+    if (!wantFlip()) { leaf(target); setCurrent(target, user); showOnly(target); return; }
     const f = prepFlip(dir); if (!f) return;
     busy = true;
     await finishFlip(f, f.start, true, user);
@@ -238,9 +273,10 @@
   function setCurrent(p, user) {
     const changed = p !== cur;
     if (changed) noteClose();
-    cur = p; ST.setLastPage(p); leaf(p); gc(); prefetch(p); updateTitle(); $('#qjR').value = p;
-    if (changed) requestAnimationFrame(() => notesPaint(p));
+    cur = p; leaf(p); updateTitle(); $('#qjR').value = p;
     if (changed && TM.on) tmLoad(p);
+    const settle = () => { ST.setLastPage(p); gc(); prefetch(p); if (changed) notesPaint(p); };
+    if (changed) requestAnimationFrame(settle); else settle();
   }
   async function updateTitle() {
     const p = cur;
@@ -270,11 +306,14 @@
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     if (!drag.f) {
       if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy)) return;
-      const f = prepFlip(dx > 0 ? 1 : -1);
+      drag.dir = dx > 0 ? 1 : -1;
+      if (!wantFlip()) { try { book.setPointerCapture(e.pointerId); } catch (_) {} return; }
+      const f = prepFlip(drag.dir);
       if (!f) { drag = null; return; }
-      busy = true; drag.f = f; drag.dir = dx > 0 ? 1 : -1;
+      busy = true; drag.f = f;
       try { book.setPointerCapture(e.pointerId); } catch (_) {}
     }
+    if (!drag.f) return;
     const prog = Math.max(0, Math.min(1, (drag.dir * dx) / (PW * 0.95)));
     drag.th = drag.dir > 0 ? prog * 180 : 180 - prog * 180;
     setAngle(drag.f.el, drag.th);
@@ -282,11 +321,14 @@
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
     const d = drag; drag = null;
-    if (!d.f) return;
-    suppressClick = true; setTimeout(() => suppressClick = false, 60);
     const dx = (e ? e.clientX : d.x0) - d.x0, dt = performance.now() - d.t0;
     const prog = Math.abs(dx) / (PW * 0.95), vel = Math.abs(dx) / Math.max(1, dt);
     const complete = e && e.type !== 'pointercancel' && (prog > 0.33 || vel > 0.45);
+    if (!d.f) {
+      if (complete && d.dir && cur + d.dir >= 1 && cur + d.dir <= N) { if (!TM.on) AU.unlock(); flip(d.dir, true); }
+      return;
+    }
+    suppressClick = true; setTimeout(() => suppressClick = false, 60);
     if (!TM.on) AU.unlock();
     finishFlip(d.f, d.th, complete, true);
   }
@@ -413,6 +455,7 @@
        <label class="lbl">القارئ</label>` +
       AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
+       <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
        <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : ''), 'settings');
     if (window.CLOUD) CLOUD.prep();
   }
@@ -448,6 +491,7 @@
   async function selectFirst() { const pd = await QD.page(cur); await select(pd.ayat[0].k); }
   $('#hubBody').onclick = async e => {
     const sn = e.target.closest('#sNightRow'); if (sn) { setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'); openSettings(); return; }
+    const sf = e.target.closest('#sFlipRow'); if (sf) { ST.set('flip3d', !wantFlip()); openSettings(); return; }
     const sp = e.target.closest('#sPaper [data-paper]');
     if (sp) { const k = sp.dataset.paper; if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
@@ -482,6 +526,12 @@
     const box = el.querySelector('.nmk'), pg = el.querySelector('.pg'), svg = el.querySelector('svg.tx'); if (!box || !svg) return;
     const ns = notesAll().filter(n => n.p === p), pn = el.querySelector('.pnote');
     if (pn) { pn.hidden = !ns.length; pn.innerHTML = ns.length ? `<svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>${ns.length === 1 ? 'ملاحظة' : ar(ns.length) + ' ' + (ns.length === 2 ? 'ملاحظتان' : ns.length <= 10 ? 'ملاحظات' : 'ملاحظة')}</span>` : ''; }
+    const na = el.querySelector('.nadd');
+    if (na) {
+      const lab = ns.length ? ('ملاحظات ' + ar(ns.length)) : 'ملاحظة';
+      na.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>' + lab + '</span>';
+      na.setAttribute('aria-label', ns.length ? (lab + ' على هذه الصفحة. اضغط لإضافة ملاحظة.') : 'ملاحظة جديدة على هذه الصفحة');
+    }
     if (!ns.length) { box.innerHTML = ''; return; }
     const pr = pg.getBoundingClientRect(), sr = svg.getBoundingClientRect();
     const used = []; let free = 0;
@@ -546,7 +596,7 @@
     const all = notesAll().filter(n => !page || n.p === page).sort((a, b) => (b.u || b.t) - (a.u || a.t));
     $('#sh-notes .sh-h b').textContent = page ? `ملاحظات صفحة ${ar(page)}` : 'ملاحظاتي';
     $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${n.id}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
-      : '<p class="muted">لا توجد ملاحظات بعد. اضغط زر القلم أسفل الصفحة لتكتب ملاحظة عليها.</p>';
+      : '<p class="muted">لا توجد ملاحظات بعد. اضغط زر «ملاحظة» أسفل الصفحة لتكتب ملاحظة عليها.</p>';
     openSheet('notes');
   }
   $('#notesBody').onclick = async e => {
@@ -1049,6 +1099,25 @@
   }
   const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+  if (/(?:^|[?&])tmdebug=1(?:&|$)/.test(location.search)) TM.debug = true;
+  function tmSafariUrl() {
+    const can = document.querySelector('link[rel="canonical"]');
+    const u = new URL((can && can.href) || (location.origin + location.pathname), location.href);
+    u.searchParams.set('p', String(cur || TM.p || 1));
+    return u.toString();
+  }
+  function tmDbgPaint(ev, txt) {
+    const box = $('#tmDbg'); if (!box || !TM.debug) return;
+    if (ev) { TM.dbgLines = TM.dbgLines || []; TM.dbgLines.push((Date.now() % 1e6) + ' ' + ev + (txt ? ' ' + txt : '')); if (TM.dbgLines.length > 40) TM.dbgLines.splice(0, TM.dbgLines.length - 40); }
+    const k = TM.keys[TM.i] || '—', heard = (TM.sess && TM.sess.length ? TM.sess.join(' ') : (TM.heardTxt || ''));
+    let score = '';
+    if (TM.E && TM.E.length && heard) {
+      const r = TMM.judge(TMM.words(heard), TM.E, k, { next: TM.En });
+      score = 'المطابقة: ' + r.j + '/' + TM.E.length + '  نهاية=' + (r.end || 0).toFixed(2) + '  ' + (r.done ? 'تُكشف' : 'لا') + '  used=' + r.used;
+    }
+    box.textContent = 'lang=' + (TM.lang || 'ar-SA') + '  standalone=' + (STANDALONE ? '1' : '0') + '  iOS=' + (IOS ? '1' : '0') + '  src=' + (SRC ? '1' : '0') + '\nالمتوقع (' + k + '): ' + (TM.E || []).join(' ') + '\nالمسموع: ' + TMM.norm(heard) + '\n' + score + '\n----\n' + (TM.dbgLines || []).join('\n');
+    box.scrollTop = box.scrollHeight;
+  }
   function tmPaint() {
     const el = leaves.get(TM.p);
     book.querySelectorAll('.hot path.rv,.hot path.rvt,.hot path.nx,.hot path.fl').forEach(s => s.classList.remove('rv', 'rvt', 'nx', 'fl'));
@@ -1065,8 +1134,16 @@
     const hd = $('#tmHeard'); hd.hidden = !SRC || done || !(TM.listening || TM.heardTxt); hd.textContent = TM.heardTxt ? 'سُمع: ' + TM.heardTxt : 'سُمع: …';
     $('#tmMic').hidden = !SRC || done; $('#tmMic').classList.toggle('on', TM.listening);
     $('#tmMic span').textContent = TM.listening ? 'إيقاف' : 'سمّع';
-    $('#tmRev').hidden = done; $('#tmHint').hidden = done;
+    $('#tmRev').hidden = done; $('#tmHint').hidden = done || !!(IOS && STANDALONE) || !!TM.needSafari;
     $('#tmNext').hidden = !done || TM.p >= N; $('#tmAgain').hidden = !done;
+    const sf = $('#tmSafari');
+    if (sf) {
+      const show = !done && !!(IOS && STANDALONE || TM.needSafari);
+      sf.hidden = !show;
+      if (show) sf.href = tmSafariUrl();
+    }
+    const dbg = $('#tmDbg');
+    if (dbg) { dbg.hidden = !TM.on || !TM.debug; if (TM.on && TM.debug) tmDbgPaint(); }
   }
   async function tmLoad(p) {
     const pd = await QD.page(p);
@@ -1178,14 +1255,23 @@
     tmPaint();
   }
   // سجل تشخيص محلي (آخر 120 حدثًا)؛ لمس سطر «سُمع» ينسخه لإرساله عند الحاجة. لا يُرسل لأي خادم.
-  function tmLog(ev, txt) { TM.log.push([Date.now() % 1e8, ev, String(txt || '').slice(0, 300)]); if (TM.log.length > 120) TM.log.shift(); }
+  function tmLog(ev, txt) { TM.log.push([Date.now() % 1e8, ev, String(txt || '').slice(0, 300)]); if (TM.log.length > 120) TM.log.shift(); if (TM.debug) tmDbgPaint(ev, txt); }
   $('#tmHeard').addEventListener('click', () => {
     const t = JSON.stringify({ ua: navigator.userAgent, standalone: STANDALONE, sr: !!SRC, page: TM.p, i: TM.i, keys: TM.keys, log: TM.log });
     (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('نُسخ سجل التسميع.')).catch(() => toast('تعذّر النسخ.'));
   });
   function tmDrop(r) { r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null; }
   function tmListen(on, hard) {
-    if (!SRC) { if (on) { TM.why = 'التعرف على الصوت غير متاح في هذا المتصفح. اكشف الآيات باللمس.'; tmPaint(); } return; }
+    if (!SRC) {
+      if (on) {
+        TM.why = IOS && STANDALONE
+          ? 'التعرف على الصوت غير متاح في وضع التطبيق على الآيفون. افتح الصفحة في Safari ثم اضغط «سمّع»، أو المس الآية لكشفها.'
+          : 'التعرف على الصوت غير متاح في هذا المتصفح. اكشف الآيات باللمس.';
+        if (IOS && STANDALONE) TM.needSafari = true;
+        tmLog('fail', 'no-SRC'); tmPaint();
+      }
+      return;
+    }
     clearTimeout(TM.wd);
     if (!on) {
       TM.listening = false; const r = TM.rec; TM.rec = null; TM.stopAt = Date.now();
@@ -1206,56 +1292,129 @@
     TM.listening = true; tmSession();
   }
   function tmSession() {
-    const r = new SRC(); r.lang = 'ar-SA'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
-    TM.rec = r; const t0 = Date.now(); let started = false, got = false;
+    clearTimeout(TM.wd);
+    const r = new SRC();
+    r.lang = TM.lang || 'ar-SA';
+    r.continuous = !IOS;          // آيفون: continuous=true غالباً لا يعمل
+    r.interimResults = true;
+    r.maxAlternatives = 3;
+    TM.rec = r; const t0 = Date.now(); let started = false, got = false, noSpeech = false;
     TM.sess = []; TM.raw = []; TM.sessBase = 0; TM.sessGone = false;
     const live = () => TM.rec === r || TM.drain === r;
-    const fail = m => { if (TM.rec !== r) return; TM.why = m; tmLog('fail', m); tmListen(false); };
-    r.onstart = r.onaudiostart = () => { started = true; };
+    const safariMsg = 'التعرف على الصوت لا يعمل من أيقونة الشاشة الرئيسية على الآيفون. افتح الصفحة في Safari ثم اضغط «سمّع»، أو المس الآية لكشفها.';
+    const fail = m => {
+      if (TM.rec !== r && TM.rec) return;
+      TM.why = m; tmLog('fail', m);
+      if (IOS && STANDALONE) TM.needSafari = true;
+      tmListen(false);
+    };
+    r.onstart = () => { started = true; if (TM.why && /لم يُلتقط|لم يبدأ/.test(TM.why)) TM.why = ''; tmLog('start-ok', r.lang); tmPaint(); };
+    r.onaudiostart = () => { started = true; tmLog('audiostart'); };
+    r.onsoundstart = r.onspeechstart = () => { started = true; TM.empty = 0; tmLog('speechstart'); };
     r.onresult = ev => {
       if (!live()) return;
       got = true; let fin = true;
       for (let x = 0; x < ev.results.length; x++) if (ev.results[x] && !ev.results[x].isFinal) fin = false;
       const txt = tmResultsText(ev.results);
-      tmLog(fin ? 'final' : 'interim', ev.resultIndex + '/' + ev.results.length + ' ' + txt);
+      let bits = ev.resultIndex + '/' + ev.results.length;
+      if (TM.debug) {
+        const parts = [];
+        for (let i = 0; i < ev.results.length; i++) {
+          const a = ev.results[i]; if (!a || !a[0]) continue;
+          parts.push('#' + i + (a.isFinal ? ' F' : ' ~') + ' «' + a[0].transcript + '» c=' + (a[0].confidence != null ? Number(a[0].confidence).toFixed(2) : '—'));
+        }
+        bits += ' ' + parts.join(' | ');
+      } else bits += ' ' + txt;
+      tmLog(fin ? 'final' : 'interim', bits);
       tmHeardUpdate(txt, fin);
     };
     r.onerror = ev => {
       if (TM.rec !== r) return;
       const e = ev && ev.error; tmLog('error', e);
-      if (e === 'no-speech' || e === 'aborted') return;   // onend يقرر المتابعة
-      const m = { 'not-allowed': 'لم يُسمح باستخدام الميكروفون أو التعرف على الكلام. اسمح بهما من الإعدادات، أو اكشف الآيات باللمس.', 'service-not-allowed': IOS && STANDALONE ? 'التعرف على الصوت لا يعمل في وضع التطبيق على الآيفون. افتح الرابط في Safari، أو اكشف الآيات باللمس.' : (IOS ? 'التعرف على الكلام غير مفعّل. فعّل «سيري» و«الإملاء» من إعدادات الآيفون، أو اكشف الآيات باللمس.' : 'التعرف على الصوت غير متاح هنا. اكشف الآيات باللمس.'), 'network': 'التعرف على الصوت يحتاج إنترنت. اكشف الآيات باللمس.', 'audio-capture': 'لم يُعثر على ميكروفون. اكشف الآيات باللمس.', 'language-not-supported': 'التعرف على العربية غير متاح في هذا الجهاز. اكشف الآيات باللمس.' }[e];
-      fail(m || `تعذّر التعرف على الصوت (${e || 'خطأ'}). اكشف الآيات باللمس.`);
+      if (e === 'aborted') return;
+      if (e === 'no-speech') {
+        noSpeech = true;
+        TM.why = 'لم يُلتقط كلام في هذه الوقفة. أكمل التلاوة.';
+        tmPaint();
+        return;
+      }
+      if (e === 'language-not-supported' && (TM.lang || 'ar-SA') !== 'ar') {
+        TM.lang = 'ar';
+        TM.why = 'سأستخدم العربية العامة.';
+        tmLog('lang', 'ar');
+        tmPaint();
+        return;
+      }
+      const m = {
+        'not-allowed': 'لم يُسمح باستخدام الميكروفون أو التعرف على الكلام. اسمح بهما من الإعدادات، أو اكشف الآيات باللمس.',
+        'service-not-allowed': IOS && STANDALONE ? safariMsg : (IOS ? 'التعرف على الكلام غير مفعّل. فعّل «سيري» و«الإملاء» من إعدادات الآيفون، أو اكشف الآيات باللمس.' : 'التعرف على الصوت غير متاح هنا. اكشف الآيات باللمس.'),
+        'network': 'التعرف على الصوت يحتاج إنترنت. اكشف الآيات باللمس.',
+        'audio-capture': 'لم يُعثر على ميكروفون. اكشف الآيات باللمس.',
+        'language-not-supported': 'التعرف على العربية غير متاح في هذا الجهاز. اكشف الآيات باللمس.'
+      }[e];
+      fail(m || ('تعذّر التعرف على الصوت (' + (e || 'خطأ') + '). اكشف الآيات باللمس.'));
     };
-    // الجوال ينهي الجلسة عند كل وقفة: نعيد التشغيل دائمًا ما دامت الجلسات تُرجع كلامًا. نتوقف فقط بعد 3 جلسات فارغة متتالية سريعة (لا حلقة لا نهائية).
+    // الجوال ينهي الجلسة عند كل وقفة: نعيد التشغيل ما دامت الجلسات تُرجع كلامًا.
+    // في وضع الشاشة الرئيسية على الآيفون: إن لم يصل صوت من أول جلسة نتوقف فورًا ونوجّه إلى Safari.
     r.onend = () => {
       if (TM.rec !== r || !TM.listening || !TM.on) return;
-      tmLog('end', (Date.now() - t0) + 'ms ' + (got ? 'words' : 'empty'));
+      tmLog('end', (Date.now() - t0) + 'ms ' + (got ? 'words' : 'empty') + (noSpeech ? ' no-speech' : ''));
       TM.empty = got ? 0 : TM.empty + 1;
-      if ((IOS && STANDALONE && !got && TM.empty >= 1 && !TM.everGot) || TM.empty >= 3) {
-        return fail(IOS && STANDALONE && !TM.everGot ? 'لم يصل صوت من الميكروفون. في وضع التطبيق على الآيفون قد لا يعمل التعرف؛ افتح الرابط في Safari، أو اكشف الآيات باللمس.' : 'توقف الاستماع. اضغط «سمّع» للمتابعة.');
-      }
+      if (IOS && STANDALONE && !got && TM.empty >= 1 && !TM.everGot) return fail(safariMsg);
+      const limit = TM.everGot ? 8 : 3;
+      if (TM.empty >= limit) return fail('توقف الاستماع. اضغط «سمّع» للمتابعة.');
       if (got) TM.everGot = true;
       tmDrop(r); tmCommit();
-      setTimeout(() => { if (TM.rec === r && TM.listening && TM.on) { try { tmSession(); } catch (e) { fail('توقف الاستماع. اضغط «سمّع» للمتابعة.'); } } }, got ? 150 : 400);
+      if (TM.rec === r) TM.rec = null;
+      const delay = IOS ? 0 : (got ? 150 : 400);
+      setTimeout(() => {
+        if (!TM.listening || !TM.on || TM.rec) return;
+        try { tmSession(); } catch (e) { fail('توقف الاستماع. اضغط «سمّع» للمتابعة.'); }
+      }, delay);
     };
-    TM.wd = setTimeout(() => { if (TM.rec === r && !started && !got) fail('لم يبدأ الميكروفون. اسمح بالميكروفون والتعرف على الكلام، أو اكشف الآيات باللمس.'); }, 6000);
-    tmLog('start');
-    try { r.start(); } catch (e) { fail('تعذّر تشغيل الميكروفون. اكشف الآيات باللمس.'); return; }
+    TM.wd = setTimeout(() => {
+      if (TM.rec !== r || started || got) return;
+      fail(IOS && STANDALONE ? safariMsg : 'لم يبدأ الميكروفون. اسمح بالميكروفون والتعرف على الكلام، أو اكشف الآيات باللمس.');
+    }, IOS && STANDALONE ? 1500 : 6000);
+    // start() هنا تزامنيًا داخل لمسة المستخدم (لا await ولا setTimeout قبله) حتى يظهر إذن الميكروفون
+    tmLog('start', r.lang + (r.continuous ? ' cont' : ' oneshot') + (STANDALONE ? ' standalone' : ''));
+    try { r.start(); }
+    catch (e) {
+      tmLog('start-throw', (e && (e.name || e.message)) || 'error');
+      fail(IOS && STANDALONE ? safariMsg : 'تعذّر تشغيل الميكروفون. اكشف الآيات باللمس.');
+      return;
+    }
     tmPaint();
   }
-  // أزرار شريط التسميع: تستجيب للمس مباشرة (touchend) وللنقر، مرة واحدة لكل لمسة
+
+  // أزرار شريط التسميع ما عدا «سمّع»: تستجيب للمس مباشرة (touchend) وللنقر، مرة واحدة لكل لمسة
   function tmBtn(id, fn) {
     const el = $(id); let tt = 0;
     el.addEventListener('touchend', e => { if (el.hidden) return; e.preventDefault(); e.stopPropagation(); tt = Date.now(); fn(); }, { passive: false });
     el.addEventListener('click', e => { e.stopPropagation(); if (Date.now() - tt < 700) return; fn(); });
   }
-  tmBtn('#tmMic', () => tmListen(!TM.listening));
+  // «سمّع»: start() يجب أن يُستدعى داخل click (آيفون لا يعتبر touchend+preventDefault إيماءة كافية لإذن الميكروفون، وpreventDefault يلغي click)
+  $('#tmMic').addEventListener('click', e => {
+    e.stopPropagation();
+    if ($('#tmMic').hidden) return;
+    tmListen(!TM.listening);
+  });
   tmBtn('#tmRev', () => { const k = TM.keys[TM.i]; if (k) tmReveal(k, 'tap'); });
   tmBtn('#tmHint', tmHint);
   tmBtn('#tmEnd', tmEnd);
   tmBtn('#tmAgain', () => tmLoad(TM.p));
   tmBtn('#tmNext', () => { if (TM.p < N) goPage(TM.p + 1, true, true); });
+  // ضغط مطوّل على عنوان «التسميع» يفتح سجل التشخيص (أو ?tmdebug=1)
+  (function () {
+    const el = $('#tm .tmh b'); if (!el) return;
+    let id = 0;
+    const down = () => { clearTimeout(id); id = setTimeout(() => { TM.debug = !TM.debug; if (TM.debug) TM.dbgLines = TM.dbgLines || []; tmPaint(); toast(TM.debug ? 'وضع تشخيص التسميع.' : 'أُغلق التشخيص.'); }, 650); };
+    const up = () => clearTimeout(id);
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', up);
+  })();
   document.addEventListener('visibilitychange', () => { if (document.hidden && TM.listening) { tmListen(false, true); TM.why = 'توقف الاستماع. اضغط «سمّع» للمتابعة.'; tmPaint(); } });
   /* ---------- التفسير: المختصر والسعدي، كما وردا في المصدر بلا أي تعديل ---------- */
   // الملفات لكل سورة في tafsir/{mukhtasar|saadi}/NNN.json، تُحمَّل عند الحاجة وتُخزَّن بعد أول فتح (sw.js)
@@ -1319,6 +1478,6 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__app = { openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice() }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaint(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

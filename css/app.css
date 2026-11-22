@@ -15,9 +15,11 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 
 /* ---- القارئ: الصفحة بملء الشاشة ---- */
 #reader{position:fixed;inset:calc(var(--sat) + var(--tbh)) 0 calc(var(--sab) + var(--bbh) + var(--qjh)) 0;overflow:hidden;touch-action:none;background:var(--paper)}
-.book{position:absolute;inset:0 0 var(--reserve) 0;perspective:2400px;transition:bottom .2s}
-.leaf{position:absolute;inset:0;background:var(--paper);transform-origin:100% 50%;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.leaf.turning{box-shadow:0 2px 6px rgba(0,0,0,.15),0 14px 40px rgba(0,0,0,.18)}
+.book{position:absolute;inset:0 0 var(--reserve) 0;perspective:1500px;transform-style:preserve-3d;transition:bottom .2s}
+.leaf{position:absolute;inset:0;background:var(--paper);transform-origin:100% 50%;transform-style:preserve-3d;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.leaf.turning{will-change:transform;box-shadow:0 4px 18px rgba(0,0,0,.16)}
+.leaf .pg,.leaf .shade{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.leaf-back{position:absolute;inset:0;background:var(--paper);transform:rotateY(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:none;box-shadow:inset 0 0 48px rgba(0,0,0,.10)}
 .pg{position:absolute;inset:0;margin:0 auto;max-width:calc(100vh * 0.58);display:flex;flex-direction:column;padding:2px 8px 0}
 .ph{flex:none;display:flex;justify-content:space-between;align-items:center;height:26px;padding:0 6px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-weight:700;font-size:16px;color:#7C5731}
 .ph .ps{max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -35,8 +37,8 @@ svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block;stroke:none;over
 .hot path.sel{fill:rgba(214,178,110,.42)}
 .hot path.play{fill:rgba(232,180,60,.55)}
 .leaf.turning .hot path{transition:none}
-.shade{position:absolute;inset:0;pointer-events:none;opacity:0}
-.fold{position:absolute;top:0;bottom:0;width:46px;background:linear-gradient(to right,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:4;pointer-events:none;opacity:0}
+.shade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(to left,rgba(0,0,0,.22),rgba(255,255,255,.08) 40%,rgba(0,0,0,.10))}
+.fold{position:absolute;top:0;left:0;bottom:0;width:46px;background:linear-gradient(to right,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:4;pointer-events:none;opacity:0;transform:translateX(-48px);will-change:transform,opacity}
 .nav{position:fixed;top:50%;transform:translateY(-50%);width:34px;height:64px;border-radius:10px;background:rgba(31,33,32,.06);font-size:28px;color:var(--brown);z-index:5;display:none}
 .nav.prev{right:8px}.nav.next{left:8px}
 @media (hover:hover) and (pointer:fine){.nav{display:block}.nav:hover{background:rgba(31,33,32,.12)}}
@@ -204,8 +206,9 @@ html.dark .hubToday .chip{color:var(--gold)}
 #remBody .btn[disabled]{opacity:.45}
 
 /* ملاحظات الحفظ على الصفحة */
-.pf .nadd{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:30px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;color:#B08A4A;opacity:.75;-webkit-tap-highlight-color:transparent}
-.pf .nadd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pf .nadd{position:absolute;right:-8px;bottom:0;top:auto;min-width:44px;height:32px;padding:0 10px 0 8px;border:1px solid #C9A45C;border-radius:999px;background:#FFF6E3;color:#6B4418;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:12.5px;font-weight:700;line-height:1;white-space:nowrap;box-shadow:0 1px 2px rgba(90,50,10,.14);opacity:1;z-index:3;-webkit-tap-highlight-color:transparent}
+.pf .nadd svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pf .nadd::before{content:"";position:absolute;inset:0 -8px}
 .pg .nmk{position:absolute;inset:0;pointer-events:none}
 .pg .nmk button{position:absolute;right:0;width:8px;height:20px;padding:0;border:0;border-radius:5px 0 0 5px;background:#C9A45C;box-shadow:0 0 0 1px rgba(124,87,49,.25);pointer-events:auto;-webkit-tap-highlight-color:transparent}
 .pg .nmk button::before{content:"";position:absolute;inset:-6px -2px -6px -8px}
@@ -219,7 +222,7 @@ html.dark .hubToday .chip{color:var(--gold)}
 .notecard .nf .btn{margin:0;padding:8px 16px;width:auto}
 html.dark .notecard{background:#26221c;border-color:#4a3f30;color:#eee}
 html.dark .notecard textarea{background:#1d1a16;border-color:#4a3f30}
-html.darkpage .pf .nadd{color:#cdb680}
+html.darkpage .pf .nadd,html.dark .pf .nadd{background:#2a2419;border-color:#7c6638;color:#e0c27f;box-shadow:0 1px 2px rgba(0,0,0,.45)}
 
 /* الوضع الليلي: تُعتَم الواجهة حول الصفحة، ونص الصفحة يبقى بألوان المجمع على ورقته */
 
@@ -259,7 +262,7 @@ html[data-paper=blue] .ph{color:#4A6E8F}
 html[data-paper=blue] .pn{background:#E0ECF8;border-color:#5C82A6;box-shadow:0 0 0 2.5px #D2E2F1,0 0 0 3.6px #5C82A6}
 html[data-paper=blue] .pn::before,html[data-paper=blue] .pn::after{border-color:#5C82A6;background:#D2E2F1}
 html[data-paper=blue] .pg .nmk button{background:#6E95BA}
-html[data-paper=blue] .pf .nadd{color:#5C82A6}
+html[data-paper=blue] .pf .nadd{border-color:#7FA2C4;background:#EAF3FB;color:#2C577D}
 html[data-paper=grey] .ph{color:#5E4529}
 /* ===== الوضع الليلي: الأشرطة والألواح داكنة، والصفحة معكوسة للعرض فقط ===== */
 html.dark{--paper:#0E0E0E;--bar:#171818;--barline:#2B2D2C;--ic:#8F8E8A;--acc:#D8B86A;--sheet:#1a1b1b;--leafback:rgba(14,14,14,.96)}
@@ -269,7 +272,7 @@ html.dark svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.92)}
 html.dark svg.tx .pimg{mix-blend-mode:normal;filter:none}
 html.dark .ph{color:#cdb680}
 html.dark .pn{filter:invert(1) hue-rotate(180deg)}
-html.dark .pf .nadd{color:#cdb680}
+
 html.dark .qjb{background:#e8e6e1;color:#1F2120}
 /* إعدادات: مفتاح وعينات ألوان */
 .sw-row{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-bottom:1px solid #eee}
@@ -397,3 +400,10 @@ body:has(#sh-tafsir:not([hidden])) .tool{display:none}body:has(.sheet:not(.small
 .tfsrc a{color:var(--tfh,#7A5220)}
 html[data-paper=blue]{--tfh:#2C577D}html[data-paper=grey]{--tfh:#6A4618}html.dark{--tfh:#D8B86A}
 html[data-paper=grey] .tfsrc{color:#4f4b46}
+
+/* تشخيص التسميع: طبقة فوق الصفحة، لا تغيّر مقاس المصحف ولا توزيع الأسطر */
+.tmdbg{position:fixed;left:0;right:0;bottom:calc(var(--sab) + var(--bbh) + var(--tmh));z-index:36;max-height:38vh;overflow:auto;background:rgba(22,20,18,.94);color:#F4EDE4;font-size:11px;line-height:15px;padding:8px 10px 10px;direction:rtl;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace}
+.tmdbg[hidden]{display:none!important}
+
+.tmb a.btn{text-decoration:none;box-sizing:border-box}
+.tmb a.btn[hidden]{display:none}
