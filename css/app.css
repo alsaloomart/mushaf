@@ -316,9 +316,10 @@ html[data-paper=blue] .pg .nmk button{background:#3F6E99}
 html.dark .pg .nmk button{background:#D9A54A;box-shadow:0 0 0 1.5px #222,0 1px 4px rgba(0,0,0,.6)}
 /* التسميع */
 :root{--tmh:152px}
-body.tm #reader{bottom:calc(var(--sab) + var(--tmh))}
-body.tm #botbar,body.tm #qj{visibility:hidden}
-.tmbar{position:fixed;left:0;right:0;bottom:0;z-index:34;height:calc(var(--sab) + var(--tmh));padding:4px 12px calc(var(--sab) + 6px);box-sizing:border-box;background:var(--bar);border-top:1px solid var(--barline);font-family:'Thmanyah Sans',system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+/* الشريط السفلي يبقى ظاهرًا أثناء التسميع (زر «التسميع» فيه يُنهيه)، وشريط التسميع فوقه */
+body.tm #reader{bottom:calc(var(--sab) + var(--bbh) + var(--tmh))}
+body.tm #qj{visibility:hidden}
+.tmbar{position:fixed;left:0;right:0;bottom:calc(var(--sab) + var(--bbh));z-index:34;height:var(--tmh);padding:4px 12px 6px;box-sizing:border-box;background:var(--bar);border-top:1px solid var(--barline);font-family:'Thmanyah Sans',system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;gap:2px}
 .tmbar[hidden]{display:none}
 .tmheard{flex:none;font-size:13px;line-height:18px;height:18px;color:var(--barink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl}
 .tmheard[hidden]{display:block;visibility:hidden}
