@@ -444,7 +444,7 @@
       hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
   }
   function openTafsirPanel() { return openTafsir(sel ? sel.list.slice() : null); }
-  const PAPERS = [['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E']];
+  const PAPERS = [['madinah', 'مصحف المدينة', '#155A3A'], ['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E']];
   function openSettings() {
     const s = ST.get(), dark = document.documentElement.classList.contains('dark'), cur = dark ? 'night' : (s.paper || 'beige'), rid = s.reciter;
     openList('الإعدادات',
@@ -971,7 +971,7 @@
     H.classList.remove('darkpage');
     H.dataset.paper = s.paper || 'beige';
     H.classList.toggle('vfull', s.view === 'full');
-    document.querySelector('meta[name="theme-color"]').content = dark ? '#171818' : ({ white: '#F7F7F6', cream: '#F4EAD6', grey: '#CDC9C4', blue: '#E6F0F8' }[s.paper] || '#FBF4EC');
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#171818' : ({ white: '#F7F7F6', cream: '#F4EAD6', grey: '#CDC9C4', blue: '#E6F0F8', madinah: '#EDE4D0' }[s.paper] || '#FBF4EC');
   }
   function setTheme(t) { ST.setTheme(t); applyTheme(); }
   mqDark.addEventListener ? mqDark.addEventListener('change', applyTheme) : mqDark.addListener(applyTheme);

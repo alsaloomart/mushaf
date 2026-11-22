@@ -236,7 +236,7 @@ html,body,#reader,.leaf{background:var(--paper)}
 .tbar svg,.bbar svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .tbar svg{width:18px;height:18px}
 .tbar button.on,.bbar button.on{color:var(--navon,#7A5220)}
-html[data-paper=grey]{--navi:#4f4b46;--navon:#5A3B12}html[data-paper=blue]{--navon:#2C577D}html.dark{--navi:#8F8E8A;--navon:#D8B86A}
+html[data-paper=grey]{--navi:#4f4b46;--navon:#5A3B12}html[data-paper=blue]{--navon:#2C577D}html[data-paper=madinah]{--navi:#5C6158;--navon:#155A3A}html.dark{--navi:#8F8E8A;--navon:#D8B86A}
 .qj{position:fixed;left:0;right:0;bottom:calc(var(--sab) + var(--bbh));height:var(--qjh);z-index:32;display:flex;align-items:center;padding:0 16px;background:var(--bar)}
 .qj input{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:none;margin:0;direction:rtl}
 .qj input::-webkit-slider-runnable-track{height:2px;background:var(--barline);border-radius:2px}
@@ -263,6 +263,17 @@ html[data-paper=blue] .pn{background:#E0ECF8;border-color:#5C82A6;box-shadow:0 0
 html[data-paper=blue] .pn::before,html[data-paper=blue] .pn::after{border-color:#5C82A6;background:#D2E2F1}
 html[data-paper=blue] .pg .nmk button{background:#6E95BA}
 html[data-paper=blue] .pf .nadd{border-color:#A8C2D8;background:rgba(63,111,154,.08);color:#2C577D}
+html[data-paper=madinah]{--paper:#F6F0E2;--bar:#EDE4D0;--barline:#D4C8A8;--ic:#6A6E62;--acc:#155A3A;--sheet:#F8F3E8;--leafback:rgba(246,240,226,.95);--barink:#3F4A40;--tfh:#155A3A;--hidc:#EDE4CE;--hidn:#E5DABF}
+html[data-paper=madinah] .ph{color:#155A3A}
+html[data-paper=madinah] .pn{background:#F0E4C4;border-color:#9A6B34;box-shadow:0 0 0 2px #E8D9A8,0 0 0 2.9px #155A3A;color:#1F2120}
+html[data-paper=madinah] .pn::before,html[data-paper=madinah] .pn::after{border-color:#9A6B34;background:#E8D9A8}
+html[data-paper=madinah] .pg .nmk button{background:#9A6B34}
+html[data-paper=madinah] .pf .nadd{border-color:#9A6B34;background:rgba(21,90,58,.08);color:#155A3A}
+html[data-paper=madinah] .ph .pnote{border-color:#9A6B34;background:rgba(21,90,58,.08);color:#155A3A}
+html[data-paper=madinah] .tq-q,html[data-paper=madinah] .tq-h{color:#155A3A}
+html[data-paper=madinah] .qj input::-webkit-slider-thumb{background:#9A6B34;box-shadow:0 0 0 1px #9A6B34;border-color:var(--bar)}
+html[data-paper=madinah] .qj input::-moz-range-thumb{background:#9A6B34;border-color:var(--bar)}
+
 html[data-paper=grey] .ph{color:#5E4529}
 /* ===== الوضع الليلي: الأشرطة والألواح داكنة، والصفحة معكوسة للعرض فقط ===== */
 html.dark{--paper:#0E0E0E;--bar:#171818;--barline:#2B2D2C;--ic:#8F8E8A;--acc:#D8B86A;--sheet:#1a1b1b;--leafback:rgba(14,14,14,.96)}
