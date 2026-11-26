@@ -14,9 +14,13 @@ const AU = (() => {
     { id: 2, name: 'عبد الباسط عبد الصمد', style: 'مرتّل' },
     // المكتبة الصوتية للقرآن الكريم (mp3quran.net): القارئ 254 «بدر التركي»، مصحف 254 «حفص عن عاصم - مرتل»، 114 سورة.
     // ملفات سور كاملة فقط، بلا توقيت آيات منشور ولا ملفات آيات: يُشغَّل «السورة كاملة» من أولها، بلا تتبع للآيات.
-    { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', notime: true }
+    { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', notime: true },
+    // MP3Quran: القارئ 102 «ماهر المعيقلي». مصحف 133 «حفص عن عاصم - المصحف المجود» له توقيت آيات منشور (ayat_timing read=133)،
+    // ومصحف 102 «حفص عن عاصم - مرتل» بلا توقيت: السورة كاملة فقط.
+    { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=' },
+    { id: 1102, name: 'ماهر المعيقلي', style: 'مرتّل', src: 'mp3quran', mq: 102, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/', notime: true }
   ];
-  const NOTIME_MSG = 'تلاوة بدر التركي متاحة للسورة كاملة فقط، بلا تحديد آية أو تكرار، لأن مصدرها لا ينشر توقيت الآيات.';
+  const NOTIME_MSG = 'هذه التلاوة متاحة للسورة كاملة فقط، بلا تحديد آية أو تكرار، لأن مصدرها لا ينشر توقيت الآيات.';
   const maps = new Map();
   function chapterMap(rid, s) {
     const id = rid + ':' + s;
@@ -57,6 +61,13 @@ const AU = (() => {
     const rc = RECITERS.find(x => x.id === rid);
     if (rc && rc.src === 'mp3quran') {
       const sd = { url: rc.server + String(s).padStart(3, '0') + '.mp3', t: null };
+      if (rc.timing) {
+        let r = null;
+        try { r = await fetch(rc.timing + s); } catch (e) {}
+        if (!r || !r.ok) throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.');
+        const d = await r.json();
+        sd.t = (Array.isArray(d) ? d : []).map(x => [s + ':' + x.ayah, +x.start_time, +x.end_time]);
+      }
       verifySurah(s, sd); return sd;
     }
     let r = null;
@@ -284,21 +295,22 @@ const AU = (() => {
     const s = +s0.keys[0].split(':')[0];
     if (reciter(s0.rid).notime) {
       if (s0.kind !== 'surah' && !(s0.keys.length > 1 && s0.keys[0] === s + ':1')) { ev.error(new Error(NOTIME_MSG)); stop(); return; }
-      if (s0.keys[0] !== s + ':1') ev.note('بدر التركي: تبدأ التلاوة من أول السورة، فمصدرها بلا توقيت للآيات.');
+      if (s0.keys[0] !== s + ':1') ev.note(reciter(s0.rid).name + ': تبدأ التلاوة من أول السورة، فمصدرها بلا توقيت للآيات.');
       s0.notime = true;
       const last = +s0.keys[s0.keys.length - 1].split(':')[1];
       s0.keys = Array.from({ length: last }, (_, i) => s + ':' + (i + 1)); s0.i = 0;
       try { return await playFull(s0, s); } catch (e) { if (st !== s0) return; ev.error(navigator.onLine === false ? new Error(OFF) : e); stop(); return; }
     }
     const contig = s0.keys.every((k, i) => k === s + ':' + (+s0.keys[0].split(':')[1] + i));
-    let useFull = contig && (s0.kind === 'surah' || s0.keys.length > 1);
+    // مصادر بلا ملفات آيات (MP3Quran): ملف السورة دائمًا
+    let useFull = contig && (s0.kind === 'surah' || s0.keys.length > 1 || reciter(s0.rid).src === 'mp3quran');
     if (contig && !useFull) useFull = await DL.has(s0.rid, s);
     if (st !== s0) return;
     if (useFull) {
       try { return await playFull(s0, s); }
       catch (e) {
         if (st !== s0) return;
-        if (navigator.onLine === false) { ev.error(e); stop(); return; }
+        if (navigator.onLine === false || reciter(s0.rid).src === 'mp3quran') { ev.error(e); stop(); return; }
         st.full = null;
       }
     }
@@ -314,7 +326,8 @@ const AU = (() => {
     s0.full = sd; s0.idx = idx; s0.lastK = null;
     s0.cur = { key: s0.keys[0], url: sd.url };
     el.src = url;
-    if (idx) seekTo(0); else { s0.want = null; try { el.currentTime = 0; } catch (e) {} }
+    // من أول السورة: نبدأ من بداية الملف (الاستعاذة والبسملة إن سبقت الآية الأولى)
+    if (idx && s0.keys[0] !== s + ':1') seekTo(0); else { s0.want = 0; try { el.currentTime = 0; } catch (e) {} }
     try { await el.play(); }
     catch (e) {
       if (e && e.name === 'NotAllowedError') { ev.ayah(s0.keys[0], s0); s0.lastK = s0.keys[0]; ev.state('paused', s0); ev.blocked(s0); return; }
