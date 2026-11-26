@@ -14,13 +14,14 @@ const AU = (() => {
     { id: 2, name: 'عبد الباسط عبد الصمد', style: 'مرتّل' },
     // المكتبة الصوتية للقرآن الكريم (mp3quran.net): القارئ 254 «بدر التركي»، مصحف 254 «حفص عن عاصم - مرتل»، 114 سورة.
     // ملفات سور كاملة فقط، بلا توقيت آيات منشور ولا ملفات آيات: يُشغَّل «السورة كاملة» من أولها، بلا تتبع للآيات.
-    { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', notime: true },
+    // توقيت الآيات لهذا المصحف غير منشور في المصدر، فولّدناه آليًا من الملفات نفسها بمواءمة نص الآيات مع الصوت (نموذج تعرّف كلام عربي مفتوح المصدر، wav2vec2، مواءمة CTC قسرية)، ونحفظه ملفًا ثابتًا مع التطبيق.
+    { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', tfile: 'data/timings/1254.json' },
     // MP3Quran: القارئ 102 «ماهر المعيقلي». مصحف 133 «حفص عن عاصم - المصحف المجود» له توقيت آيات منشور (ayat_timing read=133)،
     // ومصحف 102 «حفص عن عاصم - مرتل» بلا توقيت: السورة كاملة فقط.
     { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=' },
-    { id: 1102, name: 'ماهر المعيقلي', style: 'مرتّل', src: 'mp3quran', mq: 102, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/', notime: true }
+    { id: 1102, name: 'ماهر المعيقلي', style: 'مرتّل', src: 'mp3quran', mq: 102, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/', tfile: 'data/timings/1102.json' }
   ];
-  const NOTIME_MSG = 'هذه التلاوة متاحة للسورة كاملة فقط، بلا تحديد آية أو تكرار، لأن مصدرها لا ينشر توقيت الآيات.';
+  const NOTIME_MSG = 'هذه السورة متاحة بهذا الصوت للتلاوة كاملة فقط حاليًا، بلا تحديد آية أو تكرار.';
   const maps = new Map();
   function chapterMap(rid, s) {
     const id = rid + ':' + s;
@@ -57,11 +58,19 @@ const AU = (() => {
   /* ملف السورة كاملًا مع توقيت كل آية (Quran Foundation): تلاوة متصلة بلا فواصل بين الآيات */
   const QDC = 'https://api.quran.com/api/qdc/audio/reciters/';
   const OFF = 'لا يوجد اتصال بالإنترنت، وهذه السورة غير محمّلة لهذا القارئ. حمّلها من الفهرس لتعمل بدون إنترنت.';
+  const TF = new Map();
   async function fetchSD(rid, s) {
     const rc = RECITERS.find(x => x.id === rid);
     if (rc && rc.src === 'mp3quran') {
       const sd = { url: rc.server + String(s).padStart(3, '0') + '.mp3', t: null };
-      if (rc.timing) {
+      if (rc.tfile) {
+        if (!TF.has(rc.id)) { const pr = fetch(rc.tfile).then(r => { if (!r.ok) throw 0; return r.json(); }); pr.catch(() => TF.delete(rc.id)); TF.set(rc.id, pr); }
+        let all = null;
+        try { all = await TF.get(rc.id); } catch (e) { throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.'); }
+        const a = all[s];
+        // سورة لم يكتمل توليد توقيتها بعد: السورة كاملة بلا تتبع مؤقتًا
+        sd.t = a ? a.map((x, i) => [s + ':' + (i + 1), x[0], x[1]]) : null;
+      } else if (rc.timing) {
         let r = null;
         try { r = await fetch(rc.timing + s); } catch (e) {}
         if (!r || !r.ok) throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.');
@@ -94,7 +103,7 @@ const AU = (() => {
         const m = await DL.manifest(rid, s);
         if (m && m.done) {
           // نسخة محمّلة: تعمل فورًا، ومع الاتصال نتأكد مرة في الجلسة أن الملف لم يتغير في المصدر
-          if (navigator.onLine !== false && !checked.has(id)) { checked.add(id); fetchSD(rid, s).then(sd => { if (sd.url !== m.url || (sd.t && m.sd.t && (sd.t.length !== m.sd.t.length || sd.t.some((x, i) => x[1] !== m.sd.t[i][1])))) DL.start(rid, s); }).catch(() => {}); }
+          if (navigator.onLine !== false && !checked.has(id)) { checked.add(id); fetchSD(rid, s).then(sd => { if (sd.url !== m.url || (sd.t && !m.sd.t) || (sd.t && m.sd.t && (sd.t.length !== m.sd.t.length || sd.t.some((x, i) => x[1] !== m.sd.t[i][1])))) DL.start(rid, s); }).catch(() => {}); }
           return m.sd;
         }
         return fetchSD(rid, s);
@@ -293,9 +302,11 @@ const AU = (() => {
    * غير ذلك (آية واحدة غير محمّلة) أو إن تعذّر ملف السورة: ملفات الآيات كما كانت. */
   async function begin(s0) {
     const s = +s0.keys[0].split(':')[0];
-    if (reciter(s0.rid).notime) {
+    let untimed = !!reciter(s0.rid).notime;
+    if (!untimed && reciter(s0.rid).tfile) { try { untimed = !(await surahData(s0.rid, s)).t; } catch (e) {} if (st !== s0) return; }
+    if (untimed) {
       if (s0.kind !== 'surah' && !(s0.keys.length > 1 && s0.keys[0] === s + ':1')) { ev.error(new Error(NOTIME_MSG)); stop(); return; }
-      if (s0.keys[0] !== s + ':1') ev.note(reciter(s0.rid).name + ': تبدأ التلاوة من أول السورة، فمصدرها بلا توقيت للآيات.');
+      if (s0.keys[0] !== s + ':1') ev.note(reciter(s0.rid).name + ': تبدأ التلاوة من أول السورة، فتوقيت آياتها غير متاح بعد.');
       s0.notime = true;
       const last = +s0.keys[s0.keys.length - 1].split(':')[1];
       s0.keys = Array.from({ length: last }, (_, i) => s + ':' + (i + 1)); s0.i = 0;

@@ -1423,8 +1423,8 @@
       <p>أسماء السور والأجزاء والأحزاب من بيانات ${L('Tanzil')} (رخصة ${L('CC BY 3.0')}).</p>
       <h4>التلاوات</h4>
       <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تحمّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
-      <p>تلاوة الشيخ ماهر المعيقلي من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم (القارئ رقم 102): «المصحف المجود» برواية حفص عن عاصم (رقم 133) مع توقيت الآيات المنشور في واجهة الموقع، فيعمل معه تتبع الآيات والتكرار والتلاوة المتصلة؛ و«مرتل» (رقم 102) للسورة كاملة فقط لأن المصدر لا ينشر توقيت آياته.</p>
-      <p>تلاوة الشيخ بدر التركي (رواية حفص عن عاصم، مرتّل) من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم، القارئ رقم 254. وينص موقع MP3Quran على أن حقوق مواده متاحة للجميع، ويأذن لأي زائر أو مطور باستخدام روابطه: ${L('<a href="https://www.mp3quran.net/privacy-en.html" target="_blank" rel="noopener">mp3quran.net/privacy-en.html</a>')}. المصدر لا ينشر توقيت الآيات لهذه التلاوة، فتُشغَّل السورة كاملة دون تتبع الآيات.</p>
+      <p>تلاوة الشيخ ماهر المعيقلي من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم (القارئ رقم 102): «المصحف المجود» برواية حفص عن عاصم (رقم 133) مع توقيت الآيات المنشور في واجهة الموقع، فيعمل معه تتبع الآيات والتكرار والتلاوة المتصلة؛ و«مرتل» (رقم 102)، ولأن المصدر لا ينشر توقيت آياته فقد ولّدنا التوقيت آليًا من ملفات السور نفسها بمواءمة نص الآيات مع الصوت بنموذج تعرّف كلام عربي مفتوح المصدر، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
+      <p>تلاوة الشيخ بدر التركي (رواية حفص عن عاصم، مرتّل) من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم، القارئ رقم 254. وينص موقع MP3Quran على أن حقوق مواده متاحة للجميع، ويأذن لأي زائر أو مطور باستخدام روابطه: ${L('<a href="https://www.mp3quran.net/privacy-en.html" target="_blank" rel="noopener">mp3quran.net/privacy-en.html</a>')}. المصدر لا ينشر توقيت الآيات لهذه التلاوة، فولّدناه آليًا من ملفات السور نفسها بالطريقة ذاتها، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
@@ -2208,7 +2208,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26o';
+  window.__BUILD = '26p';
   window.__app = { snk: SNK, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
