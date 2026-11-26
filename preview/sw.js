@@ -2,10 +2,11 @@
  * - واجهة التطبيق وبيانات مواضع الآيات: تُخزن للعمل بدون إنترنت.
  * - صور صفحات المصحف (ملفات المجمع الرسمية، مسموح استخدامها في البرامج والمواقع): تُخزن دائمًا بعد أول فتح.
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
- * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
+ * - ملفات التلاوة: بث مباشر، إلا السور التي يحمّلها المستخدم بطلبه للاستماع بدون إنترنت
+ *   (كاش mushaf-preview-audio-<القارئ>، لا يُحذف عند تحديث الإصدار، ويُحذف متى حذفها المستخدم).
  */
-const SHELL = 'mushaf-preview-shell-v26h';
-const V = '26h';   // يطابق ?v= في index.html
+const SHELL = 'mushaf-preview-shell-v26i';
+const V = '26i';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-preview-tafsir-v1';
 const PAGES = 'mushaf-preview-pages-v2';
 const DATA = 'mushaf-preview-data-v3';
@@ -21,7 +22,7 @@ self.addEventListener('activate', e => {
     /* نمس فقط كاشات المعاينة — لا نحذف كاش النسخة الحيّة أبدًا */
     const keep = [SHELL, PAGES, DATA, TAFSIR];
     for (const k of await caches.keys()) {
-      if (!k.startsWith('mushaf-preview-')) continue;
+      if (!k.startsWith('mushaf-preview-') || k.startsWith(AUDIO)) continue;   // التحميلات تبقى
       if (!keep.includes(k)) await caches.delete(k);
     }
     await purge();
@@ -39,9 +40,36 @@ async function stamp(res) {
   const h = new Headers(res.headers); h.set('x-sw-time', String(Date.now()));
   return new Response(await res.clone().blob(), { status: res.status, statusText: res.statusText, headers: h });
 }
+/* السور المحمّلة: تُقدَّم من التخزين أولًا، مع دعم طلبات المقاطع (Range) التي يحتاجها مشغّل Safari */
+const AUDIO = 'mushaf-preview-audio-';
+let DLSET = new Set();
+async function loadSet() {
+  const s = new Set();
+  for (const k of await caches.keys()) {
+    if (!k.startsWith(AUDIO)) continue;
+    for (const r of await (await caches.open(k)).keys()) if (/\.mp3(\?|$)/.test(r.url)) s.add(r.url);
+  }
+  DLSET = s;
+}
+const setReady = loadSet().catch(() => {});
+self.addEventListener('message', e => { if (e.data && e.data.type === 'dl-changed') e.waitUntil(loadSet().catch(() => {})); });
+async function audioHit(req) {
+  let r = null;
+  for (const k of await caches.keys()) { if (!k.startsWith(AUDIO)) continue; r = await (await caches.open(k)).match(req.url); if (r) break; }
+  if (!r) return fetch(req);
+  const range = req.headers.get('range');
+  if (!range) return r;
+  const b = await r.blob(), n = b.size, m = /bytes=(\d*)-(\d*)/.exec(range) || [];
+  let a = m[1] ? +m[1] : 0, z = m[2] ? +m[2] : n - 1;
+  if (!m[1] && m[2]) { a = Math.max(0, n - +m[2]); z = n - 1; }
+  z = Math.min(z, n - 1);
+  if (a > z) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${n}` } });
+  return new Response(b.slice(a, z + 1), { status: 206, headers: { 'Content-Type': 'audio/mpeg', 'Content-Range': `bytes ${a}-${z}/${n}`, 'Content-Length': String(z - a + 1), 'Accept-Ranges': 'bytes' } });
+}
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);
+  if (DLSET.has(req.url)) { e.respondWith(audioHit(req)); return; }
   if (u.origin === location.origin && u.pathname.includes('/tafsir/')) {
     // التفسير: يُحمَّل لكل سورة عند أول فتح ثم يبقى بدون إنترنت
     e.respondWith((async () => {

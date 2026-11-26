@@ -607,10 +607,12 @@
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
       AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
+      `<label class="lbl">التحميلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
        <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '') + creditHTML(), 'settings');
     if (window.CLOUD) CLOUD.prep();
+    dlBox();
   }
   /* ---------- الأشرطة ---------- */
   function navOn(k) { $$('[data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === (k || 'mushaf'))); $$('[data-nav="tasmee"]').forEach(b => b.setAttribute('aria-pressed', String(k === 'tasmee'))); }
@@ -648,6 +650,9 @@
     const sp = e.target.closest('#sPaper [data-paper]');
     if (sp) { const k = sp.dataset.paper; if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
+    const dx = e.target.closest('.dlx');
+    if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (confirm('حذف تحميل سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + '؟')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
+    if (e.target.closest('#dlAll')) { if (confirm('حذف كل السور المحمّلة لكل القراء؟')) { await AU.dl.removeAll(); toast('حُذفت كل التحميلات.'); dlBox(); } return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
     const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openSettings(); return; }
     const tb = e.target.closest('.hubToday [data-act]');
@@ -1027,8 +1032,11 @@
     const L = $('#ixList');
     if (kind === 's') {
       // الصف يفتح السورة للقراءة، وزر التشغيل المنفصل يشغّلها كاملة
-      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
-      ixPaint();
+      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixdl" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تحميل سورة ${c.name_arabic}">${IXI.dl}</button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
+      dlRid = ST.get().reciter;
+      L.insertAdjacentHTML('afterbegin', `<div class="ixrc"><label for="ixRec">تحميل السور بصوت</label><select id="ixRec">${AU.RECITERS.map(r => `<option value="${r.id}"${r.id === dlRid ? ' selected' : ''}>${r.name}${r.style !== 'مرتّل' ? ' (' + r.style + ')' : ''}</option>`).join('')}</select></div>`);
+      $('#ixRec').onchange = e => { dlRid = +e.target.value; dlRefresh(); };
+      ixPaint(); dlRefresh();
     } else {
       if (!juzs) juzs = await QD.juzStarts();
       L.innerHTML = juzs.map(j => `<button class="li" data-k="${j.k}"><span class="n">${ar(j.n)}</span><span class="m"><b>الجزء ${ar(j.n)}</b><small>يبدأ من ${keyLabel(j.k)}</small></span></button>`).join('');
@@ -1036,6 +1044,8 @@
   }
   $('#sh-index .seg').onclick = e => { const b = e.target.closest('button'); if (b) openIndex(b.dataset.ix); };
   $('#ixList').onclick = async e => {
+    const db = e.target.closest('.ixdl');
+    if (db) { e.stopPropagation(); return dlTap(+db.dataset.s, db.dataset.name); }
     const pb = e.target.closest('.ixplay');
     if (pb) {
       e.stopPropagation();
@@ -1043,10 +1053,17 @@
       if (ixPlaying(sNo)) { AU.el.paused ? AU.resume() : AU.pause(); ixPaint(); return; }
       AU.prime();   // داخل اللمسة نفسها: يفتح عنصر الصوت على iOS قبل جلب الروابط
       const c = chapters[sNo - 1];
+      // بدون إنترنت: نشغّل المحمّل فقط (بصوت القارئ الحالي، أو بصوت قارئ آخر حمّلت له هذه السورة)
+      let rid = ST.get().reciter;
+      if (navigator.onLine === false && !(await AU.dl.has(rid, sNo))) {
+        let alt = null; for (const r of AU.RECITERS) if (await AU.dl.has(r.id, sNo)) { alt = r; break; }
+        if (!alt) { toast('لا يوجد اتصال بالإنترنت، وسورة ' + c.name_arabic + ' غير محمّلة. حمّلها بزر التحميل لتعمل بدون إنترنت.', 4200); return; }
+        rid = alt.id; toast('تُشغَّل بصوت ' + alt.name + '، فهي المحمّلة لهذه السورة.', 3200);
+      }
       closeSheets(); if (sel) clearSel();
       goPage(c.pages[0], true, false);
       const keys = []; for (let i = 1; i <= c.verses_count; i++) keys.push(sNo + ':' + i);
-      AU.play(keys, ST.get().reciter, 1, 'range', { kind: 'surah' });
+      AU.play(keys, rid, 1, 'range', { kind: 'surah' });
       return;
     }
     const b = e.target.closest('.ixo, .li'); if (!b) return;
@@ -1055,8 +1072,64 @@
   $('#btnIndex').onclick = () => openIndex('s');
   const IXI = {
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8v10.4a.8.8 0 001.2.7l8.2-5.2a.8.8 0 000-1.4l-8.2-5.2a.8.8 0 00-1.2.7z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.5v11M15.5 6.5v11"/></svg>'
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.5v11M15.5 6.5v11"/></svg>',
+    dl: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5v10.5M7.5 10.8l4.5 4.5 4.5-4.5M5.5 19.5h13"/></svg>',
+    done: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.6 3.6 7.4-7.6"/></svg>',
+    run: (f) => `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="rg0" cx="12" cy="12" r="9"/><circle class="rg1" cx="12" cy="12" r="9" pathLength="100" stroke-dasharray="${Math.max(2, f * 100).toFixed(1)} 100" transform="rotate(-90 12 12)"/><rect class="rgs" x="9.2" y="9.2" width="5.6" height="5.6" rx="1.2"/></svg>`
   };
+  /* ---------- تحميل السور للاستماع بدون إنترنت ---------- */
+  let dlRid = 6, dlStat = new Map();
+  const MB = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' جيجابايت' : (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' ميجابايت';
+  async function dlRefresh() { dlStat = await AU.dl.status(dlRid); dlPaint(); }
+  function dlPaint(only) {
+    $$('#ixList .ixdl').forEach(b => {
+      const sNo = +b.dataset.s; if (only && only !== sNo) return;
+      const j = AU.dl.job(dlRid, sNo), stt = dlStat.get(sNo), nm = b.dataset.name;
+      const em = b.parentNode.querySelector('.ixo small');
+      let ic = 'dl', lab = 'تحميل سورة ' + nm, note = '';
+      if (j) { const f = j.total ? j.got / j.total : 0; ic = 'run'; lab = 'إلغاء تحميل سورة ' + nm; note = j.state === 'queued' ? 'في الانتظار' : j.total ? `جارٍ التحميل ${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التحميل'; b.innerHTML = IXI.run(f); b.dataset.ic = 'run'; }
+      else if (stt === 'done') { ic = 'done'; lab = 'سورة ' + nm + ' محمّلة، اضغط لحذفها'; note = 'محمّلة'; }
+      else if (stt === 'part') { lab = 'متابعة تحميل سورة ' + nm; note = 'تحميل لم يكتمل'; }
+      if (ic !== 'run' && b.dataset.ic !== ic) { b.innerHTML = IXI[ic]; b.dataset.ic = ic; }
+      b.classList.toggle('done', ic === 'done'); b.classList.toggle('run', ic === 'run');
+      b.setAttribute('aria-label', lab);
+      if (em) { let t = em.querySelector('.ixst'); if (!t) { t = document.createElement('span'); t.className = 'ixst'; em.appendChild(t); } t.textContent = note ? ' · ' + note : ''; t.classList.toggle('ok', ic === 'done'); }
+    });
+  }
+  async function dlTap(sNo, nm) {
+    const rid = dlRid, r = AU.reciter(rid);
+    if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغي تحميل سورة ' + nm + '.'); return; }
+    if (dlStat.get(sNo) === 'done') {
+      if (!confirm('حذف تحميل سورة ' + nm + ' بصوت ' + r.name + '؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.')) return;
+      await AU.dl.remove(rid, sNo); toast('حُذف تحميل سورة ' + nm + '.'); return;
+    }
+    if (navigator.onLine === false) { toast('لا يوجد اتصال بالإنترنت. التحميل يحتاج إلى اتصال.'); return; }
+    AU.dl.start(rid, sNo);
+  }
+  AU.dl.on(async (rid, sNo, err) => {
+    if (err) toast(err, 4200);
+    if (!document.querySelector('#ixList .ixdl')) { if (document.getElementById('dlBox')) dlBox(); return; }
+    if (rid === undefined || rid === dlRid) {
+      const j = sNo && AU.dl.job(rid, sNo);
+      if (j && j.state === 'run' && j.got) dlPaint(sNo);   // تحديث التقدم فقط
+      else await dlRefresh();
+    }
+    if (rid !== undefined && !AU.dl.job(rid, sNo) && !err) { const st2 = (await AU.dl.status(rid)).get(sNo); if (st2 === 'done') toast('اكتمل تحميل سورة ' + chapters[sNo - 1].name_arabic + '، وتعمل الآن بدون إنترنت.', 3600); }
+  });
+  /* قسم «التحميلات» في الإعدادات */
+  async function dlBox() {
+    const box = $('#dlBox'); if (!box) return;
+    const items = await AU.dl.list(), est = await AU.dl.estimate(), per = await AU.dl.persisted();
+    if (!$('#dlBox')) return;
+    const tot = items.reduce((a, x) => a + (x.bytes || 0), 0);
+    const by = new Map(); items.forEach(x => { if (!by.has(x.rid)) by.set(x.rid, []); by.get(x.rid).push(x); });
+    box.innerHTML = (items.length ? [...by].map(([rid, xs]) => { const r = AU.reciter(rid); return `<div class="dlg"><b>${r.name}<small> · ${r.style}</small></b>${xs.map(x => `<div class="dlr"><span>سورة ${chapters[x.s - 1].name_arabic}</span><small>${MB(x.bytes || 0)}</small><button class="dlx" data-rid="${rid}" data-s="${x.s}" aria-label="حذف تحميل سورة ${chapters[x.s - 1].name_arabic}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('')}</div>`; }).join('') +
+      `<p class="muted sm">المجموع: ${items.length === 1 ? 'سورة واحدة' : items.length === 2 ? 'سورتان' : ar(items.length) + (items.length < 11 ? ' سور' : ' سورة')} · ${MB(tot)}</p>`
+      : `<p class="muted sm">لا توجد سور محمّلة. اضغط سهم التحميل بجانب زر التشغيل في الفهرس لتعمل السورة بدون إنترنت.</p>`) +
+      (est && est.quota ? `<p class="muted sm">مساحة التطبيق المستخدمة ${MB(est.usage || 0)} من نحو ${MB(est.quota)} متاحة له على هذا الجهاز.${per ? ' التخزين محمي من الحذف التلقائي.' : ''}</p>` : '') +
+      (items.length ? `<button class="btn full" id="dlAll">حذف كل التحميلات</button>` : '');
+  }
+
   function ixPlaying(sNo) { const st = AU.state(); return !!(st && st.kind === 'surah' && +st.keys[0].split(':')[0] === sNo); }
   function ixPaint() {
     $$('#ixList .ixplay').forEach(b => {
@@ -1204,7 +1277,7 @@
       <p>مواضع الآيات طبقة شفافة فوق الصورة، من مشروع ${L('quran-ws/quran-svg')} المستخرج من ملفات المجمع (رخصة ${L('CC BY 4.0')}). التظليل لا يغيّر صورة المصحف.</p>
       <p>أسماء السور والأجزاء والأحزاب من بيانات ${L('Tanzil')} (رخصة ${L('CC BY 3.0')}).</p>
       <h4>التلاوات</h4>
-      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث فقط، بدون تخزين أو إعادة نشر.</p>
+      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تحمّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
@@ -1987,7 +2060,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26h';
+  window.__BUILD = '26i';
   window.__app = { listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

@@ -488,3 +488,26 @@ html.dark .credit .credit-note{color:#9a9a9a}
 html.dark .credit-social a{background:#2c2e2d;color:#b0aea9}
 .sheet .credit{margin-top:18px;padding:14px 8px 8px;border-top:1px solid var(--barline,#eee)}
 html.dark .sheet .credit{border-color:#2c2e2d}
+/* تحميل السور: سهم بجانب زر التشغيل (بلا إطار، ليتميز عن زر التشغيل الدائري) */
+.ixdl{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:transparent;border:0;color:var(--ic,#8C8A86);position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.ixdl::before{content:"";position:absolute;inset:-4px}
+.ixdl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ixdl.done,.ixdl.run{color:var(--acc,#9A6B34)}
+.ixdl.done{background:rgba(162,111,42,.1);background:color-mix(in srgb,var(--acc,#9A6B34) 12%,transparent)}
+.ixdl.run svg{width:25px;height:25px}
+.ixdl .rg0{opacity:.22}
+.ixdl .rgs{fill:currentColor;stroke:none}
+.ixst.ok{color:var(--acc,#9A6B34)}
+.ixrc{display:flex;align-items:center;gap:8px;padding:2px 4px 10px;font-size:.84rem;color:#555}
+.ixrc label{white-space:nowrap}
+.ixrc select{flex:1;min-width:0;font:inherit;padding:7px 10px;border-radius:10px;border:1px solid var(--barline);background:transparent;color:inherit;-webkit-appearance:none;appearance:none}
+html.dark .ixrc{color:#aaa}
+html.dark .ixrc select{background:#202121}
+.dlg{margin:2px 0 8px}
+.dlg>b{display:block;font-size:.9rem;margin:6px 0 2px}
+.dlg>b small{font-weight:400;opacity:.65}
+.dlr{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--barline)}
+.dlr span{flex:1}
+.dlr small{opacity:.65;font-size:.8rem}
+.dlx{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;color:var(--ic,#8C8A86);background:none;border:0}
+.dlx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
