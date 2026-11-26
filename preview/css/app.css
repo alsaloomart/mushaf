@@ -521,12 +521,15 @@ html.dark .ixrc select{background:#202121}
 .dlx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 /* تظليل الآية: مستطيل لطيف مستدير الزوايا على كلمات الآية فقط، شفافية 10% بلون الثيم */
 svg.tx .hl{pointer-events:none;mix-blend-mode:multiply}
+html{--hlc:#E39B0B}
 svg.tx .hl rect{fill:var(--hlc,var(--acc,#A26F2A));fill-opacity:0;transition:fill-opacity .18s}
 svg.tx .hl rect.td{fill-opacity:.05}
-svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.15}
+svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.25}
 /* الليلي والزجاجي: الصفحة معكوسة، فنعكس طبقة التظليل عكسًا مقابلًا ليظهر لونها الحقيقي (ذهبي فاتح)، بنسبة أعلى ليُرى بوضوح والحروف واضحة */
 html.dark svg.tx .hl,html.dark svg.tx .snk{filter:invert(1) hue-rotate(180deg)}
-html.dark svg.tx .hl rect.sel,html.dark svg.tx .hl rect.play{fill-opacity:.26}
+html.dark svg.tx .hl rect.sel,html.dark svg.tx .hl rect.play{fill-opacity:.38}
+/* التظليل خلف الحروف: دمج بالضرب فيبقى الحبر بكامل تباينه */
+html.dark svg.tx .hl,html.dark svg.tx .snk{mix-blend-mode:multiply}
 svg.tx.hasHL .hot path.sel,svg.tx.hasHL .hot path.play,svg.tx.hasHL .hot path.td{fill:transparent}
 .leaf.turning svg.tx .hl rect{transition:none}
 body.tm svg.tx .hl rect{fill-opacity:0}
