@@ -28,7 +28,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://api.quran.com" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=26j">
+<link rel="stylesheet" href="css/app.css?v=26l">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -44,7 +44,7 @@
 </main>
 
 <!-- الشريط العلوي: الفهرس، وردي، ملاحظاتي، الإعدادات -->
-<nav id="topbar" class="tbar"><button data-nav="index" aria-label="الفهرس"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>الفهرس</span></button><button data-nav="wird" aria-label="وردي"><svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V19"/></svg><span>وردي</span></button><button data-nav="notes" aria-label="ملاحظاتي"><svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>ملاحظاتي</span></button><button data-nav="settings" aria-label="الإعدادات"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>الإعدادات</span></button></nav>
+<nav id="topbar" class="tbar"><button data-nav="index" aria-label="الفهرس"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>الفهرس</span></button><button data-nav="wird" aria-label="وردي"><svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V19"/></svg><span>وردي</span></button><button id="tbNote" class="tbnote" aria-label="ملاحظة جديدة على هذه الصفحة"><svg viewBox="0 0 24 24"><path d="M14 4H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V9z"/><path d="M14 4v5h5"/><path d="M12 11.5v5M9.5 14h5"/></svg><span>ملاحظة</span></button><button data-nav="notes" aria-label="ملاحظاتي"><svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>ملاحظاتي</span></button><button data-nav="settings" aria-label="الإعدادات"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>الإعدادات</span></button></nav>
 <!-- خط الانتقال السريع بين الصفحات -->
 <div id="qj" class="qj"><input type="range" id="qjR" min="1" max="604" step="1" value="1" dir="rtl" aria-label="الانتقال السريع إلى صفحة"><div id="qjB" class="qjb" hidden></div></div>
 <!-- الشريط السفلي -->
@@ -186,18 +186,18 @@
 <div id="toast" class="toast" role="status"></div>
 <div id="scrim" class="scrim" hidden></div>
 
-<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26j';try{
+<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26l';try{
 if('serviceWorker' in navigator){var had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had||done||sessionStorage.getItem('pv-cc')===V)return;done=true;sessionStorage.setItem('pv-cc',V);location.reload();});
 navigator.serviceWorker.getRegistration('/mushaf/preview/').then(function(r){if(r)r.update();}).catch(function(){});}
 addEventListener('load',function(){setTimeout(function(){if(window.__BUILD===V||sessionStorage.getItem('pv-fix')===V)return;sessionStorage.setItem('pv-fix',V);
 var a=navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(function(r){return r.scope.indexOf('/mushaf/preview/')>=0;}).map(function(r){return r.unregister();}));}):Promise.resolve();
 var b=window.caches?caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mushaf-preview-')===0;}).map(function(k){return caches.delete(k);}));}):Promise.resolve();
 Promise.all([a,b]).catch(function(){}).then(function(){location.reload();});},2000);});}catch(e){}})();</script>
-<script src="js/quran-data.js?v=26j"></script>
-<script src="js/audio.js?v=26j"></script>
-<script src="js/store.js?v=26j"></script>
-<script src="js/tmatch.js?v=26j"></script>
-<script src="js/app.js?v=26j"></script>
-<script src="js/cloud.js?v=26j"></script>
+<script src="js/quran-data.js?v=26l"></script>
+<script src="js/audio.js?v=26l"></script>
+<script src="js/store.js?v=26l"></script>
+<script src="js/tmatch.js?v=26l"></script>
+<script src="js/app.js?v=26l"></script>
+<script src="js/cloud.js?v=26l"></script>
 </body>
 </html>

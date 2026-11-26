@@ -1,6 +1,8 @@
 [hidden]{display:none!important}
 @font-face{font-family:'Thmanyah Sans';src:url(../fonts/thmanyah-sans-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Thmanyah Sans';src:url(../fonts/thmanyah-sans-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url(../fonts/thmanyah-sans-Light.woff2) format('woff2');font-weight:300;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url(../fonts/thmanyah-sans-Medium.woff2) format('woff2');font-weight:500;font-display:swap}
 @font-face{font-family:'Thmanyah Serif Display';src:url(../fonts/thmanyah-serif-display-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
 :root{
   --gold:#F2C230;--gold-d:#B8901A;--brown:#8A6A2E;--ink:#1F2120;--gray:#EAEAEA;--paper:#FFFBF7;
@@ -33,9 +35,9 @@ svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block;stroke:none;over
 .pf .hz{display:none}
 .hot{mix-blend-mode:multiply}
 .hot path{fill:transparent;stroke:none;pointer-events:all;cursor:pointer;transition:fill .15s}
-.hot path.td{fill:rgba(214,178,110,.14)}
-.hot path.sel{fill:rgba(214,178,110,.42)}
-.hot path.play{fill:rgba(232,180,60,.55)}
+.hot path.td{fill:rgba(162,111,42,.05)}
+.hot path.sel{fill:rgba(162,111,42,.10)}
+.hot path.play{fill:rgba(162,111,42,.10)}
 .leaf.turning .hot path{transition:none}
 .shade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(to left,rgba(0,0,0,.22),rgba(255,255,255,.08) 40%,rgba(0,0,0,.10))}
 .fold{position:absolute;top:0;left:0;bottom:0;width:46px;background:linear-gradient(to right,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:4;pointer-events:none;opacity:0;transform:translateX(-48px);will-change:transform,opacity}
@@ -521,3 +523,15 @@ svg.tx.hasHL .hot path.sel,svg.tx.hasHL .hot path.play,svg.tx.hasHL .hot path.td
 body.tm svg.tx .hl rect{fill-opacity:0}
 /* الوضع الليلي: الصفحة تُعكس بفلتر، فنعطي اللون المعكوس ليظهر ذهبيًا خافتًا */
 html.dark{--hlc:#95752F}
+/* تظليل التلاوة المتحرك: شريط ناعم بتدرج، يحل محل تظليل الآية الثابت أثناء التلاوة */
+svg.tx .snk{pointer-events:none;mix-blend-mode:multiply;transition:opacity .35s}
+svg.tx .snk stop{stop-color:var(--hlc,var(--acc,#A26F2A))}
+svg.tx .snk.out{opacity:0}
+svg.tx.snk-on .hl rect.play,svg.tx.snk-on .hl rect.sel{fill-opacity:0}
+body.tm svg.tx .snk{display:none}
+
+/* الشريط العلوي: العناوين خفيفة (300) و«ملاحظة» متوسطة (500) لتبرز قليلًا */
+.tbar button{font-weight:300}
+.tbar button.tbnote{font-weight:500}
+@media (max-width:380px){.tbar button{gap:3px;font-size:11px}.tbar svg{width:16px;height:16px}}
+@media (max-width:340px){.tbar button span{font-size:10px}}

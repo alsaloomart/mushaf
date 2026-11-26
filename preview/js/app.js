@@ -182,15 +182,11 @@
   }
   /* تظليل الآية (المحددة/المتلوّة): مستطيل لطيف بزوايا مستديرة لكل سطر، على حدود كلمات الآية فقط (data/tmk.json)،
    * لا يمتد إلى طرف السطر، ويتوقف قبل فاصلة الآية فلا يلوّنها. في «الصفحة بإطارها» يبقى التظليل القديم. */
-  function hlBuild(el, p, pd) {
-    const svg = el.querySelector('svg.tx'); if (!svg) return;
-    let g = svg.querySelector('g.hl');
-    const data = TMK && TMK[p];
-    if (viewFull() || !data) { if (g) g.remove(); svg.classList.remove('hasHL'); return; }
-    const L = pd.lines, s = LS || 0, D = L ? L.D : 0, p12 = !L;
-    const sc = svg.getBoundingClientRect().width ? tmMap(svg).s : (PW || 390) / pd.crop[2];
-    const rx = Math.max(2.4, Math.min(6, 7 / sc));
-    let out = '';
+  /* قطع الآيات على مسار القراءة لصفحة: لكل سطر من الأعلى، ولكل آية من اليمين إلى اليسار، على حدود كلماتها،
+   * وتتوقف قبل فاصلة الآية. بإحداثيات svg.tx بعد تباعد الأسطر. */
+  function hlPieces(p, pd) {
+    const data = TMK && TMK[p]; if (!data) return null;
+    const L = pd.lines, s = LS || 0, D = L ? L.D : 0, p12 = !L, out = [];
     for (const ln of data) {
       const dy = (!p12 && ln.i != null) ? ln.i * (s - D) : 0;
       for (const sg of ln.segs) {
@@ -203,16 +199,109 @@
         x0 += 0.7; x1 -= 0.7;
         if (x1 - x0 < 4) continue;
         const y0 = sg.length > 3 ? sg[3] - 1.5 : ln.y0 + 3, y1 = sg.length > 3 ? sg[4] + 1.5 : ln.y1 - 3;
-        out += `<rect data-k="${sg[0]}" x="${x0.toFixed(2)}" y="${(y0 + dy).toFixed(2)}" width="${(x1 - x0).toFixed(2)}" height="${(y1 - y0).toFixed(2)}" rx="${rx.toFixed(2)}"/>`;
+        out.push({ k: sg[0], x0, x1, y0: y0 + dy, y1: y1 + dy, m: ln.m || [] });
       }
     }
+    return out;
+  }
+  function hlRx(svg, pd) { const sc = svg.getBoundingClientRect().width ? tmMap(svg).s : (PW || 390) / pd.crop[2]; return Math.max(2.4, Math.min(6, 7 / sc)); }
+  /* تظليل الآية المحددة: مستطيل لطيف مستدير لكل سطر، 10% بلون الثيم. في «الصفحة بإطارها» يبقى التظليل القديم. */
+  function hlBuild(el, p, pd) {
+    const svg = el.querySelector('svg.tx'); if (!svg) return;
+    let g = svg.querySelector('g.hl');
+    if (!TMK && !viewFull()) tmkLoad();   // إن تأخر تحميل الحدود أو فشل نعيد المحاولة
+    const pcs = !viewFull() && hlPieces(p, pd);
+    if (!pcs) { if (g) g.remove(); const k = svg.querySelector('g.snk'); if (k) k.remove(); svg.classList.remove('hasHL'); return; }
+    const rx = hlRx(svg, pd).toFixed(2);
+    const out = pcs.map(c => `<rect data-k="${c.k}" x="${c.x0.toFixed(2)}" y="${c.y0.toFixed(2)}" width="${(c.x1 - c.x0).toFixed(2)}" height="${(c.y1 - c.y0).toFixed(2)}" rx="${rx}"/>`).join('');
+    const hot = svg.querySelector('g.hot');
     if (!g) {
-      g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'hl'); g.setAttribute('aria-hidden', 'true');
-      const hot = svg.querySelector('g.hot'); if (hot && hot.getAttribute('clip-path')) g.setAttribute('clip-path', hot.getAttribute('clip-path'));
+      g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'hl'); g.setAttribute('aria-hidden', 'true');
+      if (hot && hot.getAttribute('clip-path')) g.setAttribute('clip-path', hot.getAttribute('clip-path'));
       svg.insertBefore(g, hot);
+      const k = document.createElementNS(NS, 'g'); k.setAttribute('class', 'snk'); k.setAttribute('aria-hidden', 'true');
+      if (hot && hot.getAttribute('clip-path')) k.setAttribute('clip-path', hot.getAttribute('clip-path'));
+      svg.insertBefore(k, hot);
     }
-    if (g.__sig !== out) { g.innerHTML = out; g.__sig = out; }
+    if (g.__sig !== out) { g.innerHTML = out; g.__sig = out; delete el.__snkPath; }
     svg.classList.add('hasHL'); paint(el);
+    if (SNK.p === p) snkFrame(true);
+  }
+
+  /* ---------- تظليل التلاوة المتحرك: شريط ناعم يمشي مع الصوت على مسار القراءة ----------
+   * الرأس يتقدم بانسياب مع وقت التلاوة (توقيت الآيات، وداخل الآية خطيًا)، بحافة متدرجة ناعمة،
+   * والذيل يلحقه على بعد نحو آيتين ونصف ويمحو من بداية المقطع تدريجيًا، بطرف يتلاشى. */
+  const SNK = { p: 0, raf: 0, H: null, T: null, uReset: 0, lastU: -1, last: 0, el: null };
+  const SNK_TAIL = 2.5, SNK_FH = 9, SNK_A = 0.10;
+  function snkPath(el, p, pd) {
+    if (el.__snkPath) return el.__snkPath;
+    const pcs = hlPieces(p, pd); if (!pcs) return null;
+    let d = 0; const rng = new Map();
+    for (const c of pcs) { c.ds = d; d += c.x1 - c.x0; c.de = d; const r = rng.get(c.k); if (r) r[1] = c.de; else rng.set(c.k, [c.ds, c.de]); }
+    return (el.__snkPath = { pcs, rng, len: d, keys: [...rng.keys()] });
+  }
+  /* موضع التلاوة كرقم متصل: رقم الآية في القائمة + نسبة ما مضى منها */
+  function snkU() {
+    const st = AU.state(); if (!st || st.notime) return null;
+    const i = st.i, k = st.keys[i];
+    let f = 0;
+    if (st.full && st.idx) {
+      const x = st.full.t[st.idx.get(k)], t = AU.el.currentTime * 1000;
+      if (st.want != null) f = 0; else f = (t - x[1]) / Math.max(1, x[2] - x[1]);
+    } else if (AU.el.duration > 0) f = AU.el.currentTime / AU.el.duration;
+    return { u: i + Math.max(0, Math.min(1, f)), st };
+  }
+  function snkDist(P, st, u) {
+    const j = Math.floor(u), fr = u - j, k = st.keys[Math.min(j, st.keys.length - 1)];
+    const r = P.rng.get(k);
+    if (r) return j >= st.keys.length ? r[1] : r[0] + fr * (r[1] - r[0]);
+    // الآية خارج الصفحة: قبلها = بداية الصفحة، بعدها = نهايتها
+    const first = P.keys[0], fi = st.keys.indexOf(first);
+    return (fi >= 0 && j < fi) ? 0 : P.len;
+  }
+  function snkClear(el) { const g = el && el.querySelector('g.snk'); if (g) g.innerHTML = ''; if (el) el.querySelector('svg.tx') && el.querySelector('svg.tx').classList.remove('snk-on'); }
+  function snkFrame(force) {
+    const now = performance.now(), dt = Math.min(0.1, (now - (SNK.last || now)) / 1000); SNK.last = now;
+    const pu = snkU();
+    if (!pu || viewFull() || !TMK || TM.on) { if (SNK.el) snkClear(SNK.el); SNK.el = null; SNK.p = 0; return; }
+    const { u, st } = pu, k = st.keys[st.i];
+    const p = keyPage.get(k) || cur, el = leaves.get(p), pd = pageData.get(p);
+    if (!el || !pd) return;
+    const P = snkPath(el, p, pd); if (!P) return;
+    // صفحة جديدة أو قفزة للخلف (تكرار/رجوع): نبدأ نظيفًا من بداية الآية الحالية
+    if (SNK.p !== p || u < SNK.lastU - 0.02) { if (SNK.el && SNK.el !== el) snkClear(SNK.el); SNK.p = p; SNK.el = el; SNK.uReset = Math.floor(u); SNK.H = null; SNK.T = null; }
+    SNK.lastU = u;
+    const Ht = snkDist(P, st, u), Tt = snkDist(P, st, Math.max(SNK.uReset, u - SNK_TAIL));
+    const ease = (v, t, tau) => (v == null || Math.abs(t - v) > 220) ? t : v + (t - v) * (1 - Math.exp(-dt / tau));
+    SNK.H = force && SNK.H != null ? SNK.H : ease(SNK.H, Ht, 0.12);
+    SNK.T = Math.min(SNK.H, force && SNK.T != null ? SNK.T : ease(SNK.T, Tt, 0.35));
+    const H = SNK.H, T = SNK.T, g = el.querySelector('g.snk'), svg = el.querySelector('svg.tx');
+    if (!g) return;
+    svg.classList.add('snk-on');
+    // الذيل لا يتلاشى قبل أن يبدأ اللحاق (بداية نظيفة من أول الآية)
+    const T0 = snkDist(P, st, SNK.uReset);
+    const FT = Math.max(3, Math.min(90, (H - T) * 0.45, (T - T0) + 3));
+    const alpha = d => SNK_A * Math.max(0, Math.min(1, (H - d) / SNK_FH)) * Math.max(0, Math.min(1, (d - T) / FT));
+    const rx = hlRx(svg, pd).toFixed(2);
+    let defs = '', body = '', n = 0;
+    for (const c of P.pcs) {
+      const a = Math.max(c.ds, T), b = Math.min(c.de, H);
+      if (b - a < 0.6) continue;
+      const xl = c.x1 - (b - c.ds), xr = c.x1 - (a - c.ds), w = xr - xl;
+      // تدرج أفقي: الحافة الأمامية ناعمة، والذيل يتلاشى
+      const pts = [a, b, H - SNK_FH, T + FT].filter(d => d >= a && d <= b).sort((m, q) => q - m);
+      const stops = pts.map(d => `<stop offset="${((b - d) / (b - a)).toFixed(4)}" stop-opacity="${alpha(d).toFixed(4)}"/>`).join('');
+      const id = `snk${p}_${n++}`;
+      defs += `<linearGradient id="${id}" x1="0" x2="1" y1="0" y2="0">${stops}</linearGradient>`;
+      body += `<rect x="${xl.toFixed(2)}" y="${c.y0.toFixed(2)}" width="${w.toFixed(2)}" height="${(c.y1 - c.y0).toFixed(2)}" rx="${Math.min(+rx, w / 2).toFixed(2)}" fill="url(#${id})"/>`;
+    }
+    g.innerHTML = `<defs>${defs}</defs>${body}`;
+  }
+  function snkLoop() { cancelAnimationFrame(SNK.raf); const step = () => { snkFrame(); if (!AU.el.paused && AU.state()) SNK.raf = requestAnimationFrame(step); }; SNK.raf = requestAnimationFrame(step); }
+  function snkState(s) {
+    if (s === 'playing') snkLoop();
+    else if (s === 'paused') { cancelAnimationFrame(SNK.raf); snkFrame(true); }
+    else { cancelAnimationFrame(SNK.raf); const el = SNK.el; SNK.el = null; SNK.p = 0; SNK.H = SNK.T = null; if (el) { const g = el.querySelector('g.snk'); if (g) { g.classList.add('out'); setTimeout(() => { g.classList.remove('out'); if (!SNK.el || SNK.el !== el) snkClear(el); }, 380); } } }
   }
   function fitLeaf(el, p, pd) {
     const L = pd.lines;
@@ -258,7 +347,7 @@
       <svg class="tm-ov" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
       <div class="tm-ui" aria-hidden="true"></div>
       </div>
-      <div class="pf"><span class="pn">${ar(p)}</span><button class="nadd" type="button" aria-label="ملاحظة جديدة على هذه الصفحة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>ملاحظة</span></button></div>
+      <div class="pf"><span class="pn">${ar(p)}</span></div>
       <div class="nmk"></div>
     </div><div class="leaf-back" aria-hidden="true"></div><div class="shade"></div>`;
   }
@@ -540,23 +629,27 @@
   // لا تشغيل تلقائي: التلاوة تبدأ فقط عندما يضغط على آية ويختار «استماع» أو «تكرار».
   AU.on('blocked', () => toast('اضغط زر التشغيل للمتابعة.'));
   $('#aListen').onclick = () => { AU.prime(); listenNow(); };
+  AU.on('note', m => toast(m, 3600));
   AU.on('ayah', async (k, st) => {
-    playingKey = k; paint();
+    // قارئ بلا توقيت آيات: لا تظليل لآية بعينها، والعنوان باسم السورة
+    playingKey = st.notime ? null : k; paint();
     const r = AU.reciter(st.rid);
     const tot = st.count === 0 ? 'بدون حد' : ar(st.count);
+    const title = st.notime ? 'سورة ' + ((chapters[+k.split(':')[0] - 1] || {}).name_arabic || '') : keyLabel(k);
     $('#player').hidden = false;
-    $('#pNow').textContent = keyLabel(k) + ' · ' + r.name;
-    $('#pRep').textContent = st.kind === 'surah' ? `السورة كاملة · ${ar(st.i + 1)} من ${ar(st.keys.length)}` : st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
+    $('#pNow').textContent = title + ' · ' + r.name;
+    $('#pRep').textContent = st.notime ? 'السورة كاملة · بلا تتبع للآيات' : st.kind === 'surah' ? `السورة كاملة · ${ar(st.i + 1)} من ${ar(st.keys.length)}` : st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
     reserve();
     if ('mediaSession' in navigator) {
-      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title: keyLabel(k), artist: r.name, album: 'المصحف الذكي' }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title, artist: r.name, album: 'المصحف الذكي' }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
     }
     const p = await pageOfKey(k);
     // الصفحة تتبع التلاوة؛ إن كان التقليب جاريًا نعيد المحاولة بعد انتهائه
-    const follow = (n) => { const s2 = AU.state(); if (!s2 || playingKey !== k) return; if (p === cur || pageVisible(p)) return; if (busy) { if (n < 10) setTimeout(() => follow(n + 1), 250); return; } goPage(p, true, false); };
+    const follow = (n) => { const s2 = AU.state(); if (!s2 || s2.keys[s2.i] !== k) return; if (p === cur || pageVisible(p)) return; if (busy) { if (n < 10) setTimeout(() => follow(n + 1), 250); return; } goPage(p, true, false); };
     follow(0);
   });
   AU.on('state', (s) => {
+    try { snkState(s); } catch (e) {}
     document.body.classList.toggle('playing', s !== 'stopped');
     if (s === 'stopped') { playingKey = null; $('#player').hidden = true; paint(); }
     if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; } catch (e) {} }
@@ -641,7 +734,7 @@
        <div class="swatches" id="sPaper">${PAPERS.map(([k, n, c]) => `<button data-paper="${k}" class="${k === cur ? 'on' : ''}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
-      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · تلاوة آية آية</small></span></button>`).join('') +
+      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · ${r.notime ? 'السورة كاملة فقط' : 'تلاوة آية آية'}</small></span></button>`).join('') +
       `<label class="lbl">التحميلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
@@ -1105,6 +1198,8 @@
     closeSheets(); goPage(b.dataset.p ? +b.dataset.p : await pageOfKey(b.dataset.k));
   };
   $('#btnIndex').onclick = () => openIndex('s');
+  // «ملاحظة» في الشريط العلوي: ملاحظة جديدة على الصفحة الحالية (كانت بجانب رقم الصفحة)
+  $('#tbNote').onclick = () => { if (busy) return; if (TM.on) tmEnd(); closeSheets(); noteNew(); };
   const IXI = {
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8v10.4a.8.8 0 001.2.7l8.2-5.2a.8.8 0 000-1.4l-8.2-5.2a.8.8 0 00-1.2.7z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.5v11M15.5 6.5v11"/></svg>',
@@ -1313,6 +1408,7 @@
       <p>أسماء السور والأجزاء والأحزاب من بيانات ${L('Tanzil')} (رخصة ${L('CC BY 3.0')}).</p>
       <h4>التلاوات</h4>
       <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تحمّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
+      <p>تلاوة الشيخ بدر التركي (رواية حفص عن عاصم، مرتّل) من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم، القارئ رقم 254. وينص الموقع على أن حقوق مواده متاحة للجميع، ويأذن لأي زائر أو مطور باستخدام روابطه: ${L('<a href="https://www.mp3quran.net/privacy-en.html" target="_blank" rel="noopener">mp3quran.net/privacy-en.html</a>')}. المصدر لا ينشر توقيت الآيات لهذه التلاوة، فتُشغَّل السورة كاملة دون تتبع الآيات.</p>
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
@@ -2096,7 +2192,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26j';
-  window.__app = { listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__BUILD = '26l';
+  window.__app = { snk: SNK, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

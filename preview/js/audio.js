@@ -11,8 +11,12 @@ const AU = (() => {
     { id: 9, name: 'محمد صديق المنشاوي', style: 'مرتّل' },
     { id: 3, name: 'عبد الرحمن السديس', style: 'مرتّل' },
     { id: 10, name: 'سعود الشريم', style: 'مرتّل' },
-    { id: 2, name: 'عبد الباسط عبد الصمد', style: 'مرتّل' }
+    { id: 2, name: 'عبد الباسط عبد الصمد', style: 'مرتّل' },
+    // المكتبة الصوتية للقرآن الكريم (mp3quran.net): القارئ 254 «بدر التركي»، مصحف 254 «حفص عن عاصم - مرتل»، 114 سورة.
+    // ملفات سور كاملة فقط، بلا توقيت آيات منشور ولا ملفات آيات: يُشغَّل «السورة كاملة» من أولها، بلا تتبع للآيات.
+    { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', notime: true }
   ];
+  const NOTIME_MSG = 'تلاوة بدر التركي متاحة للسورة كاملة فقط، بلا تحديد آية أو تكرار، لأن مصدرها لا ينشر توقيت الآيات.';
   const maps = new Map();
   function chapterMap(rid, s) {
     const id = rid + ':' + s;
@@ -50,6 +54,11 @@ const AU = (() => {
   const QDC = 'https://api.quran.com/api/qdc/audio/reciters/';
   const OFF = 'لا يوجد اتصال بالإنترنت، وهذه السورة غير محمّلة لهذا القارئ. حمّلها من الفهرس لتعمل بدون إنترنت.';
   async function fetchSD(rid, s) {
+    const rc = RECITERS.find(x => x.id === rid);
+    if (rc && rc.src === 'mp3quran') {
+      const sd = { url: rc.server + String(s).padStart(3, '0') + '.mp3', t: null };
+      verifySurah(s, sd); return sd;
+    }
     let r = null;
     try { r = await fetch(`${QDC}${rid}/audio_files?chapter=${s}&segments=true`); } catch (e) {}
     if (!r || !r.ok) throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.');
@@ -62,7 +71,7 @@ const AU = (() => {
   /* نتحقق أن الملف للسورة نفسها وأن التوقيتات لآياتها بالترتيب */
   function verifySurah(s, sd) {
     const m = String(sd.url).match(/\/0*(\d+)\.mp3(\?.*)?$/);
-    const okT = sd.t.length > 0 && sd.t.every((x, i) => x[0] === s + ':' + (i + 1) && x[2] >= x[1] && (i === 0 || x[1] >= sd.t[i - 1][1]));
+    const okT = sd.t === null || sd.t.length > 0 && sd.t.every((x, i) => x[0] === s + ':' + (i + 1) && x[2] >= x[1] && (i === 0 || x[1] >= sd.t[i - 1][1]));
     if (!m || +m[1] !== s || !okT) throw new Error('عدم تطابق ملف السورة ' + s + ' — لن يُشغَّل');
     return true;
   }
@@ -74,7 +83,7 @@ const AU = (() => {
         const m = await DL.manifest(rid, s);
         if (m && m.done) {
           // نسخة محمّلة: تعمل فورًا، ومع الاتصال نتأكد مرة في الجلسة أن الملف لم يتغير في المصدر
-          if (navigator.onLine !== false && !checked.has(id)) { checked.add(id); fetchSD(rid, s).then(sd => { if (sd.url !== m.url || sd.t.length !== m.sd.t.length || sd.t.some((x, i) => x[1] !== m.sd.t[i][1])) DL.start(rid, s); }).catch(() => {}); }
+          if (navigator.onLine !== false && !checked.has(id)) { checked.add(id); fetchSD(rid, s).then(sd => { if (sd.url !== m.url || (sd.t && m.sd.t && (sd.t.length !== m.sd.t.length || sd.t.some((x, i) => x[1] !== m.sd.t[i][1])))) DL.start(rid, s); }).catch(() => {}); }
           return m.sd;
         }
         return fetchSD(rid, s);
@@ -223,7 +232,7 @@ const AU = (() => {
   const el = new Audio(); el.preload = 'auto';
   const pre = new Audio(); pre.preload = 'auto';
   let st = null; // {keys, i, rid, count, mode, rep, ayRep}
-  const ev = { ayah: () => {}, state: () => {}, error: () => {}, blocked: () => {} };
+  const ev = { ayah: () => {}, state: () => {}, error: () => {}, blocked: () => {}, note: () => {} };
   function on(name, fn) { ev[name] = fn; }
   async function playAt() {
     if (!st) return;
@@ -273,6 +282,14 @@ const AU = (() => {
    * غير ذلك (آية واحدة غير محمّلة) أو إن تعذّر ملف السورة: ملفات الآيات كما كانت. */
   async function begin(s0) {
     const s = +s0.keys[0].split(':')[0];
+    if (reciter(s0.rid).notime) {
+      if (s0.kind !== 'surah' && !(s0.keys.length > 1 && s0.keys[0] === s + ':1')) { ev.error(new Error(NOTIME_MSG)); stop(); return; }
+      if (s0.keys[0] !== s + ':1') ev.note('بدر التركي: تبدأ التلاوة من أول السورة، فمصدرها بلا توقيت للآيات.');
+      s0.notime = true;
+      const last = +s0.keys[s0.keys.length - 1].split(':')[1];
+      s0.keys = Array.from({ length: last }, (_, i) => s + ':' + (i + 1)); s0.i = 0;
+      try { return await playFull(s0, s); } catch (e) { if (st !== s0) return; ev.error(navigator.onLine === false ? new Error(OFF) : e); stop(); return; }
+    }
     const contig = s0.keys.every((k, i) => k === s + ':' + (+s0.keys[0].split(':')[1] + i));
     let useFull = contig && (s0.kind === 'surah' || s0.keys.length > 1);
     if (contig && !useFull) useFull = await DL.has(s0.rid, s);
@@ -290,21 +307,21 @@ const AU = (() => {
   async function playFull(s0, s) {
     const sd = await surahData(s0.rid, s);
     if (st !== s0) return;
-    const idx = new Map(sd.t.map((x, j) => [x[0], j]));
-    if (!s0.keys.every(k => idx.has(k))) throw new Error('توقيت ناقص');
+    const idx = sd.t ? new Map(sd.t.map((x, j) => [x[0], j])) : null;
+    if (idx && !s0.keys.every(k => idx.has(k))) throw new Error('توقيت ناقص');
     const url = await DL.src(s0.rid, s, sd.url);
     if (st !== s0) return;
     s0.full = sd; s0.idx = idx; s0.lastK = null;
     s0.cur = { key: s0.keys[0], url: sd.url };
     el.src = url;
-    seekTo(0);
+    if (idx) seekTo(0); else { s0.want = null; try { el.currentTime = 0; } catch (e) {} }
     try { await el.play(); }
     catch (e) {
       if (e && e.name === 'NotAllowedError') { ev.ayah(s0.keys[0], s0); s0.lastK = s0.keys[0]; ev.state('paused', s0); ev.blocked(s0); return; }
       throw e;
     }
     if (st !== s0) return;
-    tick();
+    if (!idx) { s0.lastK = s0.keys[0]; ev.ayah(s0.keys[0], s0); } else tick();
     ev.state('playing', s0);
   }
   const T = (i) => st.full.t[st.idx.get(st.keys[i])];
@@ -314,7 +331,7 @@ const AU = (() => {
   }
   el.addEventListener('loadedmetadata', () => { if (st && st.full && st.want != null && Math.abs(el.currentTime - st.want) > 0.4) { try { el.currentTime = st.want; } catch (e) {} } });
   function tick() {
-    if (!st || !st.full) return;
+    if (!st || !st.full || !st.full.t) return;
     const t = el.currentTime * 1000;
     if (st.want != null) { if (Math.abs(t / 1000 - st.want) < 0.6) st.want = null; else return; }
     let c = T(st.i);
@@ -332,6 +349,7 @@ const AU = (() => {
   }
   function boundary() {
     if (!st || !st.full) return;
+    if (!st.full.t) { if (st.onEnd) { const s1 = st; return s1.onEnd(s1); } return stop(); }
     if (st.mode === 'ayah' && (st.count === 0 || st.ayRep + 1 < st.count)) { st.ayRep++; st.lastK = null; seekTo(st.i); return; }
     st.ayRep = 0;
     if (st.i + 1 < st.keys.length) {
@@ -355,13 +373,14 @@ const AU = (() => {
   }
   // التالي/السابق داخل القائمة (أزرار شاشة القفل)
   function next() {
-    if (!(st && st.i + 1 < st.keys.length)) return;
+    if (!(st && st.i + 1 < st.keys.length) || st.notime) return;
     st.i++; st.ayRep = 0;
     if (st.full) { st.lastK = null; seekTo(st.i); clearTimeout(st.bt); ev.ayah(st.keys[st.i], st); st.lastK = st.keys[st.i]; return; }
     return playAt();
   }
   function prev() {
     if (!st) return;
+    if (st.notime) { el.currentTime = 0; return; }
     if (st.full) {
       if (el.currentTime * 1000 - T(st.i)[1] > 3000 || st.i === 0) { seekTo(st.i); return; }
       st.i--; st.ayRep = 0; seekTo(st.i); clearTimeout(st.bt); ev.ayah(st.keys[st.i], st); st.lastK = st.keys[st.i]; return;
