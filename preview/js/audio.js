@@ -60,7 +60,11 @@ const AU = (() => {
       st.cur = { key, url };
       el.src = url;
       try { await el.play(); }
-      catch (e) { if (e && e.name === 'NotAllowedError') { const k2 = st; st = null; ev.blocked(k2); return; } throw e; }
+      catch (e) {
+        // المتصفح منع التشغيل خارج اللمسة: نُبقي الآية جاهزة ويظهر زر التشغيل، ولمسه يشغّل فورًا داخل الإيماءة
+        if (e && e.name === 'NotAllowedError') { ev.ayah(key, st); ev.state('paused', st); ev.blocked(st); return; }
+        throw e;
+      }
       ev.ayah(key, st);
       ev.state('playing', st);
       // تحميل مسبق للآية التالية
@@ -98,8 +102,13 @@ const AU = (() => {
   // التالي/السابق داخل القائمة (أزرار شاشة القفل)
   function next() { if (st && st.i + 1 < st.keys.length) { st.i++; st.ayRep = 0; return playAt(); } }
   function prev() { if (st) { if (el.currentTime > 3 || st.i === 0) { el.currentTime = 0; return; } st.i--; st.ayRep = 0; return playAt(); } }
+  /* يُستدعى تزامنيًا داخل لمسة المستخدم قبل أي انتظار (جلب الروابط): iOS يسمح بعدها لهذا العنصر بالتشغيل */
+  function prime() {
+    if (st && !el.paused) return;
+    try { if (!st) el.src = SILENT; const pr = el.play(); unlocked = true; if (pr) pr.then(() => { if (!st || el.src === SILENT) el.pause(); }).catch(() => {}); } catch (e) {}
+  }
   function pause() { if (st) { el.pause(); ev.state('paused', st); } }
-  function resume() { if (st) { el.play(); ev.state('playing', st); } }
+  function resume() { if (st) { const pr = el.play(); if (pr) pr.catch(() => {}); ev.state('playing', st); } }
   function stop(silent) { el.pause(); el.removeAttribute('src'); const had = st; st = null; if (had && !silent) ev.state('stopped', had); }
   function state() { return st; }
   const reciter = id => RECITERS.find(r => r.id === id) || RECITERS[0];
@@ -109,5 +118,5 @@ const AU = (() => {
     navigator.mediaSession.setActionHandler('stop', () => stop());
     try { navigator.mediaSession.setActionHandler('nexttrack', () => next()); navigator.mediaSession.setActionHandler('previoustrack', () => prev()); } catch (e) {}
   }
-  return { RECITERS, reciter, urlFor, verify, unlock, isUnlocked: () => unlocked, play, pause, resume, stop, next, prev, state, on, el };
+  return { RECITERS, reciter, urlFor, verify, unlock, prime, isUnlocked: () => unlocked, play, pause, resume, stop, next, prev, state, on, el };
 })();

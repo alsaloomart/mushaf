@@ -482,6 +482,7 @@
   /* ---------- الصوت ---------- */
   function startPlay(count = 1, mode = 'range') {
     if (!sel) return;
+    AU.prime();
     AU.play(sel.list.slice(), ST.get().reciter, count, mode, { kind: 'sel' });
   }
   /* «السورة كاملة»: من الآية المحددة (أو أول آية في الصفحة) إلى آخر السورة بلا توقف، والصفحة تتقلب مع التلاوة */
@@ -502,8 +503,8 @@
     if (listenMode() === 'surah') playSurah(sel.a); else startPlay(1, 'range');
   }
   // لا تشغيل تلقائي: التلاوة تبدأ فقط عندما يضغط على آية ويختار «استماع» أو «تكرار».
-  AU.on('blocked', () => toast('تعذّر تشغيل هذه الآية.'));
-  $('#aListen').onclick = () => listenNow();
+  AU.on('blocked', () => toast('اضغط زر التشغيل للمتابعة.'));
+  $('#aListen').onclick = () => { AU.prime(); listenNow(); };
   AU.on('ayah', async (k, st) => {
     playingKey = k; paint();
     const r = AU.reciter(st.rid);
@@ -660,7 +661,7 @@
     if (h === 'repeat') { if (!sel) await selectFirst(); openRepeat(); }
     if (h === 'tasmee') tmStart();
     if (h === 'theme') { $('#btnTheme').click(); openSettings(); }
-    if (h === 'listen') { if (!sel) await selectFirst(); closeSheets(); listenNow(); }
+    if (h === 'listen') { AU.prime(); if (!sel) await selectFirst(); closeSheets(); listenNow(); }
     if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
     if (h === 'more') openMore();
     if (h === 'rem') openRem();
@@ -1040,7 +1041,7 @@
       e.stopPropagation();
       const sNo = +pb.dataset.s, st = AU.state();
       if (ixPlaying(sNo)) { AU.el.paused ? AU.resume() : AU.pause(); ixPaint(); return; }
-      AU.unlock();   // داخل اللمسة نفسها: يفتح عنصر الصوت على iOS قبل جلب الروابط
+      AU.prime();   // داخل اللمسة نفسها: يفتح عنصر الصوت على iOS قبل جلب الروابط
       const c = chapters[sNo - 1];
       closeSheets(); if (sel) clearSel();
       goPage(c.pages[0], true, false);
@@ -1986,6 +1987,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
+  window.__BUILD = '26g';
   window.__app = { listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

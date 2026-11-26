@@ -4,12 +4,13 @@
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
  * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
  */
-const SHELL = 'mushaf-preview-shell-v26f';
+const SHELL = 'mushaf-preview-shell-v26g';
+const V = '26g';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-preview-tafsir-v1';
 const PAGES = 'mushaf-preview-pages-v2';
 const DATA = 'mushaf-preview-data-v3';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
-const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js', 'manifest.json',
+const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', ...['css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js'].map(f => f + '?v=' + V), 'manifest.json',
   'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/tmk.json', 'data/quran-simple-clean.txt',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/thmanyah-sans-Regular.woff2', 'fonts/thmanyah-sans-Bold.woff2', 'fonts/thmanyah-serif-display-Bold.woff2'];
@@ -69,9 +70,12 @@ self.addEventListener('fetch', e => {
       const c = await caches.open(SHELL);
       // الشبكة أولًا (التحديثات تظهر مباشرة)، والنسخة المخزنة بدون إنترنت
       // مع مهلة: إن كانت الشبكة ضعيفة جدًا تُعرض النسخة المخزنة بعد 4 ثوانٍ بدل الانتظار الطويل
-      const netP = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
-      const cached = await c.match(req, { ignoreSearch: true });
-      if (!cached) return (await netP) || (await c.match('index.html')) || Response.error();
+      // no-cache: يتحقق من الخادم دائمًا (لا يأخذ نسخة قديمة من كاش المتصفح)
+      const netP = fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
+      // الملفات تحمل رقم الإصدار (?v=): لا نعرض ملفًا من إصدار آخر بسبب المهلة، فلا تختلط ملفات قديمة بجديدة
+      const nav = req.mode === 'navigate';
+      const cached = await c.match(req, { ignoreSearch: nav });
+      if (!cached) return (await netP) || (await c.match(req, { ignoreSearch: true })) || (await c.match('index.html')) || Response.error();
       return (await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 4000))])) || cached;
     })());
     return;
