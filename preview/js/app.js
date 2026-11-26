@@ -208,7 +208,9 @@
       }
       body = `<defs>${defs}</defs>${st}`;
     } else {
-      body = `${clip}<image href="${img}" x="${full ? 0 : vb[0]}" y="${full ? 0 : vb[1]}" width="${full ? pd.w : vb[2]}" height="${full ? pd.h : vb[3]}" class="pimg" preserveAspectRatio="none"/>`;
+      const im = `<image href="${img}" x="${full ? 0 : vb[0]}" y="${full ? 0 : vb[1]}" width="${full ? pd.w : vb[2]}" height="${full ? pd.h : vb[3]}" class="pimg" preserveAspectRatio="none"/>`;
+      // الصفحتان 1 و2: ورقة الصورة نفسها (#FFFBF7) تُرسم فوق حبر الآيات المخفية فقط، داخل مجموعة تمتزج بالورق مثل الصورة تمامًا
+      body = full ? `${clip}${im}` : `${clip}<g class="p12">${im}<rect class="tm-paper" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#FFFBF7" style="display:none"/></g>`;
     }
     const ss = pd.surahs;
     return `<div class="pg">
@@ -1364,131 +1366,146 @@
     }
     return lines;
   }
+  /* الغطاء الجديد: الحبر نفسه يُخفى بقناع SVG على شرائط الصورة، فيبقى الورق كما هو تمامًا (وفي الليلي يُعكس معه).
+     حدود كل آية وكل ميدالية وخط القاعدة محسوبة مسبقًا من الصور في data/tmk.json. الميداليات لا تُغطّى أبدًا. */
+  let TMK = null, TMKp = null;
+  function tmkLoad() {
+    return TMKp || (TMKp = fetch('data/tmk.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { TMK = j; if (TM.on) tmPaintOverlay(); }).catch(() => { TMKp = null; }));
+  }
+  function tmCut(iv, holes, g) {
+    let out = [iv];
+    for (const h of holes) {
+      const L = h[0] - g, R = h[1] + g, nx = [];
+      for (const [a, b] of out) { if (b <= L || a >= R) nx.push([a, b]); else { if (a < L) nx.push([a, L]); if (b > R) nx.push([R, b]); } }
+      out = nx;
+    }
+    return out;
+  }
+  function tmClearLeaf(el) {
+    el.querySelectorAll('[data-tmm]').forEach(n => n.remove());
+    el.querySelectorAll('svg.tx [mask]').forEach(n => n.removeAttribute('mask'));
+    const pp = el.querySelector('.tm-paper'); if (pp) pp.style.display = 'none';
+    const ov = el.querySelector('svg.tm-ov'); if (ov && ov.firstChild) ov.replaceChildren();
+    const ui = el.querySelector('.tm-ui'); if (ui && ui.firstChild) ui.replaceChildren();
+    const t2 = el.querySelector('svg.tx'); if (t2) t2.__tmSig = '';
+  }
   function tmPaintOverlay(root) {
     const leavesEl = root ? [root] : [...leaves.values()];
+    if (TM.on && !TMK) tmkLoad();
     for (const el of leavesEl) {
-      const ov = el.querySelector('svg.tm-ov');
-      const ui = el.querySelector('.tm-ui');
-      if (!ov) continue;
-      const tx = el.querySelector('svg.tx');
-      if (tx && ov.getAttribute('viewBox') !== tx.getAttribute('viewBox')) ov.setAttribute('viewBox', tx.getAttribute('viewBox') || '');
-      if (!TM.on) { ov.replaceChildren(); if (ui) ui.replaceChildren(); continue; }
-      const p = +el.dataset.p, onPage = p === TM.p;
-      const pd = pageData.get(p);
-      const bands = tmBands(pd);
-      const map = tx ? tmMap(tx) : { vx: 0, vy: 0, s: 1, ox: 0, oy: 0, u: 1 };
-      const gapPx = 8 * map.u;
-      const paths = [...el.querySelectorAll('g.hot path')];
-      const byK = [];
-      const allSegs = [];
-      for (const pa of paths) {
-        const k = pa.dataset.k, fl = pa.classList.contains('fl');
-        const raw = tmSubs(pa.getAttribute('d'));
-        const how = TM.rv.get(k);
-        const masked = onPage && !fl && (!tmVisible(k) || tmAnim.has(k));
-        const nx = onPage && k === TM.keys[TM.i] && !TM.rv.has(k);
-        const subs = tmSplitSubs(raw, bands).map(s => Object.assign(s, { k, how, nx }));
-        const medal = tmMedal(subs);
-        byK.push({ k, subs, medal, how, masked, fl, nx });
-        if (masked) for (const s of subs) allSegs.push(s);
-      }
-      const lines = tmCluster(allSegs);
-      for (let i = 0; i < lines.length; i++) {
-        const prev = lines[i - 1], next = lines[i + 1], L = lines[i];
-        const gapLo = prev ? L.y0 - prev.y1 : 8, gapHi = next ? next.y0 - L.y1 : 8;
-        const padLo = gapLo < 0 ? 0 : Math.min(3.2, Math.max(0, gapLo / 2));
-        const padHi = gapHi < 0 ? 0 : Math.min(3.2, Math.max(0, gapHi / 2));
-        L.fy0 = L.y0 - padLo;
-        L.fy1 = L.y1 + padHi;
-        if (L.segs.some(s => s.yc != null) && L.segs[0].li != null) L.yc = L.segs[0].yc;
-        L.medals = [];
-      }
-      for (const a of byK) {
-        if (!a.medal || !(a.masked || tmAnim.has(a.k))) continue;
-        const L = lines.find(ln => a.medal.li != null ? ln.segs.some(s => s.li === a.medal.li) : (a.medal.cy >= ln.y0 - 1 && a.medal.cy <= ln.y1 + 1));
-        if (L) L.medals.push(a.medal);
-      }
-      let svgHtml = '';
-      let uiHtml = '';
-      const grouped = new Map();
-      for (const a of byK) if (a.masked || tmAnim.has(a.k)) {
-        if (!grouped.has(a.k)) grouped.set(a.k, a);
-      }
-      const durStyle = `--tm-dur:${tmDur()}ms;--tm-line-fade:${tmLineFade()}ms;--tm-text-delay:${tmTextDelay()}ms;--tm-text-dur:${tmTextDur()}ms`;
-      for (const [k, a] of grouped) {
-        if (!a.masked && !tmAnim.has(k)) continue;
-        const coverParts = [];
-        const segsHtml = [];
-        const framesHtml = [];
-        for (const L of lines) {
-          const mine = L.segs.filter(s => s.k === k);
-          if (!mine.length) continue;
-          const merged = tmMergeX(mine);
-          const onOwnMedal = a.medal && (a.medal.li != null ? mine.some(s => s.li === a.medal.li) : (a.medal.cy >= L.y0 - 1 && a.medal.cy <= L.y1 + 1));
-          const ivCover = onOwnMedal ? tmSplitAround(merged, a.medal, 1.0, -2.4) : merged;
-          let ivLine = merged;
-          for (const med of (L.medals || [])) ivLine = tmSplitAround(ivLine, med, gapPx, gapPx);
-          const y0 = L.fy0, y1 = L.fy1, yc = L.yc;
-          const p0 = tmXY(map, 0, L.y0), p1 = tmXY(map, 0, L.y1), pc = tmXY(map, 0, yc);
-          for (const [x0, x1] of ivCover) {
-            if (x1 - x0 < 1.2) continue;
-            coverParts.push(`<rect class="tm-cover-r" x="${x0.toFixed(2)}" y="${y0.toFixed(2)}" width="${(x1 - x0).toFixed(2)}" height="${(y1 - y0).toFixed(2)}"/>`);
-            if (tmAnim.has(k)) {
-              const a0 = tmXY(map, x0, L.y0), a1 = tmXY(map, x1, L.y1);
-              const fl = a0.x - 6, ft = a0.y + 4, fw = (a1.x - a0.x) + 12, fh = (a1.y - a0.y) - 8;
-              if (fw > 8 && fh > 6) framesHtml.push(`<div class="tm-frame" style="left:${fl.toFixed(1)}px;top:${ft.toFixed(1)}px;width:${fw.toFixed(1)}px;height:${fh.toFixed(1)}px"><i class="tm-fd-tr"></i><i class="tm-fd-bl"></i></div>`);
-            }
-          }
-          const clsHow = (a.how === 'skip' || a.how === 'miss') ? ' bad' : '';
-          for (const [x0, x1] of ivLine) {
-            if (x1 - x0 < map.u * 8) continue;
-            const q0 = tmXY(map, x0, yc), q1 = tmXY(map, x1, yc);
-            const left = Math.min(q0.x, q1.x), width = Math.abs(q1.x - q0.x);
-            if (width < 8) continue;
-            let nearL = false, nearR = false;
-            for (const med of (L.medals || [])) {
-              const mR = tmXY(map, med.cx + med.r, yc).x, mL = tmXY(map, med.cx - med.r, yc).x;
-              if (Math.abs(left - mR) < 10) nearL = true;
-              if (Math.abs(left + width - mL) < 10) nearR = true;
-            }
-            const kind = nearL && nearR ? 'tm-seg-both' : nearL ? 'tm-seg-r' : nearR ? 'tm-seg-l' : 'tm-seg-full';
-            const dias = kind === 'tm-seg-both' ? '<i class="tm-dia tm-dia-l"></i><i class="tm-dia tm-dia-r"></i>' : (nearL || nearR) ? '<i class="tm-dia"></i>' : '';
-            segsHtml.push(`<div class="tm-seg ${kind}${clsHow}" data-line="${yc.toFixed(2)}" data-x1="${x0.toFixed(2)}" data-x2="${x1.toFixed(2)}" style="left:${left.toFixed(1)}px;top:${pc.y.toFixed(1)}px;width:${width.toFixed(1)}px">${dias}<i class="tm-bar"></i></div>`);
+      const tx = el.querySelector('svg.tx'), ov = el.querySelector('svg.tm-ov');
+      if (!tx || !ov) continue;
+      if (ov.getAttribute('viewBox') !== tx.getAttribute('viewBox')) ov.setAttribute('viewBox', tx.getAttribute('viewBox') || '');
+      const p = +el.dataset.p, pd = pageData.get(p), data = TMK && TMK[p];
+      if (!TM.on || p !== TM.p || !pd || !data || viewFull()) { if (tx.__tmSig !== '') tmClearLeaf(el); continue; }
+      const flash = new Set([...el.querySelectorAll('g.hot path.fl')].map(x => x.dataset.k));
+      const L = pd.lines, s = LS || 0, D = L ? L.D : 0, p12 = !L;
+      const masked = k => !flash.has(k) && (!tmVisible(k) || tmAnim.has(k));
+      const durStyle = `--tm-dur:${tmWipeDur()}ms;--tm-hl-dur:${Math.round(tmWipeDur() * .55)}ms`;
+      const masks = new Map();   // مفتاح القناع ← محتواه
+      let hl = '';
+      const animOrder = new Map();
+      for (const ln of data) {
+        const segs = ln.segs.filter(sg => masked(sg[0]));
+        if (!segs.length) continue;
+        const key = p12 ? 'p' : 'l' + ln.i;
+        const meds = ln.m;
+        const dy = ln.i != null ? ln.i * (s - D) : 0;
+        let body = masks.get(key) || '';
+        const xs = ln.segs.map(sg => [sg[1], sg[2]]);
+        const minX = Math.min(...xs.map(v => v[0])), maxX = Math.max(...xs.map(v => v[1]));
+        for (const sg of segs) {
+          const k = sg[0];
+          let x0 = sg[1], x1 = sg[2];
+          if (!p12) { if (x0 <= minX + 0.01 && ln.xa != null) x0 = Math.min(x0, ln.xa); if (x1 >= maxX - 0.01 && ln.xb != null) x1 = Math.max(x1, ln.xb); }
+          const y0 = sg.length > 3 ? sg[3] : ln.y0, y1 = sg.length > 3 ? sg[4] : ln.y1;
+          const anim = tmAnim.has(k);
+          let ord = 0;
+          if (anim) { ord = animOrder.get(k) || 0; animOrder.set(k, ord + 1); }
+          const cls = 'tmc' + (anim ? ' tm-out' : '');
+          const st = anim ? ` style="${durStyle};animation-delay:${ord * 90}ms"` : '';
+          body += `<rect class="${cls}" data-k="${tmEscK(k)}" x="${x0.toFixed(2)}" y="${(y0 - 0.5).toFixed(2)}" width="${(x1 - x0).toFixed(2)}" height="${(y1 - y0 + 1).toFixed(2)}" fill="${p12 ? '#fff' : '#000'}"${st}/>`;
+          const how = TM.rv.get(k), bad = how === 'skip' || how === 'miss';
+          for (const [a, b] of tmCut([x0 + 0.6, x1 - 0.6], meds, 2.2)) {
+            if (b - a < 3) continue;
+            const y = (ln.hy + dy).toFixed(2);
+            hl += `<line class="tm-hl${bad ? ' bad' : ''}${anim ? ' tm-out' : ''}" data-k="${tmEscK(k)}" x1="${a.toFixed(2)}" y1="${y}" x2="${b.toFixed(2)}" y2="${y}"${anim ? ` style="${durStyle};animation-delay:${ord * 90}ms"` : ''}/>`;
           }
         }
-        const animCls = tmAnim.has(k) ? ' tm-out' : '';
-        svgHtml += `<g class="tm-ayah${animCls}" data-k="${tmEscK(k)}" style="${durStyle}"><g class="tm-cover">${coverParts.join('')}</g></g>`;
-        uiHtml += `<div class="tm-ayah-ui${animCls}" data-k="${tmEscK(k)}" style="${durStyle}">${segsHtml.join('')}${framesHtml.join('')}</div>`;
+        masks.set(key, body);
       }
-      ov.innerHTML = svgHtml;
-      if (ui) ui.innerHTML = uiHtml;
+      // الميداليات دائمًا مكشوفة: تُرسم فوق الغطاء بلون «اظهر»
+      const sig = [...masks].map(([k, v]) => k + v).join('|') + hl + '@' + s.toFixed(3);
+      if (tx.__tmSig === sig) continue;
+      tx.__tmSig = sig;
+      el.querySelectorAll('[data-tmm]').forEach(n => n.remove());
+      tx.querySelectorAll('[mask]').forEach(n => n.removeAttribute('mask'));
+      const pp = el.querySelector('.tm-paper'); if (pp) pp.style.display = 'none';
+      let defs = tx.querySelector('defs'); if (!defs) { defs = document.createElementNS(NS, 'defs'); tx.prepend(defs); }
+      const vb = (tx.getAttribute('viewBox') || '0 0 1 1').split(/[ ,]+/).map(Number);
+      const big = `x="${vb[0] - 20}" y="${vb[1] - 200}" width="${vb[2] + 40}" height="${vb[3] + 400}"`;
+      let html = '';
+      const medsAll = p12 ? data.flatMap(ln => ln.m) : null;
+      for (const [key, body] of masks) {
+        const id = `tmk${p}_${key}`;
+        let medR = '';
+        const mm = p12 ? medsAll : (data.find(ln => 'l' + ln.i === key) || { m: [] }).m;
+        for (const m of mm) medR += `<ellipse cx="${((m[0] + m[1]) / 2).toFixed(2)}" cy="${((m[2] + m[3]) / 2).toFixed(2)}" rx="${((m[1] - m[0]) / 2 + 0.2).toFixed(2)}" ry="${((m[3] - m[2]) / 2 + 0.2).toFixed(2)}" fill="${p12 ? '#000' : '#fff'}"/>`;
+        html += `<mask id="${id}" data-tmm="1" maskUnits="userSpaceOnUse" ${big}><rect ${big} fill="${p12 ? '#000' : '#fff'}"/>${body}${medR}</mask>`;
+      }
+      defs.insertAdjacentHTML('beforeend', html);
+      for (const key of masks.keys()) {
+        const id = `url(#tmk${p}_${key})`;
+        if (p12) { if (pp) { pp.style.display = ''; pp.setAttribute('mask', id); } }
+        else { const g = tx.querySelectorAll('g.st')[+key.slice(1)]; const im = g && g.querySelector('image'); if (im) im.setAttribute('mask', id); }
+      }
+      ov.innerHTML = hl ? `<g class="tm-hls">${hl}</g>` : '';
     }
   }
+  function tmWipeDur() { return window.__tmShotDur || (tmReduce() ? 200 : 450); }
   function tmClearOverlays() {
-    tmAnim.clear();
-    leaves.forEach(el => {
-      const ov = el.querySelector('svg.tm-ov'); if (ov) ov.replaceChildren();
-      const ui = el.querySelector('.tm-ui'); if (ui) ui.replaceChildren();
-    });
+    tmAnim.clear(); tmAnimT.clear();
+    leaves.forEach(el => tmClearLeaf(el));
+  }
+  // الكشف: الغطاء ينكمش من اليسار إلى اليمين ويتلاشى معًا (~450ms). يُحرَّك بالخصائص نفسها عبر rAF لأن Safari لا يعيد رسم القناع مع حركات CSS داخله
+  const tmAnimT = new Map();
+  let tmRaf = 0;
+  function tmEase(t) { return 1 - Math.pow(1 - t, 3); }
+  function tmAnimFrame() {
+    tmRaf = 0;
+    const now = performance.now(), dur = tmWipeDur();
+    for (const [k, t0] of tmAnimT) {
+      const rs = book.querySelectorAll(`rect.tmc.tm-out[data-k="${tmEscK(k)}"]`);
+      rs.forEach((r, i) => {
+        if (r.__x0 == null) { r.__x0 = +r.getAttribute('x'); r.__w0 = +r.getAttribute('width'); }
+        const t = Math.max(0, Math.min(1, (now - t0 - i * 90) / dur)), e = tmEase(t);
+        r.setAttribute('x', (r.__x0 + r.__w0 * e).toFixed(2));
+        r.setAttribute('width', Math.max(0, r.__w0 * (1 - e)).toFixed(2));
+        r.setAttribute('opacity', (1 - e).toFixed(3));
+      });
+    }
+    if (tmAnimT.size) tmRaf = requestAnimationFrame(tmAnimFrame);
   }
   function tmStartAnim(k) {
     if (!TM.on || !tmVisible(k)) return Promise.resolve();
     if (tmReduce() || window.__tmShotHold) { tmPaintOverlay(); return Promise.resolve(); }
     tmAnim.add(k);
     tmPaintOverlay();
-    const sel = `.tm-ayah[data-k="${tmEscK(k)}"]`;
+    const sel = `rect.tmc.tm-out[data-k="${tmEscK(k)}"]`;
     const gs = [...book.querySelectorAll(sel)];
     if (!gs.length) { tmAnim.delete(k); tmPaintOverlay(); return Promise.resolve(); }
+    tmAnimT.set(k, performance.now());
+    if (!tmRaf) tmRaf = requestAnimationFrame(tmAnimFrame);
     return new Promise(res => {
       let done = false;
       const finish = () => {
         if (done) return; done = true;
+        tmAnimT.delete(k);
         tmAnim.delete(k);
         tmPaintOverlay();
         res();
       };
-      gs.forEach(g => g.addEventListener('animationend', e => { if (e.animationName === 'tmWipe' || e.animationName === 'tmFade' || e.animationName === 'tmFrameIn' || e.animationName === 'tmFadeIn') finish(); }, { once: true }));
-      setTimeout(finish, tmDur() + tmTextDelay() + 40);
+      setTimeout(finish, tmWipeDur() + 90 * Math.max(0, gs.length - 1) + 60);
     });
   }
   async function tmFlush() {

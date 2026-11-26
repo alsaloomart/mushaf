@@ -357,41 +357,28 @@ html.dark .tmst{color:#e8e6e1}
 body.tm .hot{mix-blend-mode:normal}
 body.tm .hot path{fill:transparent}
 body.tm .hot path.rvt{fill:transparent}
-:root{--tm-line:#B08A4E;--tm-line-bad:#C47A3A;--tm-fb:#FFFBF3;--tm-fbd:#C9A66B;--tm-fin:rgba(176,138,78,.28);--tm-sh:rgba(110,82,40,.10);--tm-tx:#3B2E1E}
-html[data-paper=madinah]{--tm-line:#9A6B34;--tm-fb:#FBF7EC;--tm-fbd:#155A3A;--tm-fin:rgba(154,107,52,.45);--tm-sh:rgba(21,90,58,.10);--tm-tx:#1E2A22}
-html.dark{--tm-line:#C9A96A;--tm-fb:#1A1814;--tm-fbd:#8C7444;--tm-fin:rgba(201,169,106,.22);--tm-sh:rgba(0,0,0,.45);--tm-tx:#EDE6D6}
 .txw{flex:1;min-height:0;width:100%;position:relative;display:flex;flex-direction:column}
 .txw svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block}
 svg.tm-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
-svg.tm-ov .tm-cover,svg.tm-ov .tm-cover-r{fill:var(--paper,#FFFBF7);stroke:none;fill-opacity:1}
-svg.tm-ov .tm-ayah.tm-out .tm-cover{animation:tmWipe var(--tm-text-dur,240ms) cubic-bezier(.2,.7,.2,1) var(--tm-text-delay,80ms) both}
-.tm-ui{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:2}
-.tm-seg{position:absolute;height:12px;margin-top:-6px;pointer-events:none}
-.tm-bar{position:absolute;left:0;right:0;top:50%;height:1.5px;transform:translateY(-50%);opacity:.7;
-  background:linear-gradient(to left,transparent 0,var(--tm-line) 28px,var(--tm-line) calc(100% - 28px),transparent 100%)}
-html.dark .tm-bar{opacity:.45}
-.tm-seg-r .tm-bar{background:linear-gradient(to left,transparent 0,var(--tm-line) 28px,var(--tm-line) 100%)}
-.tm-seg-l .tm-bar{background:linear-gradient(to left,var(--tm-line) 0,var(--tm-line) calc(100% - 28px),transparent 100%)}
-.tm-seg-both .tm-bar{background:var(--tm-line)}
-.tm-seg.bad .tm-bar,.tm-seg.bad .tm-dia{--tm-line:var(--tm-line-bad)}
-.tm-dia{position:absolute;top:50%;width:5px;height:5px;background:var(--tm-line);transform:translateY(-50%) rotate(45deg);opacity:1}
-.tm-seg-r .tm-dia,.tm-seg-both .tm-dia-l{left:-2.5px}
-.tm-seg-l .tm-dia,.tm-seg-both .tm-dia-r{right:-2.5px}
-.tm-frame{position:absolute;box-sizing:border-box;border-radius:10px;background:transparent;border:1px solid var(--tm-fbd);
-  box-shadow:inset 0 0 0 3px var(--tm-fb),inset 0 0 0 4px var(--tm-fin),0 4px 14px var(--tm-sh);overflow:visible;pointer-events:none}
-.tm-frame i{position:absolute;width:6px;height:6px;background:var(--tm-fbd);transform:rotate(45deg)}
-.tm-fd-tr{top:-3px;right:14px}
-.tm-fd-bl{bottom:-3px;left:14px}
-.tm-ayah-ui.tm-out .tm-seg{animation:tmFade var(--tm-line-fade,200ms) cubic-bezier(.2,.7,.2,1) forwards}
-.tm-ayah-ui.tm-out .tm-frame{animation:tmFrameIn var(--tm-dur,320ms) cubic-bezier(.2,.7,.2,1) both}
-@keyframes tmWipe{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 0 100%)}}
-@keyframes tmFade{from{opacity:1}to{opacity:0}}
-@keyframes tmFrameIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes tmFadeIn{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){
-  svg.tm-ov .tm-ayah.tm-out .tm-cover{animation:tmFade 200ms ease var(--tm-text-delay,0ms) both}
-  .tm-ayah-ui.tm-out .tm-seg{animation:tmFade 200ms ease forwards}
-  .tm-ayah-ui.tm-out .tm-frame{animation:tmFadeIn 200ms ease both}
+/* التسميع: الحبر المخفي يُزال بقناع على الصورة نفسها فيبقى الورق نظيفًا، وخط شعري هادئ مكان كل سطر يقف عند الميداليات */
+:root{--tm-hair:rgba(96,82,62,.27);--tm-hair-bad:rgba(178,96,58,.55)}
+html[data-paper=madinah]{--tm-hair:rgba(92,86,72,.27)}
+html[data-paper=grey]{--tm-hair:rgba(60,56,52,.32)}
+html[data-paper=blue]{--tm-hair:rgba(60,84,110,.28)}
+html.dark{--tm-hair:rgba(232,226,212,.20);--tm-hair-bad:rgba(226,150,110,.50)}
+svg.tm-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
+svg.tm-ov .tm-hl{stroke:var(--tm-hair);stroke-width:1px;vector-effect:non-scaling-stroke;stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
+svg.tm-ov .tm-hl.bad{stroke:var(--tm-hair-bad);stroke-dasharray:2 3}
+svg.tm-ov .tm-hl.tm-out{animation:tmHlOut var(--tm-hl-dur,250ms) ease-out both}
+.tm-ui{position:absolute;inset:0;pointer-events:none;z-index:2}
+@keyframes tmHlOut{from{opacity:1}to{opacity:0}}
+svg.tx .p12{mix-blend-mode:multiply}
+svg.tx .p12 .pimg{mix-blend-mode:normal}
+html[data-paper=blue] svg.tx .p12{filter:url(#fBlue)}
+html[data-paper=blue] svg.tx .p12 .pimg{filter:none}
+html.darkpage svg.tx .p12{filter:invert(1) hue-rotate(180deg) brightness(.9)}
+html.darkpage svg.tx .p12 .pimg{filter:none}
+html.dark svg.tx .p12{mix-blend-mode:normal;filter:none}
 }
 .tmmode{display:flex;flex:none;height:30px;margin:1px 0 2px;border:1px solid var(--barline);border-radius:9px;overflow:hidden;background:var(--sheet,transparent)}
 .tmmode button{flex:1;height:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:13.5px;touch-action:manipulation;padding:0}
