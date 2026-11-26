@@ -180,9 +180,43 @@
       return 'M' + out.join(' ') + 'Z';
     }).join(' ');
   }
+  /* تظليل الآية (المحددة/المتلوّة): مستطيل لطيف بزوايا مستديرة لكل سطر، على حدود كلمات الآية فقط (data/tmk.json)،
+   * لا يمتد إلى طرف السطر، ويتوقف قبل فاصلة الآية فلا يلوّنها. في «الصفحة بإطارها» يبقى التظليل القديم. */
+  function hlBuild(el, p, pd) {
+    const svg = el.querySelector('svg.tx'); if (!svg) return;
+    let g = svg.querySelector('g.hl');
+    const data = TMK && TMK[p];
+    if (viewFull() || !data) { if (g) g.remove(); svg.classList.remove('hasHL'); return; }
+    const L = pd.lines, s = LS || 0, D = L ? L.D : 0, p12 = !L;
+    const sc = svg.getBoundingClientRect().width ? tmMap(svg).s : (PW || 390) / pd.crop[2];
+    const rx = Math.max(2.4, Math.min(6, 7 / sc));
+    let out = '';
+    for (const ln of data) {
+      const dy = (!p12 && ln.i != null) ? ln.i * (s - D) : 0;
+      for (const sg of ln.segs) {
+        let x0 = sg[1], x1 = sg[2];
+        if (!p12 && ln.xa != null) { x0 = Math.max(x0, ln.xa - 0.5); x1 = Math.min(x1, ln.xb + 0.5); }
+        for (const m of ln.m || []) {
+          if (m[1] <= x0 || m[0] >= x1) continue;
+          if ((m[0] + m[1]) / 2 < (x0 + x1) / 2) x0 = Math.max(x0, m[1] + 1.2); else x1 = Math.min(x1, m[0] - 1.2);
+        }
+        x0 += 0.7; x1 -= 0.7;
+        if (x1 - x0 < 4) continue;
+        const y0 = sg.length > 3 ? sg[3] - 1.5 : ln.y0 + 3, y1 = sg.length > 3 ? sg[4] + 1.5 : ln.y1 - 3;
+        out += `<rect data-k="${sg[0]}" x="${x0.toFixed(2)}" y="${(y0 + dy).toFixed(2)}" width="${(x1 - x0).toFixed(2)}" height="${(y1 - y0).toFixed(2)}" rx="${rx.toFixed(2)}"/>`;
+      }
+    }
+    if (!g) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'hl'); g.setAttribute('aria-hidden', 'true');
+      const hot = svg.querySelector('g.hot'); if (hot && hot.getAttribute('clip-path')) g.setAttribute('clip-path', hot.getAttribute('clip-path'));
+      svg.insertBefore(g, hot);
+    }
+    if (g.__sig !== out) { g.innerHTML = out; g.__sig = out; }
+    svg.classList.add('hasHL'); paint(el);
+  }
   function fitLeaf(el, p, pd) {
     const L = pd.lines;
-    if (viewFull() || !L) { if (TM.on) tmPaintOverlay(el); return; }
+    if (viewFull() || !L) { hlBuild(el, p, pd); if (TM.on) tmPaintOverlay(el); return; }
     if (LS == null) { const m = measureLS(el); if (!m || m.W <= 0) { if (TM.on) tmPaintOverlay(el); return; } const [, , w, h] = pd.crop; LS = Math.max(0, Math.min(14, (m.H / m.W * w - h) / 14)); }
     const s = LS, [x, y, w, h] = pd.crop, svg = el.querySelector('svg.tx');
     svg.setAttribute('viewBox', `${x} ${y} ${w} ${h + 14 * s}`);
@@ -190,6 +224,7 @@
     el.querySelectorAll('g.st').forEach((g, i) => g.setAttribute('transform', `translate(0 ${(i * (s - L.D)).toFixed(3)})`));
     const byK = new Map(pd.ayat.map(a => [a.k, a.d]));
     el.querySelectorAll('g.hot path').forEach(pa => pa.setAttribute('d', shiftPath(byK.get(pa.dataset.k), L.m, s)));
+    hlBuild(el, p, pd);
     if (TM.on) tmPaintOverlay(el);
   }
   function refit() { LS = null; for (const [p, el] of leaves) { const pd = pageData.get(p); if (pd && el.style.display !== 'none') fitLeaf(el, p, pd); } for (const [p, el] of leaves) { const pd = pageData.get(p); if (pd) fitLeaf(el, p, pd); } }
@@ -393,7 +428,7 @@
     } catch (e) { $('#tSub').textContent = 'صفحة ' + ar(p); }
   }
   function paint(root = book) {
-    root.querySelectorAll('.hot path').forEach(s => {
+    root.querySelectorAll('.hot path, .hl rect').forEach(s => {
       const k = s.dataset.k;
       s.classList.toggle('sel', !!(sel && sel.keys.has(k)));
       s.classList.toggle('play', k === playingKey);
@@ -1358,6 +1393,7 @@
     if (!start && t && pl && isPlanDay(pl) && !(await keysBetween(t.a, t.b)).every(ST.isMem)) start = await pageOfKey(t.a);
     if (!start) start = ST.get().lastPage || 1;
     goPage(start);
+    tmkLoad();   // حدود كلمات الآيات للتظليل اللطيف
     if (params.has('wird')) { history.replaceState(null, '', location.pathname); setTimeout(openWird, 300); }
     setTimeout(() => showInstall(false), 1500);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/mushaf/preview/sw.js', { scope: '/mushaf/preview/' }).catch(() => {});
@@ -1500,7 +1536,7 @@
      حدود كل آية وكل ميدالية وخط القاعدة محسوبة مسبقًا من الصور في data/tmk.json. الميداليات لا تُغطّى أبدًا. */
   let TMK = null, TMKp = null;
   function tmkLoad() {
-    return TMKp || (TMKp = fetch('data/tmk.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { TMK = j; if (TM.on) tmPaintOverlay(); }).catch(() => { TMKp = null; }));
+    return TMKp || (TMKp = fetch('data/tmk.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { TMK = j; for (const [p, el] of leaves) { const pd = pageData.get(p); if (pd) hlBuild(el, p, pd); } if (TM.on) tmPaintOverlay(); }).catch(() => { TMKp = null; }));
   }
   function tmCut(iv, holes, g) {
     let out = [iv];
@@ -2060,7 +2096,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26i';
+  window.__BUILD = '26j';
   window.__app = { listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

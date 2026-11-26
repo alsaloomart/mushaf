@@ -511,3 +511,13 @@ html.dark .ixrc select{background:#202121}
 .dlr small{opacity:.65;font-size:.8rem}
 .dlx{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;color:var(--ic,#8C8A86);background:none;border:0}
 .dlx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* تظليل الآية: مستطيل لطيف مستدير الزوايا على كلمات الآية فقط، شفافية 10% بلون الثيم */
+svg.tx .hl{pointer-events:none;mix-blend-mode:multiply}
+svg.tx .hl rect{fill:var(--hlc,var(--acc,#A26F2A));fill-opacity:0;transition:fill-opacity .18s}
+svg.tx .hl rect.td{fill-opacity:.05}
+svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.10}
+svg.tx.hasHL .hot path.sel,svg.tx.hasHL .hot path.play,svg.tx.hasHL .hot path.td{fill:transparent}
+.leaf.turning svg.tx .hl rect{transition:none}
+body.tm svg.tx .hl rect{fill-opacity:0}
+/* الوضع الليلي: الصفحة تُعكس بفلتر، فنعطي اللون المعكوس ليظهر ذهبيًا خافتًا */
+html.dark{--hlc:#95752F}
