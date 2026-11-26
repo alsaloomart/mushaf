@@ -266,6 +266,69 @@
     const first = P.keys[0], fi = st.keys.indexOf(first);
     return (fi >= 0 && j < fi) ? 0 : P.len;
   }
+  /* مزامنة الرأس مع وتيرة القارئ: نربط زمن كل كلمة بموضعها على السطر الذي كُتبت فيه في صفحة المصحف.
+   * data/wl.json: لكل آية [[الصفحة, [عدد حروف كل كلمة في هذا السطر]], ...] بترتيب الأسطر (تخطيط مصحف المدينة كما في Quran Foundation).
+   * توقيت الكلمات: مقاطع Quran Foundation للقراء المتاحين، أو توقيت الكلمات المولّد (ماهر المرتل، بدر التركي)،
+   * وإلا نوزع زمن الآية على كلماتها بعدد الحروف. فيبلغ الرأس نهاية السطر مع آخر كلمة فيه. */
+  let WL = null, wlP = null;
+  function wlLoad() { if (WL || wlP) return; wlP = fetch('data/wl.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(d => { WL = d; }).catch(() => { wlP = null; }); }
+  // أزمنة كلمات الآية [[بداية, نهاية], ...] بزمن ملف الصوت الحالي
+  const AWC = new Map();
+  function ayahWords(st, k) {
+    const g = WL && WL[k]; if (!g) { wlLoad(); return null; }
+    let x0, x1, wt = null, src;
+    if (st.full && st.idx) { const x = st.full.t[st.idx.get(k)]; if (!x) return null; x0 = x[1]; x1 = x[2]; wt = x[3] || null; src = st.full; }
+    else { const d = AU.el.duration; if (!(d > 0)) return null; x0 = 0; x1 = d * 1000; src = AU.el.currentSrc; }
+    const c0 = AWC.get(k); if (c0 && c0.src === src && c0.x1 === x1) return c0;
+    const lets = g.flatMap(z => z[1]);
+    if (!wt || wt.length !== lets.length || wt.some(v => !v)) {
+      const tot = lets.reduce((a, b) => a + b, 0) || 1; let c = 0;
+      wt = lets.map(l => { const a = x0 + (x1 - x0) * c / tot; c += l; return [a, x0 + (x1 - x0) * c / tot]; });
+    }
+    const pg = g.flatMap(z => z[1].map(() => z[0]));
+    const o = { src, x1, wt, pg, g }; if (AWC.size > 400) AWC.clear(); AWC.set(k, o); return o;
+  }
+  // صفحة الكلمة التي يتلوها القارئ الآن (لآية تمتد على صفحتين)
+  function wordPage(st, k) {
+    const W = ayahWords(st, k); if (!W || W.pg[0] === W.pg[W.pg.length - 1]) return 0;
+    if (st.want != null) return W.pg[0];
+    const t = AU.el.currentTime * 1000; let p = W.pg[0];
+    for (let i = 0; i < W.wt.length; i++) { if (W.wt[i][0] <= t) p = W.pg[i]; else break; }
+    return p;
+  }
+  function snkKnots(P, p, st, k) {
+    const W = ayahWords(st, k); if (!W) return null;
+    const g = W.g, wt = W.wt, src = W.src, x1 = W.x1;
+    P.kc = P.kc || new Map();
+    const c0 = P.kc.get(k); if (c0 && c0.src === src && c0.x1 === x1) return c0.kn;
+    const pcs = P.pcs.filter(c => c.k === k); if (!pcs.length) return null;
+    const first = []; let w0 = 0; g.forEach(z => { first.push(w0); w0 += z[1].length; });
+    const gi = []; g.forEach((z, i) => { if (z[0] === p) gi.push(i); });
+    const kn = [];
+    const lay = (wi, ls, ds, de) => {
+      const tot = ls.reduce((a, b) => a + b, 0) || 1; let c = 0;
+      ls.forEach((l, j) => { const a = ds + (de - ds) * c / tot; c += l; const t = wt[wi + j]; kn.push([t[0], a], [t[1], ds + (de - ds) * c / tot]); });
+    };
+    if (gi.length === pcs.length) gi.forEach((i, j) => lay(first[i], g[i][1], pcs[j].ds, pcs[j].de));
+    else { const use = gi.length ? gi : g.map((_, i) => i); lay(first[use[0]], use.flatMap(i => g[i][1]), pcs[0].ds, pcs[pcs.length - 1].de); }
+    for (let i = 1; i < kn.length; i++) { if (kn[i][0] < kn[i - 1][0]) kn[i][0] = kn[i - 1][0]; if (kn[i][1] < kn[i - 1][1]) kn[i][1] = kn[i - 1][1]; }
+    P.kc.set(k, { src, x1, kn });
+    return kn;
+  }
+  function snkHead(P, p, st, u) {
+    const k = st.keys[Math.min(Math.floor(u), st.keys.length - 1)];
+    if (Math.floor(u) < st.keys.length && P.rng.has(k)) {
+      const kn = snkKnots(P, p, st, k);
+      if (kn && kn.length) {
+        if (st.want != null) return kn[0][1];
+        const t = st.full && st.idx ? AU.el.currentTime * 1000 : AU.el.currentTime * 1000;
+        if (t <= kn[0][0]) return kn[0][1];
+        for (let i = 1; i < kn.length; i++) if (t <= kn[i][0]) { const a = kn[i - 1], b = kn[i]; return b[0] > a[0] ? a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]) : b[1]; }
+        return kn[kn.length - 1][1];
+      }
+    }
+    return snkDist(P, st, u);
+  }
   function snkClear(el) { const g = el && el.querySelector('g.snk'); if (g) g.innerHTML = ''; if (el) el.querySelector('svg.tx') && el.querySelector('svg.tx').classList.remove('snk-on'); }
   function snkFrame(force) {
     const now = performance.now(), dt = Math.min(0.1, (now - (SNK.last || now)) / 1000); SNK.last = now;
@@ -273,15 +336,20 @@
     if (!pu || viewFull() || !TMK || TM.on) { if (SNK.el) snkClear(SNK.el); SNK.el = null; SNK.p = 0; return; }
     if (pu.pre) { if (SNK.el) snkClear(SNK.el); SNK.H = null; SNK.T = null; return; }
     const { u, st } = pu, k = st.keys[st.i];
-    const p = keyPage.get(k) || cur, el = leaves.get(p), pd = pageData.get(p);
+    // آية تمتد على صفحتين: الشريط على صفحة الكلمة التي يتلوها القارئ، والصفحة تتقلب معه عند أول كلمة في الصفحة التالية
+    const wp = wordPage(st, k);
+    const p = wp || keyPage.get(k) || cur, el = leaves.get(p), pd = pageData.get(p);
+    if (wp && wp !== cur && !pageVisible(wp) && !busy && !AU.el.paused && SNK.turn !== k + '@' + wp) { SNK.turn = k + '@' + wp; goPage(wp, true, false); }
     if (!el || !pd) return;
     const P = snkPath(el, p, pd); if (!P) return;
     // صفحة جديدة أو قفزة للخلف (تكرار/رجوع): نبدأ نظيفًا من بداية الآية الحالية
     if (SNK.p !== p || u < SNK.lastU - 0.02) { if (SNK.el && SNK.el !== el) snkClear(SNK.el); SNK.p = p; SNK.el = el; SNK.uReset = Math.floor(u); SNK.H = null; SNK.T = null; }
     SNK.lastU = u;
-    const Ht = snkDist(P, st, u);
+    const Ht = snkHead(P, p, st, u);
+    // تنعيم خفيف جدًا (نحو 30ms) يمحو تقطع تحديث وقت الصوت دون أن يتأخر الرأس عن القارئ
     const ease = (v, t, tau) => (v == null || Math.abs(t - v) > 220) ? t : v + (t - v) * (1 - Math.exp(-dt / tau));
-    SNK.H = force && SNK.H != null ? SNK.H : ease(SNK.H, Ht, 0.12);
+    SNK.Ht = Ht;
+    SNK.H = force && SNK.H != null ? SNK.H : ease(SNK.H, Ht, 0.03);
     const H = SNK.H;
     // سطر واحد فقط: الرأس يمشي على السطر، والذيل يلحقه داخل السطر نفسه حتى يلتقيا عند نهايته، ثم يبدأ السطر التالي نظيفًا
     const ln = P.lines.find(l => H >= l.ds - 0.01 && H <= l.de + 0.01) || P.lines.find(l => H < l.ds) || P.lines[P.lines.length - 1];
@@ -675,6 +743,8 @@
     reserve();
   });
   AU.on('error', e => toast(e && e.message && /^[\u0600-\u06FF]/.test(e.message) ? e.message : 'تعذّر تشغيل هذه الآية.'));
+  // شريط تقدّم رفيع في المشغّل (موضع التلاوة في ملف السورة أو الآية)
+  AU.el.addEventListener('timeupdate', () => { const d = AU.el.duration, b = $('#pBar'); if (b) b.style.width = (d > 0 ? Math.min(100, 100 * AU.el.currentTime / d) : 0).toFixed(2) + '%'; });
   $('#pToggle').onclick = () => { const st = AU.state(); if (!st) return; AU.el.paused ? AU.resume() : AU.pause(); };
   $('#pStop').onclick = () => AU.stop();
 
@@ -714,12 +784,37 @@
     openList('التلاوة',
       `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ من أول آية في هذه الصفحة، أو اضغط على آية في الصفحة أولًا.'}</p>` +
       `<div class="seg" id="lMode" role="radiogroup" aria-label="طريقة الاستماع">${[['surah', 'السورة كاملة'], ['ayah', 'الآية أو المقطع']].map(([v, n]) => `<button data-lm="${v}" role="radio" aria-checked="${listenMode() === v}" class="${listenMode() === v ? 'on' : ''}">${n}</button>`).join('')}</div>` +
+      tdlHTML() +
       hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'من الآية المحددة إلى آخر السورة بلا توقف، والصفحة تتقلب مع التلاوة' : 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
       hi('repeat', 'repeat', 'التكرار', 'كرّر الآية أو المقطع بعدد تختاره') +
       hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
+    tdlPaint();
+  }
+  /* «تنزيل السورة» في لوحة التلاوة: اختصار لتحميل السورة الحالية بصوت القارئ الحالي، بنفس منطق سهم الفهرس وحالاته */
+  function tdlSurah() { const pd0 = pageData.get(cur); const k = sel ? sel.list[0] : pd0 && pd0.ayat && pd0.ayat[0] && pd0.ayat[0].k; return k ? +String(k).split(':')[0] : 0; }
+  function tdlHTML() {
+    const sNo = tdlSurah(); if (!sNo) return '';
+    const c = chapters[sNo - 1], r = AU.reciter(ST.get().reciter);
+    return `<button class="li hub tdl" data-h="tdl" data-s="${sNo}" data-rid="${r.id}" data-name="${c.name_arabic}"><span class="n tdlic" data-ic="dl">${IXI.dl}</span><span class="m"><b>تنزيل السورة</b><small>سورة ${c.name_arabic} بصوت ${r.name}، لتعمل بدون إنترنت</small></span></button>`;
+  }
+  async function tdlPaint() {
+    const b = document.querySelector('#hubBody .tdl'); if (!b) return;
+    const sNo = +b.dataset.s, rid = +b.dataset.rid, nm = b.dataset.name, r = AU.reciter(rid);
+    const j = AU.dl.job(rid, sNo);
+    const stt = j ? null : (await AU.dl.status(rid)).get(sNo);
+    if (!b.isConnected) return;
+    const ic = b.querySelector('.tdlic'), sm = b.querySelector('.m small'), bb = b.querySelector('.m b');
+    let k = 'dl', lab = 'تنزيل السورة', sub = `سورة ${nm} بصوت ${r.name}، لتعمل بدون إنترنت`;
+    if (j) { const f = j.total ? j.got / j.total : 0; k = 'run'; lab = 'جارٍ تنزيل السورة'; sub = (j.state === 'queued' ? 'في الانتظار' : j.total ? `${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التحميل') + ' · اضغط للإلغاء'; ic.innerHTML = IXI.run(f); ic.dataset.ic = 'run'; }
+    else if (stt === 'done') { k = 'done'; lab = 'السورة محمّلة'; sub = `سورة ${nm} بصوت ${r.name} تعمل بدون إنترنت · اضغط لحذفها`; }
+    else if (stt === 'part') { sub = 'تحميل لم يكتمل · اضغط للمتابعة'; }
+    if (k !== 'run' && ic.dataset.ic !== k) { ic.innerHTML = IXI[k]; ic.dataset.ic = k; }
+    b.classList.toggle('done', k === 'done'); b.classList.toggle('run', k === 'run');
+    bb.textContent = lab; sm.textContent = sub;
+    b.setAttribute('aria-label', lab + '، ' + sub);
   }
   function openTafsirPanel() { return openTafsir(sel ? sel.list.slice() : null); }
-  const PAPERS = [['madinah', 'مصحف المدينة', '#155A3A'], ['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E']];
+  const PAPERS = [['madinah', 'مصحف المدينة', '#155A3A'], ['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E'], ['glass', 'زجاجي', '#1F2120']];
 
   const SOCIAL = [
     ['x', 'إكس', 'https://x.com/alsaloomart', '<path d="M5 5l14 14M19 5L5 19"/>'],
@@ -742,14 +837,14 @@
   }
 
   function openSettings() {
-    const s = ST.get(), dark = document.documentElement.classList.contains('dark'), cur = dark ? 'night' : (s.paper || 'beige'), rid = s.reciter;
+    const s = ST.get(), dark = document.documentElement.classList.contains('dark'), cur = s.theme === 'glass' ? 'glass' : dark ? 'night' : (s.paper || 'beige'), rid = s.reciter;
     openList('الإعدادات',
       `<div class="sw-row" id="sNightRow" role="presentation"><b>الوضع الليلي</b><button class="switch" id="sNight" role="switch" aria-checked="${dark}" aria-label="الوضع الليلي"></button></div>
        <label class="lbl">لون الصفحة</label>
        <div class="swatches" id="sPaper">${PAPERS.map(([k, n, c]) => `<button data-paper="${k}" class="${k === cur ? 'on' : ''}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
-      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · ${r.notime ? 'السورة كاملة فقط، بلا تظليل للآيات' : 'تتبّع الآيات مع التظليل المتحرك'}</small></span></button>`).join('') +
+      `<div class="rgrid">${AU.RECITERS.map(r => `<button class="rcard${r.id === rid ? ' on' : ''}" data-r="${r.id}" aria-pressed="${r.id === rid}"><span class="rc-h"><b>${r.name}</b>${r.id === rid ? CK : ''}</span><small>${r.style}</small><span class="rbadge${r.notime ? ' off' : ''}">${r.notime ? 'السورة كاملة فقط' : 'تتبّع الآيات مع التظليل المتحرك'}</span></button>`).join('')}</div>` +
       `<label class="lbl">التحميلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
@@ -791,7 +886,7 @@
     const sn = e.target.closest('#sNightRow'); if (sn) { setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'); openSettings(); return; }
     const sf = e.target.closest('#sFlipRow'); if (sf) { ST.set('flip3d', !wantFlip()); openSettings(); return; }
     const sp = e.target.closest('#sPaper [data-paper]');
-    if (sp) { const k = sp.dataset.paper; if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
+    if (sp) { const k = sp.dataset.paper; if (k === 'glass') setTheme('glass'); else if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
     const dx = e.target.closest('.dlx');
     if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (confirm('حذف تحميل سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + '؟')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
@@ -809,6 +904,7 @@
     if (h === 'repeat') { if (!sel) await selectFirst(); openRepeat(); }
     if (h === 'tasmee') tmStart();
     if (h === 'theme') { $('#btnTheme').click(); openSettings(); }
+    if (h === 'tdl') { await dlTap(+b.dataset.s, b.dataset.name, +b.dataset.rid); tdlPaint(); return; }
     if (h === 'listen') { AU.prime(); if (!sel) await selectFirst(); closeSheets(); listenNow(); }
     if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
     if (h === 'more') openMore();
@@ -1241,10 +1337,10 @@
       if (em) { let t = em.querySelector('.ixst'); if (!t) { t = document.createElement('span'); t.className = 'ixst'; em.appendChild(t); } t.textContent = note ? ' · ' + note : ''; t.classList.toggle('ok', ic === 'done'); }
     });
   }
-  async function dlTap(sNo, nm) {
-    const rid = dlRid, r = AU.reciter(rid);
+  async function dlTap(sNo, nm, rid = dlRid) {
+    const r = AU.reciter(rid);
     if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغي تحميل سورة ' + nm + '.'); return; }
-    if (dlStat.get(sNo) === 'done') {
+    if ((await AU.dl.status(rid)).get(sNo) === 'done') {
       if (!confirm('حذف تحميل سورة ' + nm + ' بصوت ' + r.name + '؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.')) return;
       await AU.dl.remove(rid, sNo); toast('حُذف تحميل سورة ' + nm + '.'); return;
     }
@@ -1253,6 +1349,7 @@
   }
   AU.dl.on(async (rid, sNo, err) => {
     if (err) toast(err, 4200);
+    tdlPaint();
     if (!document.querySelector('#ixList .ixdl')) { if (document.getElementById('dlBox')) dlBox(); return; }
     if (rid === undefined || rid === dlRid) {
       const j = sNo && AU.dl.job(rid, sNo);
@@ -1366,13 +1463,15 @@
   const mqDark = matchMedia('(prefers-color-scheme: dark)');
   function applyTheme() {
     const s = ST.get(), t = s.theme || 'system';
-    const dark = t === 'dark' || (t === 'system' && mqDark.matches);
+    const glass = t === 'glass';
+    const dark = glass || t === 'dark' || (t === 'system' && mqDark.matches);
     const H = document.documentElement;
     H.classList.toggle('dark', dark);
+    H.classList.toggle('glass', glass);
     H.classList.remove('darkpage');
     H.dataset.paper = s.paper || 'beige';
     H.classList.toggle('vfull', s.view === 'full');
-    document.querySelector('meta[name="theme-color"]').content = dark ? '#171818' : ({ white: '#F7F7F6', cream: '#F4EAD6', grey: '#CDC9C4', blue: '#E6F0F8', madinah: '#EDE4D0' }[s.paper] || '#FBF4EC');
+    document.querySelector('meta[name="theme-color"]').content = glass ? '#1F2120' : dark ? '#171818' : ({ white: '#F7F7F6', cream: '#F4EAD6', grey: '#CDC9C4', blue: '#E6F0F8', madinah: '#EDE4D0' }[s.paper] || '#FBF4EC');
   }
   function setTheme(t) { ST.setTheme(t); applyTheme(); }
   mqDark.addEventListener ? mqDark.addEventListener('change', applyTheme) : mqDark.addListener(applyTheme);
@@ -1505,7 +1604,7 @@
     if (!start && t && pl && isPlanDay(pl) && !(await keysBetween(t.a, t.b)).every(ST.isMem)) start = await pageOfKey(t.a);
     if (!start) start = ST.get().lastPage || 1;
     goPage(start);
-    tmkLoad();   // حدود كلمات الآيات للتظليل اللطيف
+    tmkLoad(); wlLoad();   // حدود كلمات الآيات للتظليل اللطيف
     if (params.has('wird')) { history.replaceState(null, '', location.pathname); setTimeout(openWird, 300); }
     setTimeout(() => showInstall(false), 1500);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/mushaf/preview/sw.js', { scope: '/mushaf/preview/' }).catch(() => {});
@@ -2208,7 +2307,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26p';
-  window.__app = { snk: SNK, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__BUILD = '26r';
+  window.__app = { snk: SNK, snkKnots, snkPath, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

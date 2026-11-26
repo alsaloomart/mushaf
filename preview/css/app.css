@@ -499,6 +499,12 @@ html.dark .sheet .credit{border-color:#2c2e2d}
 .ixdl.run svg{width:25px;height:25px}
 .ixdl .rg0{opacity:.22}
 .ixdl .rgs{fill:currentColor;stroke:none}
+/* «تنزيل السورة» في لوحة التلاوة: نفس أيقونات سهم الفهرس وحالاتها */
+.li.hub.tdl .n svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.li.hub.tdl.run .n svg{width:24px;height:24px}
+.li.hub.tdl .rg0{opacity:.22}
+.li.hub.tdl .rgs{fill:currentColor;stroke:none}
+.li.hub.tdl.done .n{background:color-mix(in srgb,var(--acc,#9A6B34) 12%,transparent)}
 .ixst.ok{color:var(--acc,#9A6B34)}
 .ixrc{display:flex;align-items:center;gap:8px;padding:2px 4px 10px;font-size:.84rem;color:#555}
 .ixrc label{white-space:nowrap}
@@ -535,3 +541,90 @@ body.tm svg.tx .snk{display:none}
 .tbar button.tbnote{font-weight:500}
 @media (max-width:380px){.tbar button{gap:3px;font-size:11px}.tbar svg{width:16px;height:16px}}
 @media (max-width:340px){.tbar button span{font-size:10px}}
+
+/* ---------- بطاقات القرّاء (كل الأوضاع) ---------- */
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:2px 0 10px}
+.rcard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:96px;padding:12px 12px 11px;border-radius:20px;text-align:start;background:var(--gray);border:1px solid rgba(0,0,0,.06);transition:transform .15s ease,border-color .15s ease}
+.rcard:active{transform:scale(.98)}
+.rcard .rc-h{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;width:100%}
+.rcard b{font-size:.94rem;line-height:1.3}
+.rcard small{color:#777;font-size:.76rem}
+.rcard .ck{flex:none;width:20px;height:20px;padding:3px;border-radius:50%;background:var(--acc,#9A6B34);color:#fff;stroke-width:3}
+.rcard .rbadge{margin-top:auto;font-size:.66rem;line-height:1.3;padding:3px 8px;border-radius:999px;background:rgba(154,107,52,.12);color:var(--acc,#9A6B34)}
+.rcard .rbadge.off{background:rgba(127,127,127,.14);color:#777}
+.rcard.on{border-color:var(--acc,#9A6B34);box-shadow:inset 0 0 0 1px var(--acc,#9A6B34)}
+html.dark .rcard{background:#1f2120;border-color:#2f3130}
+html.dark .rcard small,html.dark .rcard .rbadge.off{color:#9a9a9a}
+html.dark .rcard .rbadge{background:rgba(205,182,128,.14);color:#cdb680}
+html.dark .rcard.on{border-color:#cdb680;box-shadow:inset 0 0 0 1px #cdb680}
+html.dark .rcard .ck{background:#cdb680;color:#151515}
+/* شريط تقدّم المشغّل */
+.player{position:fixed}
+.pprog{position:absolute;inset-inline:16px;bottom:3px;height:2px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden;pointer-events:none}
+.pprog b{display:block;height:100%;width:0;background:var(--gold);border-radius:2px;transition:width .25s linear}
+
+/* ---------- الوضع الزجاجي ---------- */
+html.glass{--gl:rgba(255,255,255,.075);--gl2:rgba(255,255,255,.12);--glb:rgba(255,255,255,.13);--glh:inset 0 1px 0 rgba(255,255,255,.10);--gray:rgba(255,255,255,.08);--bar:rgba(31,33,32,.74);--barline:rgba(255,255,255,.08);--navi:#a1a1a6;--acc:#f2f2f7;color-scheme:dark}
+html.glass body{background:#1F2120;color:#f2f2f7}
+html.glass #reader,html.glass .leaf{background:#1F2120}
+html.glass{--leafback:rgba(31,33,32,.95)}
+html.glass .tbar,html.glass .bbar{background:rgba(31,33,32,.72);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3)}
+html.glass .tbar button,html.glass .bbar button{color:#a1a1a6}
+html.glass .tbar button.on,html.glass .bbar button.on{color:#F2C230}
+html.glass .sheet{background:#1F2120;color:#f2f2f7;border-color:var(--glb)}
+html.glass .sheet.small{background:rgba(40,42,41,.82);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);border:1px solid var(--glb);box-shadow:var(--glh),0 -10px 40px rgba(0,0,0,.5);border-radius:28px 28px 0 0}
+html.glass .sh-h b{color:#fff;font-weight:700}
+html.glass .x{width:36px;height:36px;background:var(--gl);border:1px solid var(--glb);box-shadow:var(--glh);color:#fff;font-size:18px}
+html.glass .seg{background:none;gap:8px;padding:2px 0}
+html.glass .seg button{background:var(--gl);border:1px solid var(--glb);box-shadow:var(--glh);border-radius:999px;color:#d1d1d6;padding:8px 12px}
+html.glass .seg button.on{background:#F2C230;color:#1F2120;border-color:transparent;font-weight:700}
+html.glass .chip{background:var(--gl);border-color:var(--glb);color:#f2f2f7}
+html.glass .chip.on{background:#F2C230;color:#1F2120;border-color:transparent}
+html.glass input,html.glass select,html.glass textarea{background:var(--gl);border:1px solid var(--glb);color:#f2f2f7;border-radius:14px}
+html.glass .lbl{color:#8e8e93;font-weight:700}
+html.glass .muted,html.glass .li .m small,html.glass .li .pgn,html.glass .rv .m small,html.glass .rcard small{color:#8e8e93}
+/* الصفوف بطاقات زجاجية */
+html.glass .li{background:var(--gl);border:1px solid var(--glb);box-shadow:var(--glh);border-radius:22px;padding:10px 12px;margin:0 0 8px}
+html.glass .li .n{background:var(--gl2);border-radius:50%;color:#fff}
+html.glass .li .m b{color:#fff}
+html.glass #ixList{padding-inline:12px}
+html.glass .ixplay,html.glass .ixdl{background:var(--gl2);border:1px solid var(--glb);box-shadow:var(--glh);color:#fff}
+html.glass .ixplay.on{background:#F2C230;color:#1F2120;border-color:#F2C230}
+html.glass .ixdl.done{color:#fff}
+html.glass .card,html.glass .today,html.glass .notecard,html.glass .install{background:var(--gl);border:1px solid var(--glb);box-shadow:var(--glh);border-radius:24px;color:#f2f2f7}
+html.glass .switch{box-shadow:var(--glh)}
+html.glass .swatches button.on i{box-shadow:0 0 0 2px #1F2120,0 0 0 4px #F2C230}
+html.glass .toast{background:rgba(58,60,59,.9);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--glb)}
+html.glass .scrim{background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+/* بطاقات القرّاء: زجاج */
+html.glass .rcard{background:var(--gl);border:1px solid var(--glb);box-shadow:var(--glh);border-radius:24px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+html.glass .rcard b{color:#fff}
+html.glass .rcard .rbadge{background:rgba(255,255,255,.12);color:#e5e5ea}
+html.glass .rcard .rbadge.off{background:rgba(255,255,255,.06);color:#8e8e93}
+html.glass .rcard.on{background:rgba(255,255,255,.12);border-color:rgba(242,194,48,.75);box-shadow:var(--glh),inset 0 0 0 1px rgba(255,255,255,.22)}
+html.glass .rcard .ck{background:#F2C230;color:#1F2120}
+/* المشغّل: بطاقة زجاجية بأزرار دائرية */
+html.glass .player{background:rgba(46,48,47,.62);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 12px 34px rgba(0,0,0,.5);border-radius:28px;padding:10px 12px 14px;gap:10px}
+html.glass .player b{color:#fff;font-weight:700}
+html.glass .player small{color:#a1a1a6}
+html.glass .player .ib{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);box-shadow:var(--glh);color:#fff}
+html.glass .player #pToggle{background:#F2C230;color:#1F2120;border-color:#F2C230}
+html.glass .player #pToggle svg,html.glass .player #pStop svg{fill:currentColor;stroke:none;width:20px;height:20px}
+html.glass .pprog{inset-inline:22px;bottom:5px;height:3px;background:rgba(255,255,255,.14)}
+html.glass .pprog b{background:#fff}
+html.glass .hubtab{color:#f2f2f7;background:rgba(46,48,47,.7);border-color:var(--glb);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+/* تظليل الآية في الزجاجي: ذهبي هادئ (الصفحة معكوسة كالليلي، فهذا اللون يظهر ذهبيًا بعد العكس)، 10% لا يغطي الحروف */
+html.glass{--hlc:#936C00}
+html.glass .li.hub .n svg{color:#fff}
+html.glass .li.hub.tdl.done .n{background:rgba(242,194,48,.16);color:#F2C230}
+html.glass .li.hub.tdl.done .n svg{color:#F2C230}
+/* بلا دعم للضبابية: أسطح معتمة بالدرجات نفسها */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html.glass .tbar,html.glass .bbar{background:#272928}
+  html.glass .sheet.small{background:#2A2C2B}
+  html.glass .player{background:#2E302F}
+  html.glass .rcard{background:#2A2C2B}
+  html.glass .toast{background:#3A3C3B}
+  html.glass .hubtab{background:#2E302F}
+  html.glass .scrim{background:rgba(0,0,0,.6)}
+}

@@ -5,14 +5,14 @@
  * - ملفات التلاوة: بث مباشر، إلا السور التي يحمّلها المستخدم بطلبه للاستماع بدون إنترنت
  *   (كاش mushaf-preview-audio-<القارئ>، لا يُحذف عند تحديث الإصدار، ويُحذف متى حذفها المستخدم).
  */
-const SHELL = 'mushaf-preview-shell-v26p';
-const V = '26p';   // يطابق ?v= في index.html
+const SHELL = 'mushaf-preview-shell-v26r';
+const V = '26r';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-preview-tafsir-v1';
 const PAGES = 'mushaf-preview-pages-v2';
 const DATA = 'mushaf-preview-data-v3';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
 const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', ...['css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js'].map(f => f + '?v=' + V), 'manifest.json',
-  'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/tmk.json', 'data/timings/1102.json', 'data/timings/1254.json', 'data/quran-simple-clean.txt',
+  'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/tmk.json', 'data/wl.json', 'data/timings/1102.json', 'data/timings/1254.json', 'data/timings/1133w.json', 'data/quran-simple-clean.txt',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/thmanyah-sans-Regular.woff2', 'fonts/thmanyah-sans-Bold.woff2', 'fonts/thmanyah-sans-Light.woff2', 'fonts/thmanyah-sans-Medium.woff2', 'fonts/thmanyah-serif-display-Bold.woff2'];
 

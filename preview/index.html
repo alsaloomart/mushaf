@@ -28,7 +28,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://api.quran.com" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=26p">
+<link rel="stylesheet" href="css/app.css?v=26r">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -92,6 +92,7 @@
   <button class="ib" id="pToggle" aria-label="إيقاف مؤقت"><svg viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></button>
   <div class="pinfo"><b id="pNow"></b><small id="pRep"></small></div>
   <button class="ib" id="pStop" aria-label="إيقاف"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+  <i class="pprog" aria-hidden="true"><b id="pBar"></b></i>
 </div>
 
 <nav class="tabs cx">
@@ -186,18 +187,18 @@
 <div id="toast" class="toast" role="status"></div>
 <div id="scrim" class="scrim" hidden></div>
 
-<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26p';try{
+<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26r';try{
 if('serviceWorker' in navigator){var had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had||done||sessionStorage.getItem('pv-cc')===V)return;done=true;sessionStorage.setItem('pv-cc',V);location.reload();});
 navigator.serviceWorker.getRegistration('/mushaf/preview/').then(function(r){if(r)r.update();}).catch(function(){});}
 addEventListener('load',function(){setTimeout(function(){if(window.__BUILD===V||sessionStorage.getItem('pv-fix')===V)return;sessionStorage.setItem('pv-fix',V);
 var a=navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(function(r){return r.scope.indexOf('/mushaf/preview/')>=0;}).map(function(r){return r.unregister();}));}):Promise.resolve();
 var b=window.caches?caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mushaf-preview-')===0;}).map(function(k){return caches.delete(k);}));}):Promise.resolve();
 Promise.all([a,b]).catch(function(){}).then(function(){location.reload();});},2000);});}catch(e){}})();</script>
-<script src="js/quran-data.js?v=26p"></script>
-<script src="js/audio.js?v=26p"></script>
-<script src="js/store.js?v=26p"></script>
-<script src="js/tmatch.js?v=26p"></script>
-<script src="js/app.js?v=26p"></script>
-<script src="js/cloud.js?v=26p"></script>
+<script src="js/quran-data.js?v=26r"></script>
+<script src="js/audio.js?v=26r"></script>
+<script src="js/store.js?v=26r"></script>
+<script src="js/tmatch.js?v=26r"></script>
+<script src="js/app.js?v=26r"></script>
+<script src="js/cloud.js?v=26r"></script>
 </body>
 </html>

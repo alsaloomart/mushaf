@@ -18,7 +18,7 @@ const AU = (() => {
     { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', tfile: 'data/timings/1254.json' },
     // MP3Quran: القارئ 102 «ماهر المعيقلي». مصحف 133 «حفص عن عاصم - المصحف المجود» له توقيت آيات منشور (ayat_timing read=133)،
     // ومصحف 102 «حفص عن عاصم - مرتل» بلا توقيت: السورة كاملة فقط.
-    { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=' },
+    { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=', wfile: 'data/timings/1133w.json' },
     { id: 1102, name: 'ماهر المعيقلي', style: 'مرتّل', src: 'mp3quran', mq: 102, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/', tfile: 'data/timings/1102.json' }
   ];
   const NOTIME_MSG = 'هذه السورة متاحة بهذا الصوت للتلاوة كاملة فقط حاليًا، بلا تحديد آية أو تكرار.';
@@ -69,13 +69,19 @@ const AU = (() => {
         try { all = await TF.get(rc.id); } catch (e) { throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.'); }
         const a = all[s];
         // سورة لم يكتمل توليد توقيتها بعد: السورة كاملة بلا تتبع مؤقتًا
-        sd.t = a ? a.map((x, i) => [s + ':' + (i + 1), x[0], x[1]]) : null;
+        // x[2] (إن وُجد): بدايات الكلمات نسبةً إلى بداية الآية بوحدات 10ms، لمزامنة شريط التظليل مع وتيرة القارئ في كل سطر
+        sd.t = a ? a.map((x, i) => [s + ':' + (i + 1), x[0], x[1], wordsFromStarts(x)]) : null;
       } else if (rc.timing) {
         let r = null;
         try { r = await fetch(rc.timing + s); } catch (e) {}
         if (!r || !r.ok) throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.');
         const d = await r.json();
         sd.t = (Array.isArray(d) ? d : []).map(x => [s + ':' + x.ayah, +x.start_time, +x.end_time]);
+        // مواضع الكلمات داخل حدود الآيات المنشورة (مولّدة بمواءمة CTC، للسور المتاحة)، لمزامنة الشريط مع وتيرة القارئ
+        if (rc.wfile) {
+          if (!TF.has('w' + rc.id)) { const pr = fetch(rc.wfile).then(r => { if (!r.ok) throw 0; return r.json(); }); pr.catch(() => TF.delete('w' + rc.id)); TF.set('w' + rc.id, pr); }
+          try { const w = (await TF.get('w' + rc.id))[s]; if (w && w.length === sd.t.length) sd.t.forEach((x, i) => { x[3] = wordsFromStarts([x[1], x[2], w[i]]); }); } catch (e) {}
+        }
       }
       verifySurah(s, sd); return sd;
     }
@@ -84,9 +90,27 @@ const AU = (() => {
     if (!r || !r.ok) throw new Error(navigator.onLine === false ? OFF : 'تحقّق من اتصالك بالإنترنت.');
     const f = ((await r.json()).audio_files || [])[0];
     if (!f || !f.verse_timings) throw new Error('تعذّر تشغيل هذه السورة.');
-    const sd = { url: absolute(f.audio_url), t: f.verse_timings.map(v => [v.verse_key, +v.timestamp_from, +v.timestamp_to]) };
+    const sd = { url: absolute(f.audio_url), t: f.verse_timings.map(v => [v.verse_key, +v.timestamp_from, +v.timestamp_to, wordsFromSegs(v)]) };
     verifySurah(s, sd);
     return sd;
+  }
+  /* توقيت الكلمات داخل الآية: [[بداية, نهاية], ...] بالمللي ثانية، بترتيب كلمات الآية؛ null إن لم يتوفر */
+  function wordsFromStarts(x) {
+    const w = x[2]; if (!Array.isArray(w) || !w.length) return null;
+    const a = w.map(v => x[0] + v * 10);
+    return a.map((v, i) => [v, i + 1 < a.length ? Math.max(v, a[i + 1]) : Math.max(v, x[1])]);
+  }
+  // مقاطع Quran Foundation: [رقم الكلمة, من, إلى]. عند إعادة القارئ لكلمات سابقة نُبقي الموضع عند آخر كلمة بلغها
+  function wordsFromSegs(v) {
+    const sg = (v.segments || []).filter(x => Array.isArray(x) && x.length >= 3 && x[0] >= 1);
+    if (!sg.length) return null;
+    const n = Math.max(...sg.map(x => x[0])), w = new Array(n).fill(null);
+    let mx = 0;
+    for (const [i, a, b] of sg) {
+      if (i > mx) { for (let j = mx + 1; j <= i; j++) if (!w[j - 1]) w[j - 1] = [+a, +b]; mx = i; }
+      else if (w[mx - 1]) w[mx - 1][1] = Math.max(w[mx - 1][1], +b);
+    }
+    return w;
   }
   /* نتحقق أن الملف للسورة نفسها وأن التوقيتات لآياتها بالترتيب */
   function verifySurah(s, sd) {
