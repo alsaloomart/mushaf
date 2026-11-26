@@ -359,7 +359,6 @@ body.tm .hot path{fill:transparent}
 body.tm .hot path.rvt{fill:transparent}
 .txw{flex:1;min-height:0;width:100%;position:relative;display:flex;flex-direction:column}
 .txw svg.tx{flex:1;min-height:0;width:100%;height:auto;display:block}
-svg.tm-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
 /* التسميع: الحبر المخفي يُزال بقناع على الصورة نفسها فيبقى الورق نظيفًا، وخط شعري هادئ مكان كل سطر يقف عند الميداليات */
 :root{--tm-hair:rgba(96,82,62,.27);--tm-hair-bad:rgba(178,96,58,.55)}
 html[data-paper=madinah]{--tm-hair:rgba(92,86,72,.27)}
@@ -379,7 +378,6 @@ html[data-paper=blue] svg.tx .p12 .pimg{filter:none}
 html.darkpage svg.tx .p12{filter:invert(1) hue-rotate(180deg) brightness(.9)}
 html.darkpage svg.tx .p12 .pimg{filter:none}
 html.dark svg.tx .p12{mix-blend-mode:normal;filter:none}
-}
 .tmmode{display:flex;flex:none;height:30px;margin:1px 0 2px;border:1px solid var(--barline);border-radius:9px;overflow:hidden;background:var(--sheet,transparent)}
 .tmmode button{flex:1;height:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:13.5px;touch-action:manipulation;padding:0}
 .tmmode button[aria-checked=true]{background:var(--acc);color:#fff}
