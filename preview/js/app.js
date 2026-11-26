@@ -16,7 +16,9 @@
     page: { one: 'صفحة واحدة', two: ['صفحتان', 'صفحتين'], pl: 'صفحات', acc: 'صفحة', sg: 'صفحة' },
     line: { one: 'سطر واحد', two: ['سطران', 'سطرين'], pl: 'أسطر', acc: 'سطرًا', sg: 'سطر' },
     day:  { one: 'يوم واحد', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
-    note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' }
+    note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' },
+    word: { one: 'كلمة واحدة', two: ['كلمتان', 'كلمتين'], pl: 'كلمات', acc: 'كلمة', sg: 'كلمة' },
+    surah: { one: 'سورة واحدة', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورة', sg: 'سورة' }
   };
   /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(15)='15 آية'، cnt(100)='100 آية' */
   function cnt(n, w = 'aya', gen = false) {
@@ -198,8 +200,17 @@
         }
         x0 += 0.7; x1 -= 0.7;
         if (x1 - x0 < 4) continue;
-        const y0 = sg.length > 3 ? sg[3] - 1.5 : ln.y0 + 3, y1 = sg.length > 3 ? sg[4] + 1.5 : ln.y1 - 3;
-        out.push({ k: sg[0], x0, x1, y0: y0 + dy, y1: y1 + dy, m: ln.m || [] });
+        const y0 = sg.length > 3 ? sg[3] - 1 : ln.y0 + 3, y1 = sg.length > 3 ? sg[4] + 1 : ln.y1 - 3;
+        out.push({ k: sg[0], x0, x1, y0: y0 + dy, y1: y1 + dy, m: ln.m || [], li: ln.i });
+      }
+    }
+    // لا يتداخل تظليل سطر مع السطر الذي يليه: إن تقاربا نقسم المسافة بينهما
+    if (!p12) {
+      const by = new Map(); for (const c of out) { if (c.li == null) continue; const b = by.get(c.li) || [Infinity, -Infinity]; b[0] = Math.min(b[0], c.y0); b[1] = Math.max(b[1], c.y1); by.set(c.li, b); }
+      for (const [i, b] of by) {
+        const n = by.get(i + 1); if (!n || b[1] + 0.8 <= n[0]) continue;
+        const mid = (b[1] + n[0]) / 2;
+        for (const c of out) { if (c.li === i) c.y1 = Math.min(c.y1, mid - 0.4); else if (c.li === i + 1) c.y0 = Math.max(c.y0, mid + 0.4); }
       }
     }
     return out;
@@ -281,10 +292,15 @@
     else { const d = AU.el.duration; if (!(d > 0)) return null; x0 = 0; x1 = d * 1000; src = AU.el.currentSrc; }
     const c0 = AWC.get(k); if (c0 && c0.src === src && c0.x1 === x1) return c0;
     const lets = g.flatMap(z => z[1]);
+    // توقيت كلمات خارج حدود الآية (خلل في مصدر المقاطع، مثل إزاحة آيتين عند بعض القراء): لا نثق به ونوزّع بالحروف
+    if (wt && wt.length && wt.some(v => v && (v[0] > x1 + 1500 || v[0] < x0 - 1500))) wt = null;
     if (!wt || wt.length !== lets.length || wt.some(v => !v)) {
       const tot = lets.reduce((a, b) => a + b, 0) || 1; let c = 0;
       wt = lets.map(l => { const a = x0 + (x1 - x0) * c / tot; c += l; return [a, x0 + (x1 - x0) * c / tot]; });
     }
+    // آخر كلمة تنتهي قبل حدّ الآية بقليل، فيبلغ الرأس نهاية السطر قبل الانتقال (مهم في آخر سطر من الصفحة)
+    wt = wt.map(v => [Math.min(Math.max(v[0], x0), x1), Math.min(Math.max(v[1], x0), x1)]);
+    const L = wt[wt.length - 1]; if (L && L[1] > x1 - 90 && x1 - 90 > L[0]) wt = wt.slice(0, -1).concat([[L[0], x1 - 90]]);
     const pg = g.flatMap(z => z[1].map(() => z[0]));
     const o = { src, x1, wt, pg, g }; if (AWC.size > 400) AWC.clear(); AWC.set(k, o); return o;
   }
@@ -390,7 +406,9 @@
   function fitLeaf(el, p, pd) {
     const L = pd.lines;
     if (viewFull() || !L) { hlBuild(el, p, pd); if (TM.on) tmPaintOverlay(el); return; }
-    if (LS == null) { const m = measureLS(el); if (!m || m.W <= 0) { if (TM.on) tmPaintOverlay(el); return; } const [, , w, h] = pd.crop; LS = Math.max(0, Math.min(14, (m.H / m.W * w - h) / 14)); }
+    if (LS == null) { const m = measureLS(el); if (!m || m.W <= 0) { if (TM.on) tmPaintOverlay(el); return; } const [, , w, h] = pd.crop; const base = Math.max(0, Math.min(14, (m.H / m.W * w - h) / 14));
+      // توسيع طفيف لما بين الأسطر حتى لا يلامس التظليل السطر المجاور: حتى 6 وحدات، وبزيادة لا تتجاوز 1.5 (أقل من 5% من ارتفاع الصفحة)
+      LS = Math.min(14, Math.max(base, Math.min(6, base + 1.5))); }
     const s = LS, [x, y, w, h] = pd.crop, svg = el.querySelector('svg.tx');
     svg.setAttribute('viewBox', `${x} ${y} ${w} ${h + 14 * s}`);
     const ov = el.querySelector('svg.tm-ov'); if (ov) ov.setAttribute('viewBox', svg.getAttribute('viewBox'));
@@ -423,7 +441,7 @@
     }
     const ss = pd.surahs;
     return `<div class="pg">
-      <div class="ph"><span class="pj">الجزء ${ar(pd.juz)}</span><button class="pnote" hidden aria-label="ملاحظات هذه الصفحة"></button><span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
+      <div class="ph prt">${p > 2 ? `<img class="phimg" src="phdr/${String(p).padStart(3, '0')}.webp" alt="" aria-hidden="true" decoding="async">` : ''}<span class="pj">الجزء ${ar(pd.juz)}</span><button class="pnote" hidden aria-label="ملاحظات هذه الصفحة"></button><span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
       <div class="txw">
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
         <g class="hot"${clip ? ` clip-path="url(#cc${p})"` : ''}>${pd.ayat.map(a => `<path data-k="${a.k}" d="${a.d}"/>`).join('')}</g>
@@ -431,7 +449,7 @@
       <svg class="tm-ov" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
       <div class="tm-ui" aria-hidden="true"></div>
       </div>
-      <div class="pf"><span class="pn">${ar(p)}</span></div>
+      <div class="pf prt">${p > 2 ? `<img class="pnimg" src="pnum/${String(p).padStart(3, '0')}.webp" alt="صفحة ${p}" decoding="async">` : ''}<span class="pn">${ar(p)}</span></div>
       <div class="nmk"></div>
     </div><div class="leaf-back" aria-hidden="true"></div><div class="shade"></div>`;
   }
@@ -657,6 +675,23 @@
     clearTimeout(chromeT);
   }
 
+  /* ---------- وضع التلاوة الغامر: أثناء التشغيل تختفي الأشرطة والمشغل وتملأ الصفحة الشاشة (تكبير فقط، نفس الأسطر والكلمات).
+   * لمسة على الصفحة تُظهر الأدوات، وتختفي بعد نحو 4 ثوانٍ ما دامت التلاوة جارية؛ الإيقاف المؤقت أو التوقف يعيد الوضع العادي. */
+  const IMM = { on: false, t: 0 };
+  function immSet(on) {
+    if (IMM.on === on) return;
+    IMM.on = on; clearTimeout(IMM.t);
+    document.body.classList.toggle('immersive', on); document.body.classList.remove('imm-show');
+    requestAnimationFrame(() => { layout(); refit(); showOnly(cur); notesPaintVisible(cur); });
+  }
+  function immShow() {
+    document.body.classList.add('imm-show'); clearTimeout(IMM.t);
+    IMM.t = setTimeout(() => {
+      if (!IMM.on) return;
+      if (sel || document.body.classList.contains('sheet-open') || AU.el.paused) return immShow();
+      document.body.classList.remove('imm-show');
+    }, 4000);
+  }
   /* ---------- التحديد ---------- */
   async function select(a, b = a) {
     if (cmpKey(a, b) > 0) [a, b] = [b, a];
@@ -675,6 +710,8 @@
     if (np) { e.stopPropagation(); if (suppressClick || busy) return; const ns = notesAll().filter(n => n.p === cur); if (ns.length === 1) noteOpen(ns[0].id); else openNotes(cur); return; }
     if (na || nm) { e.stopPropagation(); if (suppressClick || busy) return; na ? noteNew() : noteOpen(nm.dataset.id); return; }
     if (suppressClick || busy) return;
+    // في الوضع الغامر: أول لمسة تُظهر الأدوات فقط
+    if (IMM.on) { const hidden = !document.body.classList.contains('imm-show'); immShow(); if (hidden) return; }
     if (!TM.on) AU.unlock();
     const s = e.target.closest('path[data-k]');
     if (!s) { if (sel && !rangeMode) clearSel(); return; }   // الصفحة نظيفة: لا أشرطة تظهر باللمس
@@ -734,6 +771,8 @@
   });
   AU.on('state', (s) => {
     try { snkState(s); } catch (e) {}
+    // استئناف من إيقاف مؤقت: تبقى الأزرار ظاهرة 4 ثوانٍ (قد يريد المستخدم الإيقاف)، ثم تختفي
+    try { const was = IMM.st; IMM.st = s; immSet(s === 'playing' && !TM.on); if (s === 'playing' && was === 'paused' && IMM.on) immShow(); } catch (e) {}
     document.body.classList.toggle('playing', s !== 'stopped');
     if (s === 'stopped') { playingKey = null; $('#player').hidden = true; paint(); }
     if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; } catch (e) {} }
@@ -806,9 +845,9 @@
     if (!b.isConnected) return;
     const ic = b.querySelector('.tdlic'), sm = b.querySelector('.m small'), bb = b.querySelector('.m b');
     let k = 'dl', lab = 'تنزيل السورة', sub = `سورة ${nm} بصوت ${r.name}، لتعمل بدون إنترنت`;
-    if (j) { const f = j.total ? j.got / j.total : 0; k = 'run'; lab = 'جارٍ تنزيل السورة'; sub = (j.state === 'queued' ? 'في الانتظار' : j.total ? `${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التحميل') + ' · اضغط للإلغاء'; ic.innerHTML = IXI.run(f); ic.dataset.ic = 'run'; }
-    else if (stt === 'done') { k = 'done'; lab = 'السورة محمّلة'; sub = `سورة ${nm} بصوت ${r.name} تعمل بدون إنترنت · اضغط لحذفها`; }
-    else if (stt === 'part') { sub = 'تحميل لم يكتمل · اضغط للمتابعة'; }
+    if (j) { const f = j.total ? j.got / j.total : 0; k = 'run'; lab = 'جارٍ تنزيل السورة'; sub = (j.state === 'queued' ? 'في الانتظار' : j.total ? `${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التنزيل') + ' · اضغط للإلغاء'; ic.innerHTML = IXI.run(f); ic.dataset.ic = 'run'; }
+    else if (stt === 'done') { k = 'done'; lab = 'تم تنزيل السورة'; sub = `سورة ${nm} بصوت ${r.name} تعمل بدون إنترنت · اضغط لحذفها`; }
+    else if (stt === 'part') { sub = 'تنزيل لم يكتمل · اضغط للمتابعة'; }
     if (k !== 'run' && ic.dataset.ic !== k) { ic.innerHTML = IXI[k]; ic.dataset.ic = k; }
     b.classList.toggle('done', k === 'done'); b.classList.toggle('run', k === 'run');
     bb.textContent = lab; sm.textContent = sub;
@@ -846,7 +885,7 @@
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
       `<div class="rgrid">${AU.RECITERS.map(r => `<button class="rcard${r.id === rid ? ' on' : ''}" data-r="${r.id}" aria-pressed="${r.id === rid}"><span class="rc-h"><b>${r.name}</b>${r.id === rid ? CK : ''}</span><small>${r.style}</small><span class="rbadge${r.notime ? ' off' : ''}">${r.notime ? 'السورة كاملة فقط' : 'تتبّع الآيات مع التظليل المتحرك'}</span></button>`).join('')}</div>` +
-      `<label class="lbl">التحميلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
+      `<label class="lbl">التنزيلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
        <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '') + creditHTML(), 'settings');
@@ -890,8 +929,8 @@
     if (sp) { const k = sp.dataset.paper; if (k === 'glass') setTheme('glass'); else if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
     const dx = e.target.closest('.dlx');
-    if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (confirm('حذف تحميل سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + '؟')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
-    if (e.target.closest('#dlAll')) { if (confirm('حذف كل السور المحمّلة لكل القراء؟')) { await AU.dl.removeAll(); toast('حُذفت كل التحميلات.'); dlBox(); } return; }
+    if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (confirm('حذف سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + ' من جهازك؟')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
+    if (e.target.closest('#dlAll')) { if (confirm('حذف كل السور التي نزّلتها، لكل القرّاء؟')) { await AU.dl.removeAll(); toast('حُذفت كل التنزيلات.'); dlBox(); } return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
     const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openSettings(); return; }
     const tb = e.target.closest('.hubToday [data-act]');
@@ -924,10 +963,10 @@
     const el = leaves.get(p); if (!el) return;
     const box = el.querySelector('.nmk'), pg = el.querySelector('.pg'), svg = el.querySelector('svg.tx'); if (!box || !svg) return;
     const ns = notesAll().filter(n => n.p === p), pn = el.querySelector('.pnote');
-    if (pn) { pn.hidden = !ns.length; pn.innerHTML = ns.length ? `<svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>${ns.length === 1 ? 'ملاحظة' : ar(ns.length) + ' ' + (ns.length === 2 ? 'ملاحظتان' : ns.length <= 10 ? 'ملاحظات' : 'ملاحظة')}</span>` : ''; }
+    if (pn) { pn.hidden = !ns.length; pn.innerHTML = ns.length ? `<svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>${cnt(ns.length, 'note')}</span>` : ''; }
     const na = el.querySelector('.nadd');
     if (na) {
-      const lab = ns.length ? ('ملاحظات ' + ar(ns.length)) : 'ملاحظة';
+      const lab = ns.length ? cnt(ns.length, 'note') : 'ملاحظة';
       na.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>' + lab + '</span>';
       na.setAttribute('aria-label', ns.length ? (lab + ' على هذه الصفحة. اضغط لإضافة ملاحظة.') : 'ملاحظة جديدة على هذه الصفحة');
     }
@@ -995,7 +1034,7 @@
     const all = notesAll().filter(n => !page || n.p === page).sort((a, b) => (b.u || b.t) - (a.u || a.t));
     $('#sh-notes .sh-h b').textContent = page ? `ملاحظات صفحة ${ar(page)}` : 'ملاحظاتي';
     $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${n.id}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
-      : '<p class="muted">لا توجد ملاحظات بعد. اضغط زر «ملاحظة» أسفل الصفحة لتكتب ملاحظة عليها.</p>';
+      : '<p class="muted">لا توجد ملاحظات بعد. اضغط «ملاحظة» في الشريط العلوي لتكتب ملاحظة على الصفحة.</p>';
     openSheet('notes');
   }
   $('#notesBody').onclick = async e => {
@@ -1272,9 +1311,9 @@
     const L = $('#ixList');
     if (kind === 's') {
       // الصف يفتح السورة للقراءة، وزر التشغيل المنفصل يشغّلها كاملة
-      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixdl" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تحميل سورة ${c.name_arabic}">${IXI.dl}</button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
+      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixdl" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تنزيل سورة ${c.name_arabic}">${IXI.dl}</button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
       dlRid = ST.get().reciter;
-      L.insertAdjacentHTML('afterbegin', `<div class="ixrc"><label for="ixRec">تحميل السور بصوت</label><select id="ixRec">${AU.RECITERS.map(r => `<option value="${r.id}"${r.id === dlRid ? ' selected' : ''}>${r.name}${r.style !== 'مرتّل' || AU.RECITERS.filter(x => x.name === r.name).length > 1 ? ' (' + r.style + ')' : ''}</option>`).join('')}</select></div>`);
+      L.insertAdjacentHTML('afterbegin', `<div class="ixrc"><label for="ixRec">تنزيل السور بصوت</label><select id="ixRec">${AU.RECITERS.map(r => `<option value="${r.id}"${r.id === dlRid ? ' selected' : ''}>${r.name}${r.style !== 'مرتّل' || AU.RECITERS.filter(x => x.name === r.name).length > 1 ? ' (' + r.style + ')' : ''}</option>`).join('')}</select></div>`);
       $('#ixRec').onchange = e => { dlRid = +e.target.value; dlRefresh(); };
       ixPaint(); dlRefresh();
     } else {
@@ -1297,8 +1336,8 @@
       let rid = ST.get().reciter;
       if (navigator.onLine === false && !(await AU.dl.has(rid, sNo))) {
         let alt = null; for (const r of AU.RECITERS) if (await AU.dl.has(r.id, sNo)) { alt = r; break; }
-        if (!alt) { toast('لا يوجد اتصال بالإنترنت، وسورة ' + c.name_arabic + ' غير محمّلة. حمّلها بزر التحميل لتعمل بدون إنترنت.', 4200); return; }
-        rid = alt.id; toast('تُشغَّل بصوت ' + alt.name + '، فهي المحمّلة لهذه السورة.', 3200);
+        if (!alt) { toast('لا يوجد اتصال بالإنترنت، وسورة ' + c.name_arabic + ' لم تُنزَّل بعد. نزّلها بزر التنزيل لتستمع إليها بدون إنترنت.', 4200); return; }
+        rid = alt.id; toast('تُشغَّل بصوت ' + alt.name + '، لأنك نزّلت هذه السورة بصوته.', 3200);
       }
       closeSheets(); if (sel) clearSel();
       goPage(c.pages[0], true, false);
@@ -1328,10 +1367,10 @@
       const sNo = +b.dataset.s; if (only && only !== sNo) return;
       const j = AU.dl.job(dlRid, sNo), stt = dlStat.get(sNo), nm = b.dataset.name;
       const em = b.parentNode.querySelector('.ixo small');
-      let ic = 'dl', lab = 'تحميل سورة ' + nm, note = '';
-      if (j) { const f = j.total ? j.got / j.total : 0; ic = 'run'; lab = 'إلغاء تحميل سورة ' + nm; note = j.state === 'queued' ? 'في الانتظار' : j.total ? `جارٍ التحميل ${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التحميل'; b.innerHTML = IXI.run(f); b.dataset.ic = 'run'; }
-      else if (stt === 'done') { ic = 'done'; lab = 'سورة ' + nm + ' محمّلة، اضغط لحذفها'; note = 'محمّلة'; }
-      else if (stt === 'part') { lab = 'متابعة تحميل سورة ' + nm; note = 'تحميل لم يكتمل'; }
+      let ic = 'dl', lab = 'تنزيل سورة ' + nm, note = '';
+      if (j) { const f = j.total ? j.got / j.total : 0; ic = 'run'; lab = 'إلغاء تنزيل سورة ' + nm; note = j.state === 'queued' ? 'في الانتظار' : j.total ? `جارٍ التنزيل ${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التحميل'; b.innerHTML = IXI.run(f); b.dataset.ic = 'run'; }
+      else if (stt === 'done') { ic = 'done'; lab = 'تم تنزيل سورة ' + nm + '، اضغط لحذفها'; note = 'تم تنزيلها'; }
+      else if (stt === 'part') { lab = 'متابعة تنزيل سورة ' + nm; note = 'تنزيل لم يكتمل'; }
       if (ic !== 'run' && b.dataset.ic !== ic) { b.innerHTML = IXI[ic]; b.dataset.ic = ic; }
       b.classList.toggle('done', ic === 'done'); b.classList.toggle('run', ic === 'run');
       b.setAttribute('aria-label', lab);
@@ -1340,12 +1379,12 @@
   }
   async function dlTap(sNo, nm, rid = dlRid) {
     const r = AU.reciter(rid);
-    if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغي تحميل سورة ' + nm + '.'); return; }
+    if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغي تنزيل سورة ' + nm + '.'); return; }
     if ((await AU.dl.status(rid)).get(sNo) === 'done') {
-      if (!confirm('حذف تحميل سورة ' + nm + ' بصوت ' + r.name + '؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.')) return;
-      await AU.dl.remove(rid, sNo); toast('حُذف تحميل سورة ' + nm + '.'); return;
+      if (!confirm('حذف سورة ' + nm + ' بصوت ' + r.name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.')) return;
+      await AU.dl.remove(rid, sNo); toast('حُذفت سورة ' + nm + ' من جهازك.'); return;
     }
-    if (navigator.onLine === false) { toast('لا يوجد اتصال بالإنترنت. التحميل يحتاج إلى اتصال.'); return; }
+    if (navigator.onLine === false) { toast('لا يوجد اتصال بالإنترنت. التنزيل يحتاج إلى اتصال.'); return; }
     AU.dl.start(rid, sNo);
   }
   AU.dl.on(async (rid, sNo, err) => {
@@ -1357,7 +1396,7 @@
       if (j && j.state === 'run' && j.got) dlPaint(sNo);   // تحديث التقدم فقط
       else await dlRefresh();
     }
-    if (rid !== undefined && !AU.dl.job(rid, sNo) && !err) { const st2 = (await AU.dl.status(rid)).get(sNo); if (st2 === 'done') toast('اكتمل تحميل سورة ' + chapters[sNo - 1].name_arabic + '، وتعمل الآن بدون إنترنت.', 3600); }
+    if (rid !== undefined && !AU.dl.job(rid, sNo) && !err) { const st2 = (await AU.dl.status(rid)).get(sNo); if (st2 === 'done') toast('اكتمل تنزيل سورة ' + chapters[sNo - 1].name_arabic + '، وأصبحت متاحة بدون إنترنت.', 3600); }
   });
   /* قسم «التحميلات» في الإعدادات */
   async function dlBox() {
@@ -1366,11 +1405,11 @@
     if (!$('#dlBox')) return;
     const tot = items.reduce((a, x) => a + (x.bytes || 0), 0);
     const by = new Map(); items.forEach(x => { if (!by.has(x.rid)) by.set(x.rid, []); by.get(x.rid).push(x); });
-    box.innerHTML = (items.length ? [...by].map(([rid, xs]) => { const r = AU.reciter(rid); return `<div class="dlg"><b>${r.name}<small> · ${r.style}</small></b>${xs.map(x => `<div class="dlr"><span>سورة ${chapters[x.s - 1].name_arabic}</span><small>${MB(x.bytes || 0)}</small><button class="dlx" data-rid="${rid}" data-s="${x.s}" aria-label="حذف تحميل سورة ${chapters[x.s - 1].name_arabic}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('')}</div>`; }).join('') +
-      `<p class="muted sm">المجموع: ${items.length === 1 ? 'سورة واحدة' : items.length === 2 ? 'سورتان' : ar(items.length) + (items.length < 11 ? ' سور' : ' سورة')} · ${MB(tot)}</p>`
-      : `<p class="muted sm">لا توجد سور محمّلة. اضغط سهم التحميل بجانب زر التشغيل في الفهرس لتعمل السورة بدون إنترنت.</p>`) +
+    box.innerHTML = (items.length ? [...by].map(([rid, xs]) => { const r = AU.reciter(rid); return `<div class="dlg"><b>${r.name}<small> · ${r.style}</small></b>${xs.map(x => `<div class="dlr"><span>سورة ${chapters[x.s - 1].name_arabic}</span><small>${MB(x.bytes || 0)}</small><button class="dlx" data-rid="${rid}" data-s="${x.s}" aria-label="حذف سورة ${chapters[x.s - 1].name_arabic} من الجهاز"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('')}</div>`; }).join('') +
+      `<p class="muted sm">المجموع: ${cnt(items.length, 'surah')} · ${MB(tot)}</p>`
+      : `<p class="muted sm">لم تُنزّل أي سورة بعد. اضغط سهم التنزيل بجانب زر التشغيل في الفهرس لتستمع إلى السورة بدون إنترنت.</p>`) +
       (est && est.quota ? `<p class="muted sm">مساحة التطبيق المستخدمة ${MB(est.usage || 0)} من نحو ${MB(est.quota)} متاحة له على هذا الجهاز.${per ? ' التخزين محمي من الحذف التلقائي.' : ''}</p>` : '') +
-      (items.length ? `<button class="btn full" id="dlAll">حذف كل التحميلات</button>` : '');
+      (items.length ? `<button class="btn full" id="dlAll">حذف كل التنزيلات</button>` : '');
   }
 
   function ixPlaying(sNo) { const st = AU.state(); return !!(st && st.kind === 'surah' && +st.keys[0].split(':')[0] === sNo); }
@@ -1489,7 +1528,7 @@
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
        <button class="btn full" id="mInst">طريقة التثبيت على الآيفون</button>
-       <p class="muted sm" style="line-height:1.8;margin-top:14px">بياناتك (الخطة، والمحفوظ، والمراجعة، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسل إلى أي خادم. صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبث عند التشغيل ولا تُخزَّن.</p>` + creditHTML();
+       <p class="muted sm" style="line-height:1.8;margin-top:14px">بياناتك (الخطة، والمحفوظ، والمراجعة، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسل إلى أي خادم. صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبث عند التشغيل، إلا السور التي تنزّلها بنفسك فتُحفظ على جهازك.</p>` + creditHTML();
     $('#moreBody').onclick = e => {
       const r = e.target.closest('[data-r]');
       if (r) { ST.setReciter(+r.dataset.r); openMore(); return; }
@@ -1522,8 +1561,8 @@
       <p>مواضع الآيات طبقة شفافة فوق الصورة، من مشروع ${L('quran-ws/quran-svg')} المستخرج من ملفات المجمع (رخصة ${L('CC BY 4.0')}). التظليل لا يغيّر صورة المصحف.</p>
       <p>أسماء السور والأجزاء والأحزاب من بيانات ${L('Tanzil')} (رخصة ${L('CC BY 3.0')}).</p>
       <h4>التلاوات</h4>
-      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تحمّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
-      <p>تلاوة الشيخ ماهر المعيقلي من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم (القارئ رقم 102): «المصحف المجود» برواية حفص عن عاصم (رقم 133) مع توقيت الآيات المنشور في واجهة الموقع، فيعمل معه تتبع الآيات والتكرار والتلاوة المتصلة؛ و«مرتل» (رقم 102)، ولأن المصدر لا ينشر توقيت آياته فقد ولّدنا التوقيت آليًا من ملفات السور نفسها بمواءمة نص الآيات مع الصوت بنموذج تعرّف كلام عربي مفتوح المصدر، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
+      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تنزّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
+      <p>تلاوة الشيخ ماهر المعيقلي من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم: «المصحف المجود» برواية حفص عن عاصم (رقم 133) مع توقيت الآيات المنشور في واجهة الموقع، فيعمل معه تتبع الآيات والتكرار والتلاوة المتصلة؛ و«المرتّل» (رقم 102)، ولأن المصدر لا ينشر توقيت آياته فقد ولّدنا التوقيت آليًا من ملفات السور نفسها بمواءمة نص الآيات مع الصوت بنموذج تعرّف كلام عربي مفتوح المصدر، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
       <p>تلاوة الشيخ بدر التركي (رواية حفص عن عاصم، مرتّل) من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم، القارئ رقم 254. وينص موقع MP3Quran على أن حقوق مواده متاحة للجميع، ويأذن لأي زائر أو مطور باستخدام روابطه: ${L('<a href="https://www.mp3quran.net/privacy-en.html" target="_blank" rel="noopener">mp3quran.net/privacy-en.html</a>')}. المصدر لا ينشر توقيت الآيات لهذه التلاوة، فولّدناه آليًا من ملفات السور نفسها بالطريقة ذاتها، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
@@ -1941,7 +1980,7 @@
     if (done && (TM.mode === 'ayah' || TM.flush)) st = `أتممت الصفحة: ${ar(bySpeech)} بالتلاوة، ${ar(byTap)} باللمس` + (bySkip ? `، ${ar(bySkip)} لم تُتبيَّن` : '') + '.';
     else if (TM.why) st = TM.why;
     else if (TM.mode === 'page' && !TM.flush && TM.listening) st = 'أسمعك… تلاوة الوجه كاملًا، والنتيجة بعد الختام' + (TM.prog && TM.keys[TM.i] ? ` · الآية ${ar(TM.keys[TM.i].split(':')[1])}` : '');
-    else if (TM.listening) st = `أسمعك… الآية ${ar(TM.keys[TM.i].split(':')[1])}` + (TM.prog ? ` · طابقت ${ar(TM.prog)} من ${ar(TM.E.length)} كلمة` : '');
+    else if (TM.listening) st = `أسمعك… الآية ${ar(TM.keys[TM.i].split(':')[1])}` + (TM.prog ? ` · طابقت ${ar(TM.prog)} من ${cnt(TM.E.length, 'word', true)}` : '');
     else if (!SRC) st = IOS && STANDALONE ? 'التعرف على الصوت غير متاح في وضع التطبيق على الآيفون. افتح الرابط في Safari، أو المس الآية بعد تلاوتها لتنكشف.' : 'المس الآية بعد تلاوتها لتنكشف. التعرف على الصوت غير متاح في هذا المتصفح.';
     else if (TM.mode === 'page') st = 'اضغط «سمّع» واتْلُ الوجه كاملًا، ثم «أظهر النتيجة».';
     else st = IOS && STANDALONE ? 'اضغط «سمّع» وابدأ التلاوة. إن لم يعمل الصوت في وضع التطبيق فافتح الرابط في Safari، أو المس الآية لكشفها.' : 'اضغط «سمّع» وابدأ التلاوة، أو المس الآية لكشفها.';
@@ -2308,7 +2347,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26t';
-  window.__app = { snk: SNK, snkKnots, snkPath, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__BUILD = '26u';
+  window.__app = { snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

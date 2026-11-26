@@ -634,3 +634,18 @@ html.glass .li.hub.tdl.done .n svg{color:#F2C230}
   html.glass .hubtab{background:#2E302F}
   html.glass .scrim{background:rgba(0,0,0,.6)}
 }
+
+/* وضع التلاوة الغامر: الصفحة تملأ الشاشة (ضمن المناطق الآمنة)، والأشرطة والمشغل تظهر فوقها عند اللمس */
+.tbar,.bbar,.qj,.player,.tool{transition:opacity .25s ease,visibility 0s linear 0s}
+body.immersive #reader{top:var(--sat);bottom:var(--sab)}
+body.immersive .book{bottom:0}
+body.immersive:not(.imm-show) .tbar,body.immersive:not(.imm-show) .bbar,body.immersive:not(.imm-show) .qj,body.immersive:not(.imm-show) .player,body.immersive:not(.imm-show) .tool{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s linear .3s}
+
+/* الترويسة ورقم الصفحة كما في مصحف المدينة المطبوع (مقتطعة من صفحة المجمع نفسها: «الجزء …» و«سورة …» ورقم الصفحة بأرقامه)،
+   بلون الحبر، ولا تغيير في نص المصحف أو أسطره. النص المكتوب يبقى لقارئ الشاشة فقط. */
+.ph.prt{height:auto;display:block;padding:0}
+.ph.prt .phimg{display:block;width:100%;margin:0;height:auto;pointer-events:none}
+.ph.prt .pj,.ph.prt .ps,.pf.prt .pn{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pf.prt{align-items:center;padding-bottom:0}
+.pf.prt .pnimg{display:block;width:18%;max-width:96px;height:auto;pointer-events:none}
+html.dark .phimg,html.dark .pnimg{filter:invert(1) brightness(.9)}

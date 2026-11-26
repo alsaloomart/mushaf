@@ -57,7 +57,7 @@ const AU = (() => {
 
   /* ملف السورة كاملًا مع توقيت كل آية (Quran Foundation): تلاوة متصلة بلا فواصل بين الآيات */
   const QDC = 'https://api.quran.com/api/qdc/audio/reciters/';
-  const OFF = 'لا يوجد اتصال بالإنترنت، وهذه السورة غير محمّلة لهذا القارئ. حمّلها من الفهرس لتعمل بدون إنترنت.';
+  const OFF = 'لا يوجد اتصال بالإنترنت، وهذه السورة لم تُنزَّل بصوت هذا القارئ. نزّلها من الفهرس لتستمع إليها بدون إنترنت.';
   const TF = new Map();
   async function fetchSD(rid, s) {
     const rc = RECITERS.find(x => x.id === rid);
@@ -219,8 +219,8 @@ const AU = (() => {
       } catch (e) {
         const cancelled = j.state === 'cancel' || (e && e.name === 'AbortError' && j.state === 'cancel');
         jobs.delete(id);
-        const msg = cancelled ? null : (e && e.name === 'QuotaExceededError') ? 'لا توجد مساحة كافية على الجهاز لتحميل هذه السورة.'
-          : navigator.onLine === false ? 'انقطع الاتصال أثناء التحميل. اضغط زر التحميل مرة أخرى للمتابعة من حيث توقف.' : 'تعذّر تحميل السورة. اضغط زر التحميل مرة أخرى للمحاولة.';
+        const msg = cancelled ? null : (e && e.name === 'QuotaExceededError') ? 'لا توجد مساحة كافية على الجهاز لتنزيل هذه السورة.'
+          : navigator.onLine === false ? 'انقطع الاتصال أثناء التنزيل. اضغط زر التنزيل مرة أخرى للمتابعة من حيث توقّف.' : 'تعذّر تنزيل السورة. اضغط زر التنزيل مرة أخرى للمحاولة.';
         emit(rid, s, msg);
       }
     }

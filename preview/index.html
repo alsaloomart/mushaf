@@ -28,7 +28,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://api.quran.com" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=26t">
+<link rel="stylesheet" href="css/app.css?v=26u">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -187,18 +187,18 @@
 <div id="toast" class="toast" role="status"></div>
 <div id="scrim" class="scrim" hidden></div>
 
-<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26t';try{
+<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26u';try{
 if('serviceWorker' in navigator){var had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had||done||sessionStorage.getItem('pv-cc')===V)return;done=true;sessionStorage.setItem('pv-cc',V);location.reload();});
 navigator.serviceWorker.getRegistration('/mushaf/preview/').then(function(r){if(r)r.update();}).catch(function(){});}
 addEventListener('load',function(){setTimeout(function(){if(window.__BUILD===V||sessionStorage.getItem('pv-fix')===V)return;sessionStorage.setItem('pv-fix',V);
 var a=navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(function(r){return r.scope.indexOf('/mushaf/preview/')>=0;}).map(function(r){return r.unregister();}));}):Promise.resolve();
 var b=window.caches?caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mushaf-preview-')===0;}).map(function(k){return caches.delete(k);}));}):Promise.resolve();
 Promise.all([a,b]).catch(function(){}).then(function(){location.reload();});},2000);});}catch(e){}})();</script>
-<script src="js/quran-data.js?v=26t"></script>
-<script src="js/audio.js?v=26t"></script>
-<script src="js/store.js?v=26t"></script>
-<script src="js/tmatch.js?v=26t"></script>
-<script src="js/app.js?v=26t"></script>
-<script src="js/cloud.js?v=26t"></script>
+<script src="js/quran-data.js?v=26u"></script>
+<script src="js/audio.js?v=26u"></script>
+<script src="js/store.js?v=26u"></script>
+<script src="js/tmatch.js?v=26u"></script>
+<script src="js/app.js?v=26u"></script>
+<script src="js/cloud.js?v=26u"></script>
 </body>
 </html>

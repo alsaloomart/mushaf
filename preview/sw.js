@@ -5,8 +5,8 @@
  * - ملفات التلاوة: بث مباشر، إلا السور التي يحمّلها المستخدم بطلبه للاستماع بدون إنترنت
  *   (كاش mushaf-preview-audio-<القارئ>، لا يُحذف عند تحديث الإصدار، ويُحذف متى حذفها المستخدم).
  */
-const SHELL = 'mushaf-preview-shell-v26t';
-const V = '26t';   // يطابق ?v= في index.html
+const SHELL = 'mushaf-preview-shell-v26u';
+const V = '26u';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-preview-tafsir-v1';
 const PAGES = 'mushaf-preview-pages-v2';
 const DATA = 'mushaf-preview-data-v3';
@@ -82,7 +82,7 @@ self.addEventListener('fetch', e => {
     })());
     return;
   }
-  if (u.origin === location.origin && (u.pathname.includes('/pages/') || u.pathname.includes('/lines/'))) {
+  if (u.origin === location.origin && (u.pathname.includes('/pages/') || u.pathname.includes('/lines/') || u.pathname.includes('/phdr/') || u.pathname.includes('/pnum/'))) {
     e.respondWith((async () => {
       const c = await caches.open(PAGES);
       const hit = await c.match(req.url);
