@@ -253,6 +253,8 @@
     if (st.full && st.idx) {
       const x = st.full.t[st.idx.get(k)], t = AU.el.currentTime * 1000;
       if (st.want != null) f = 0; else f = (t - x[1]) / Math.max(1, x[2] - x[1]);
+      // قبل بداية الآية في الملف (الاستعاذة والبسملة عند بعض القراء، مثل ماهر المجوّد): لا شريط بعد، ويبقى تظليل الآية الثابت ظاهرًا
+      if (st.want == null && t < x[1] - 40) return { pre: true, st };
     } else if (AU.el.duration > 0) f = AU.el.currentTime / AU.el.duration;
     return { u: i + Math.max(0, Math.min(1, f)), st };
   }
@@ -269,6 +271,7 @@
     const now = performance.now(), dt = Math.min(0.1, (now - (SNK.last || now)) / 1000); SNK.last = now;
     const pu = snkU();
     if (!pu || viewFull() || !TMK || TM.on) { if (SNK.el) snkClear(SNK.el); SNK.el = null; SNK.p = 0; return; }
+    if (pu.pre) { if (SNK.el) snkClear(SNK.el); SNK.H = null; SNK.T = null; return; }
     const { u, st } = pu, k = st.keys[st.i];
     const p = keyPage.get(k) || cur, el = leaves.get(p), pd = pageData.get(p);
     if (!el || !pd) return;
@@ -746,7 +749,7 @@
        <div class="swatches" id="sPaper">${PAPERS.map(([k, n, c]) => `<button data-paper="${k}" class="${k === cur ? 'on' : ''}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
-      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · ${r.notime ? 'السورة كاملة فقط' : 'تلاوة آية آية'}</small></span></button>`).join('') +
+      AU.RECITERS.map(r => `<button class="li" data-r="${r.id}"><span class="n">${r.id === rid ? CK : ''}</span><span class="m"><b>${r.name}</b><small>${r.style} · ${r.notime ? 'السورة كاملة فقط، بلا تظليل للآيات' : 'تتبّع الآيات مع التظليل المتحرك'}</small></span></button>`).join('') +
       `<label class="lbl">التحميلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
@@ -2205,7 +2208,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26n';
+  window.__BUILD = '26o';
   window.__app = { snk: SNK, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
