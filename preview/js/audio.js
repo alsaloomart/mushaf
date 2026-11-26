@@ -66,8 +66,8 @@ const AU = (() => {
       // تحميل مسبق للآية التالية
       const nk = st.keys[st.i + 1];
       if (nk) urlFor(st.rid, nk).then(u => { pre.src = u; }).catch(() => {});
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: 'الآية ' + key, artist: reciter(st.rid).name, album: 'المصحف الذكي' });
+      if ('mediaSession' in navigator && !st.meta) {
+        try { navigator.mediaSession.metadata = new MediaMetadata({ title: 'الآية ' + key, artist: reciter(st.rid).name, album: 'المصحف الذكي' }); } catch (e) {}
       }
     } catch (e) { ev.error(e); stop(); }
   }
@@ -95,6 +95,9 @@ const AU = (() => {
     if (st) return;
     try { el.src = SILENT; const pr = el.play(); if (pr) pr.then(() => { if (!st) el.pause(); }).catch(() => { unlocked = false; }); } catch (e) { unlocked = false; }
   }
+  // التالي/السابق داخل القائمة (أزرار شاشة القفل)
+  function next() { if (st && st.i + 1 < st.keys.length) { st.i++; st.ayRep = 0; return playAt(); } }
+  function prev() { if (st) { if (el.currentTime > 3 || st.i === 0) { el.currentTime = 0; return; } st.i--; st.ayRep = 0; return playAt(); } }
   function pause() { if (st) { el.pause(); ev.state('paused', st); } }
   function resume() { if (st) { el.play(); ev.state('playing', st); } }
   function stop(silent) { el.pause(); el.removeAttribute('src'); const had = st; st = null; if (had && !silent) ev.state('stopped', had); }
@@ -104,6 +107,7 @@ const AU = (() => {
     navigator.mediaSession.setActionHandler('play', resume);
     navigator.mediaSession.setActionHandler('pause', pause);
     navigator.mediaSession.setActionHandler('stop', () => stop());
+    try { navigator.mediaSession.setActionHandler('nexttrack', () => next()); navigator.mediaSession.setActionHandler('previoustrack', () => prev()); } catch (e) {}
   }
-  return { RECITERS, reciter, urlFor, verify, unlock, isUnlocked: () => unlocked, play, pause, resume, stop, state, on, el };
+  return { RECITERS, reciter, urlFor, verify, unlock, isUnlocked: () => unlocked, play, pause, resume, stop, next, prev, state, on, el };
 })();

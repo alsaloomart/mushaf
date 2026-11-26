@@ -50,6 +50,7 @@
     while (k !== b && out.length < max) { k = await QD.nextKey(k); if (!k) break; out.push(k); }
     return out;
   }
+  function pageVisible(p) { if (p === cur) return true; if (!document.documentElement.classList.contains('spread')) return false; const sp = spreadPair(cur); return sp.left === p || sp.right === p; }
   async function pageOfKey(k) { return keyPage.get(k) || QD.pageOf(k); }
   const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -483,23 +484,46 @@
     if (!sel) return;
     AU.play(sel.list.slice(), ST.get().reciter, count, mode, { kind: 'sel' });
   }
+  /* «السورة كاملة»: من الآية المحددة (أو أول آية في الصفحة) إلى آخر السورة بلا توقف، والصفحة تتقلب مع التلاوة */
+  function listenMode() { return ST.get().listen === 'ayah' ? 'ayah' : 'surah'; }
+  async function surahKeys(from) {
+    const [s, a] = from.split(':').map(Number);
+    const ch = await QD.chapters();
+    const n = ch[s - 1].verses_count, out = [];
+    for (let i = a; i <= n; i++) out.push(s + ':' + i);
+    return out;
+  }
+  async function playSurah(from) {
+    const keys = await surahKeys(from);
+    return AU.play(keys, ST.get().reciter, 1, 'range', { kind: 'surah' });
+  }
+  function listenNow() {
+    if (!sel) return;
+    if (listenMode() === 'surah') playSurah(sel.a); else startPlay(1, 'range');
+  }
   // لا تشغيل تلقائي: التلاوة تبدأ فقط عندما يضغط على آية ويختار «استماع» أو «تكرار».
   AU.on('blocked', () => toast('تعذّر تشغيل هذه الآية.'));
-  $('#aListen').onclick = () => startPlay(1, 'range');
+  $('#aListen').onclick = () => listenNow();
   AU.on('ayah', async (k, st) => {
     playingKey = k; paint();
     const r = AU.reciter(st.rid);
     const tot = st.count === 0 ? 'بدون حد' : ar(st.count);
     $('#player').hidden = false;
     $('#pNow').textContent = keyLabel(k) + ' · ' + r.name;
-    $('#pRep').textContent = st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
+    $('#pRep').textContent = st.kind === 'surah' ? `السورة كاملة · ${ar(st.i + 1)} من ${ar(st.keys.length)}` : st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
     reserve();
+    if ('mediaSession' in navigator) {
+      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title: keyLabel(k), artist: r.name, album: 'المصحف الذكي' }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+    }
     const p = await pageOfKey(k);
-    if (p !== cur && !busy) goPage(p, true, false);
+    // الصفحة تتبع التلاوة؛ إن كان التقليب جاريًا نعيد المحاولة بعد انتهائه
+    const follow = (n) => { const s2 = AU.state(); if (!s2 || playingKey !== k) return; if (p === cur || pageVisible(p)) return; if (busy) { if (n < 10) setTimeout(() => follow(n + 1), 250); return; } goPage(p, true, false); };
+    follow(0);
   });
   AU.on('state', (s) => {
     document.body.classList.toggle('playing', s !== 'stopped');
     if (s === 'stopped') { playingKey = null; $('#player').hidden = true; paint(); }
+    if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; } catch (e) {} }
     const paused = s === 'paused';
     $('#pToggle').setAttribute('aria-label', paused ? 'تشغيل' : 'إيقاف مؤقت');
     $('#pToggle').innerHTML = paused ? '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg>';
@@ -544,7 +568,8 @@
   function openTilawa() {
     openList('التلاوة',
       `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ من أول آية في هذه الصفحة، أو اضغط على آية في الصفحة أولًا.'}</p>` +
-      hi('play', 'listen', 'استماع', 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
+      `<div class="seg" id="lMode" role="radiogroup" aria-label="طريقة الاستماع">${[['surah', 'السورة كاملة'], ['ayah', 'الآية أو المقطع']].map(([v, n]) => `<button data-lm="${v}" role="radio" aria-checked="${listenMode() === v}" class="${listenMode() === v ? 'on' : ''}">${n}</button>`).join('')}</div>` +
+      hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'من الآية المحددة إلى آخر السورة بلا توقف، والصفحة تتقلب مع التلاوة' : 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
       hi('repeat', 'repeat', 'التكرار', 'كرّر الآية أو المقطع بعدد تختاره') +
       hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
   }
@@ -620,6 +645,7 @@
     const sf = e.target.closest('#sFlipRow'); if (sf) { ST.set('flip3d', !wantFlip()); openSettings(); return; }
     const sp = e.target.closest('#sPaper [data-paper]');
     if (sp) { const k = sp.dataset.paper; if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
+    const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
     const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openSettings(); return; }
     const tb = e.target.closest('.hubToday [data-act]');
@@ -633,7 +659,7 @@
     if (h === 'repeat') { if (!sel) await selectFirst(); openRepeat(); }
     if (h === 'tasmee') tmStart();
     if (h === 'theme') { $('#btnTheme').click(); openSettings(); }
-    if (h === 'listen') { if (!sel) await selectFirst(); closeSheets(); $('#aListen').click(); }
+    if (h === 'listen') { if (!sel) await selectFirst(); closeSheets(); listenNow(); }
     if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
     if (h === 'more') openMore();
     if (h === 'rem') openRem();
@@ -1930,6 +1956,6 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__app = { isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__app = { listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
