@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /mushaf/preview/
 
 Sitemap: https://alsaloomart.github.io/mushaf/sitemap.xml

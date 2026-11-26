@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<base href="/mushaf/preview/">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>المصحف الذكي — مصحف المدينة النبوية</title>
+<meta name="description" content="مصحف المدينة النبوية (مجمع الملك فهد) بتجربة تفاعلية للحفظ والمراجعة">
+<link rel="canonical" href="https://alsaloomart.github.io/mushaf/preview/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="المصحف الذكي">
+<meta property="og:title" content="المصحف الذكي — مصحف المدينة النبوية">
+<meta property="og:description" content="مصحف المدينة النبوية (مجمع الملك فهد) بتجربة تفاعلية للحفظ والمراجعة">
+<meta property="og:url" content="https://alsaloomart.github.io/mushaf/preview/">
+<meta property="og:image" content="https://alsaloomart.github.io/mushaf/preview/icons/icon-512.png">
+<meta property="og:locale" content="ar_SA">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "المصحف الذكي", "alternateName": "المصحف الذكي — مصحف المدينة النبوية", "description": "مصحف المدينة النبوية (مجمع الملك فهد) بتجربة تفاعلية للحفظ والمراجعة", "url": "https://alsaloomart.github.io/mushaf/preview/", "inLanguage": "ar", "applicationCategory": "EducationalApplication", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "SAR"}}</script>
+<meta name="theme-color" content="#FFFBF7">
+<script>/* الوضع الليلي قبل الرسم */(function(){try{var s=JSON.parse(localStorage.getItem('mushaf.preview.v1')||'{}'),t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');document.documentElement.dataset.paper=s.paper||'beige';if(s.view==='full')document.documentElement.classList.add('vfull')}catch(e){}})()</script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="المصحف الذكي">
+<meta name="apple-mobile-web-app-title" content="المصحف الذكي">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://api.quran.com" crossorigin>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fBlue" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-1 2.75 -0.75 0 0  3.6667 -5.25 2.5833 0 0  6.3333 -9.5 4.1667 0 0  0 0 0 1 0"/></filter>
+  <filter id="fCream" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.984 0 0 0 0  0 0.965 0 0 0  0 0 0.925 0 0  0 0 0 1 0"/></filter>
+</svg>
+
+<main id="reader">
+  <div id="book" class="book" aria-label="صفحات المصحف"><div id="fold" class="fold"></div></div>
+  <button class="nav prev" id="navPrev" aria-label="الصفحة السابقة">›</button>
+  <button class="nav next" id="navNext" aria-label="الصفحة التالية">‹</button>
+  <div id="deskCredit"></div>
+</main>
+
+<!-- الشريط العلوي: الفهرس، وردي، ملاحظاتي، الإعدادات -->
+<nav id="topbar" class="tbar"><button data-nav="index" aria-label="الفهرس"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>الفهرس</span></button><button data-nav="wird" aria-label="وردي"><svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V19"/></svg><span>وردي</span></button><button data-nav="notes" aria-label="ملاحظاتي"><svg viewBox="0 0 24 24"><path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/></svg><span>ملاحظاتي</span></button><button data-nav="settings" aria-label="الإعدادات"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>الإعدادات</span></button></nav>
+<!-- خط الانتقال السريع بين الصفحات -->
+<div id="qj" class="qj"><input type="range" id="qjR" min="1" max="604" step="1" value="1" dir="rtl" aria-label="الانتقال السريع إلى صفحة"><div id="qjB" class="qjb" hidden></div></div>
+<!-- الشريط السفلي -->
+<div id="tm" class="tmbar" hidden role="region" aria-label="التسميع">
+<div class="tmh"><b>التسميع</b><span id="tmPg"></span><button id="tmEnd" class="tmx" aria-label="إنهاء التسميع"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="tmmode" role="radiogroup" aria-label="وضع التسميع">
+<button type="button" role="radio" id="tmModeAyah" aria-checked="true">آية آية</button>
+<button type="button" role="radio" id="tmModePage" aria-checked="false">الوجه كامل</button>
+</div>
+<div id="tmSt" class="tmst" aria-live="polite"></div>
+<div id="tmHeard" class="tmheard" hidden></div>
+<div class="tmb"><button id="tmMic" class="btn pri"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><span>سمّع</span></button><button id="tmRev" class="btn">اكشف الآية</button><button id="tmFlush" class="btn" hidden>أظهر النتيجة</button><button id="tmHint" class="btn">تلميح</button><a id="tmSafari" class="btn" hidden target="_blank" rel="noopener">افتح في Safari</a><button id="tmAgain" class="btn" hidden>أعد الصفحة</button><button id="tmNext" class="btn pri" hidden>الصفحة التالية</button></div>
+</div>
+<div id="tmDbg" class="tmdbg" hidden></div>
+<nav id="botbar" class="bbar"><button data-nav="mushaf" aria-label="المصحف"><svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V19"/></svg><span>المصحف</span></button><button data-nav="search" aria-label="البحث"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>البحث</span></button><button data-nav="tasmee" aria-label="التسميع"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><span>التسميع</span></button><button data-nav="tilawa" aria-label="التلاوة"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><span>التلاوة</span></button><button data-nav="tafsir" aria-label="التفسير"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg><span>التفسير</span></button><button data-nav="more" aria-label="المزيد"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg><span>المزيد</span></button></nav>
+
+<!-- أدوات قديمة (لم تعد تظهر على الصفحة) -->
+<header class="top cx">
+  <button class="ib" id="btnIndex" aria-label="الفهرس"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
+  <div class="ttl"><b id="tSurah"></b><small id="tSub"></small></div>
+  <button class="ib" id="btnTheme" aria-label="الوضع الليلي"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg></button>
+  <button class="ib" id="btnGo" aria-label="انتقل إلى صفحة"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button>
+</header>
+<div id="today" class="today cx" hidden></div>
+
+<!-- شريط أدوات الآية -->
+<div id="tool" class="tool" hidden>
+  <div class="tool-h">
+    <span id="selLbl"></span>
+    <button class="chip" id="btnRange">حدّد آخر آية</button>
+    <button class="x" id="btnSelClose" aria-label="إلغاء التحديد">×</button>
+  </div>
+  <div class="tool-b">
+    <button id="aListen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>استماع</span></button>
+    <button id="aRepeat"><svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 014-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 01-4 4H4"/></svg><span>تكرار</span></button>
+    <button id="aTafsir"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg><span>تفسير</span></button>
+    <button id="aMem"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg><span>حفظ</span></button>
+    <button id="aRev" hidden><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/></svg><span>مراجعة</span></button>
+  </div>
+  <div id="rangeHint" class="hint" hidden>اضغط على آخر آية في المقطع. يمكنك تقليب الصفحات.</div>
+</div>
+
+<!-- شريط التشغيل -->
+<div id="player" class="player" hidden>
+  <button class="ib" id="pToggle" aria-label="إيقاف مؤقت"><svg viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></button>
+  <div class="pinfo"><b id="pNow"></b><small id="pRep"></small></div>
+  <button class="ib" id="pStop" aria-label="إيقاف"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+</div>
+
+<nav class="tabs cx">
+  <button data-tab="mushaf" class="on"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>المصحف</span></button>
+  <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>الخطة</span></button>
+  <button data-tab="review"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/></svg><span>المراجعة</span><i id="dueBadge" hidden></i></button>
+  <button data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>المزيد</span></button>
+</nav>
+
+<section class="sheet" id="sh-index" hidden>
+  <div class="sh-h"><b>الفهرس</b><button class="x" data-close>×</button></div>
+  <div class="seg"><button class="on" data-ix="s">السور</button><button data-ix="j">الأجزاء</button></div>
+  <div class="sh-b" id="ixList"></div>
+</section>
+<section class="sheet" id="sh-plan" hidden>
+  <div class="sh-h"><b>خطة الحفظ</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="planBody"></div>
+</section>
+<section class="sheet" id="sh-review" hidden>
+  <div class="sh-h"><b>المراجعة</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="revBody"></div>
+</section>
+<section class="sheet" id="sh-more" hidden>
+  <div class="sh-h"><b>المزيد</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="moreBody"></div>
+</section>
+<section class="sheet" id="sh-sources" hidden>
+  <div class="sh-h"><b>المصادر</b><button class="x" data-close>×</button></div>
+  <div class="sh-b prose" id="srcBody"></div>
+</section>
+<section class="sheet small" id="sh-repeat" hidden>
+  <div class="sh-h"><b>التكرار</b><button class="x" data-close>×</button></div>
+  <div class="sh-b">
+    <label class="lbl">عدد المرات</label>
+    <div class="seg wrap" id="repCount"></div>
+    <label class="lbl">طريقة التكرار</label>
+    <div class="seg" id="repMode"><button data-m="range">المقطع كامل</button><button data-m="ayah">كل آية على حدة</button></div>
+    <button class="btn gold full" id="repGo">ابدأ التكرار</button>
+  </div>
+</section>
+<div id="noteCard" class="notecard" hidden></div>
+<section class="sheet" id="sh-notes" hidden>
+  <div class="sh-h"><b>ملاحظاتي</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="notesBody"></div>
+</section>
+<section class="sheet" id="sh-rem" hidden>
+  <div class="sh-h"><b>تذكير الورد</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="remBody"></div>
+</section>
+<section class="sheet" id="sh-tafsir" hidden>
+  <div class="sh-h"><b>التفسير</b><button class="x" data-close>×</button></div>
+  <div class="sh-b">
+    <div class="seg" id="tfSeg"><button data-t="mukhtasar">المختصر</button><button data-t="saadi">السعدي</button></div>
+    <p class="muted sm" id="tfScope"></p>
+    <div id="tfBody" class="tfbody"></div>
+  </div>
+</section>
+<section class="sheet" id="sh-hub" hidden>
+  <div class="sh-h"><b>القائمة</b><button class="x" data-close>×</button></div>
+  <div class="sh-b" id="hubBody"></div>
+</section>
+<section class="sheet" id="sh-go" hidden>
+  <div class="sh-h"><b>بحث</b><button class="x" data-close>×</button></div>
+  <div class="seg" id="goSeg"><button class="on" data-m="t">الآية</button><button data-m="s">السورة</button><button data-m="j">الجزء</button><button data-m="p">الصفحة</button></div>
+  <div class="sh-b" id="goBody">
+    <div data-pane="t">
+      <input id="qText" type="search" placeholder="اكتب كلمات من الآية" autocomplete="off" enterkeyhint="search">
+      <p class="muted sm" id="qInfo">البحث يتجاهل التشكيل والهمزات</p>
+      <div id="qRes"></div>
+    </div>
+    <div data-pane="s" hidden>
+      <input id="qSurah" type="search" placeholder="اسم السورة أو رقمها" autocomplete="off">
+      <div id="sList"></div>
+      <label class="lbl">سورة وآية</label>
+      <div class="row"><select id="goSurah"></select><input id="goAyah" type="number" min="1" inputmode="numeric" placeholder="الآية" style="max-width:96px"><button class="btn gold" id="goKeyBtn">اذهب</button></div>
+    </div>
+    <div data-pane="j" hidden><div id="jList" class="grid"></div></div>
+    <div data-pane="p" hidden>
+      <label class="lbl">رقم الصفحة (1–604)</label>
+      <div class="row"><input id="goPage" type="number" min="1" max="604" inputmode="numeric" enterkeyhint="go"><button class="btn gold" id="goPageBtn">اذهب</button></div>
+      <p class="muted sm" id="goPageInfo"></p>
+    </div>
+  </div>
+</section>
+<section class="sheet small" id="sh-confirm" hidden>
+  <div class="sh-b cf"><p id="cfMsg"></p>
+    <div class="row"><button class="btn" id="cfNo">رجوع</button><button class="btn danger" id="cfYes">نعم</button></div>
+  </div>
+</section>
+
+<div id="install" class="install" hidden></div>
+<div id="toast" class="toast" role="status"></div>
+<div id="scrim" class="scrim" hidden></div>
+
+<script src="js/quran-data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/store.js"></script>
+<script src="js/tmatch.js"></script>
+<script src="js/app.js"></script>
+<script src="js/cloud.js"></script>
+</body>
+</html>
