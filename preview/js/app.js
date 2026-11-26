@@ -232,13 +232,18 @@
    * الرأس يتقدم بانسياب مع وقت التلاوة (توقيت الآيات، وداخل الآية خطيًا)، بحافة متدرجة ناعمة،
    * والذيل يلحقه على بعد نحو آيتين ونصف ويمحو من بداية المقطع تدريجيًا، بطرف يتلاشى. */
   const SNK = { p: 0, raf: 0, H: null, T: null, uReset: 0, lastU: -1, last: 0, el: null };
-  const SNK_TAIL = 2.5, SNK_FH = 9, SNK_A = 0.10;
+  const SNK_FH = 9, SNK_A = 0.10;
   function snkPath(el, p, pd) {
     if (el.__snkPath) return el.__snkPath;
     const pcs = hlPieces(p, pd); if (!pcs) return null;
-    let d = 0; const rng = new Map();
-    for (const c of pcs) { c.ds = d; d += c.x1 - c.x0; c.de = d; const r = rng.get(c.k); if (r) r[1] = c.de; else rng.set(c.k, [c.ds, c.de]); }
-    return (el.__snkPath = { pcs, rng, len: d, keys: [...rng.keys()] });
+    let d = 0; const rng = new Map(), lines = [];
+    for (const c of pcs) {
+      c.ds = d; d += c.x1 - c.x0; c.de = d;
+      const r = rng.get(c.k); if (r) r[1] = c.de; else rng.set(c.k, [c.ds, c.de]);
+      const ln = lines[lines.length - 1];
+      if (ln && Math.abs(ln.y - c.y0) < 6) ln.de = c.de; else lines.push({ y: c.y0, ds: c.ds, de: c.de });
+    }
+    return (el.__snkPath = { pcs, rng, lines, len: d, keys: [...rng.keys()] });
   }
   /* موضع التلاوة كرقم متصل: رقم الآية في القائمة + نسبة ما مضى منها */
   function snkU() {
@@ -271,20 +276,27 @@
     // صفحة جديدة أو قفزة للخلف (تكرار/رجوع): نبدأ نظيفًا من بداية الآية الحالية
     if (SNK.p !== p || u < SNK.lastU - 0.02) { if (SNK.el && SNK.el !== el) snkClear(SNK.el); SNK.p = p; SNK.el = el; SNK.uReset = Math.floor(u); SNK.H = null; SNK.T = null; }
     SNK.lastU = u;
-    const Ht = snkDist(P, st, u), Tt = snkDist(P, st, Math.max(SNK.uReset, u - SNK_TAIL));
+    const Ht = snkDist(P, st, u);
     const ease = (v, t, tau) => (v == null || Math.abs(t - v) > 220) ? t : v + (t - v) * (1 - Math.exp(-dt / tau));
     SNK.H = force && SNK.H != null ? SNK.H : ease(SNK.H, Ht, 0.12);
-    SNK.T = Math.min(SNK.H, force && SNK.T != null ? SNK.T : ease(SNK.T, Tt, 0.35));
-    const H = SNK.H, T = SNK.T, g = el.querySelector('g.snk'), svg = el.querySelector('svg.tx');
+    const H = SNK.H;
+    // سطر واحد فقط: الرأس يمشي على السطر، والذيل يلحقه داخل السطر نفسه حتى يلتقيا عند نهايته، ثم يبدأ السطر التالي نظيفًا
+    const ln = P.lines.find(l => H >= l.ds - 0.01 && H <= l.de + 0.01) || P.lines.find(l => H < l.ds) || P.lines[P.lines.length - 1];
+    const W = Math.max(1, ln.de - ln.ds), q = Math.max(0, Math.min(1, (H - ln.ds) / W));
+    // الذيل ثابت عند بداية السطر حتى يبلغ الرأس منتصفه، ثم يمحو من البداية بسرعة أكبر فيلتقيان عند نهاية السطر.
+    // tail = p<0.5 ? 0 : (p-0.5)*2، مع بداية لينة (x²(2-x)) حتى لا ينطلق فجأة
+    const x = q < 0.5 ? 0 : (q - 0.5) * 2, tq = x * x * (2 - x);
+    const T = Math.max(ln.ds, Math.min(H, ln.ds + W * tq));
+    SNK.T = T; SNK.ln = ln;
+    const g = el.querySelector('g.snk'), svg = el.querySelector('svg.tx');
     if (!g) return;
     svg.classList.add('snk-on');
-    // الذيل لا يتلاشى قبل أن يبدأ اللحاق (بداية نظيفة من أول الآية)
-    const T0 = snkDist(P, st, SNK.uReset);
-    const FT = Math.max(3, Math.min(90, (H - T) * 0.45, (T - T0) + 3));
+    const FT = Math.max(2, Math.min(60, (H - T) * 0.45, (T - ln.ds) + 2));
     const alpha = d => SNK_A * Math.max(0, Math.min(1, (H - d) / SNK_FH)) * Math.max(0, Math.min(1, (d - T) / FT));
     const rx = hlRx(svg, pd).toFixed(2);
     let defs = '', body = '', n = 0;
     for (const c of P.pcs) {
+      if (c.de < ln.ds - 0.01 || c.ds > ln.de + 0.01) continue;
       const a = Math.max(c.ds, T), b = Math.min(c.de, H);
       if (b - a < 0.6) continue;
       const xl = c.x1 - (b - c.ds), xr = c.x1 - (a - c.ds), w = xr - xl;
@@ -2193,7 +2205,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26m';
+  window.__BUILD = '26n';
   window.__app = { snk: SNK, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
