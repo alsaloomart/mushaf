@@ -524,6 +524,7 @@
     document.body.classList.toggle('playing', s !== 'stopped');
     if (s === 'stopped') { playingKey = null; $('#player').hidden = true; paint(); }
     if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; } catch (e) {} }
+    try { ixPaint(); } catch (e) {}
     const paused = s === 'paused';
     $('#pToggle').setAttribute('aria-label', paused ? 'تشغيل' : 'إيقاف مؤقت');
     $('#pToggle').innerHTML = paused ? '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg>';
@@ -1024,7 +1025,9 @@
     $$('#sh-index .seg button').forEach(b => b.classList.toggle('on', b.dataset.ix === kind));
     const L = $('#ixList');
     if (kind === 's') {
-      L.innerHTML = chapters.map(c => `<button class="li" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button>`).join('');
+      // الصف يفتح السورة للقراءة، وزر التشغيل المنفصل يشغّلها كاملة
+      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
+      ixPaint();
     } else {
       if (!juzs) juzs = await QD.juzStarts();
       L.innerHTML = juzs.map(j => `<button class="li" data-k="${j.k}"><span class="n">${ar(j.n)}</span><span class="m"><b>الجزء ${ar(j.n)}</b><small>يبدأ من ${keyLabel(j.k)}</small></span></button>`).join('');
@@ -1032,10 +1035,37 @@
   }
   $('#sh-index .seg').onclick = e => { const b = e.target.closest('button'); if (b) openIndex(b.dataset.ix); };
   $('#ixList').onclick = async e => {
-    const b = e.target.closest('.li'); if (!b) return;
+    const pb = e.target.closest('.ixplay');
+    if (pb) {
+      e.stopPropagation();
+      const sNo = +pb.dataset.s, st = AU.state();
+      if (ixPlaying(sNo)) { AU.el.paused ? AU.resume() : AU.pause(); ixPaint(); return; }
+      AU.unlock();   // داخل اللمسة نفسها: يفتح عنصر الصوت على iOS قبل جلب الروابط
+      const c = chapters[sNo - 1];
+      closeSheets(); if (sel) clearSel();
+      goPage(c.pages[0], true, false);
+      const keys = []; for (let i = 1; i <= c.verses_count; i++) keys.push(sNo + ':' + i);
+      AU.play(keys, ST.get().reciter, 1, 'range', { kind: 'surah' });
+      return;
+    }
+    const b = e.target.closest('.ixo, .li'); if (!b) return;
     closeSheets(); goPage(b.dataset.p ? +b.dataset.p : await pageOfKey(b.dataset.k));
   };
   $('#btnIndex').onclick = () => openIndex('s');
+  const IXI = {
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8v10.4a.8.8 0 001.2.7l8.2-5.2a.8.8 0 000-1.4l-8.2-5.2a.8.8 0 00-1.2.7z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.5v11M15.5 6.5v11"/></svg>'
+  };
+  function ixPlaying(sNo) { const st = AU.state(); return !!(st && st.kind === 'surah' && +st.keys[0].split(':')[0] === sNo); }
+  function ixPaint() {
+    $$('#ixList .ixplay').forEach(b => {
+      const sNo = +b.dataset.s, on = ixPlaying(sNo), run = on && !AU.el.paused;
+      b.classList.toggle('on', on);
+      const want = run ? 'pause' : 'play';
+      if (b.dataset.ic !== want) { b.innerHTML = IXI[want]; b.dataset.ic = want; }
+      b.setAttribute('aria-label', (run ? 'إيقاف مؤقت لسورة ' : 'تشغيل سورة ') + b.dataset.name);
+    });
+  }
 
   /* ---------- البحث: الآية، السورة، الجزء، الصفحة ---------- */
   // نص Tanzil (Simple Clean، CC BY 3.0) كما هو، والتطبيع وقت البحث فقط
