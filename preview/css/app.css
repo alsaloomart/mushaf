@@ -523,12 +523,15 @@ html.dark .ixrc select{background:#202121}
 svg.tx .hl{pointer-events:none;mix-blend-mode:multiply}
 svg.tx .hl rect{fill:var(--hlc,var(--acc,#A26F2A));fill-opacity:0;transition:fill-opacity .18s}
 svg.tx .hl rect.td{fill-opacity:.05}
-svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.10}
+svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.15}
+/* الليلي والزجاجي: الصفحة معكوسة، فنعكس طبقة التظليل عكسًا مقابلًا ليظهر لونها الحقيقي (ذهبي فاتح)، بنسبة أعلى ليُرى بوضوح والحروف واضحة */
+html.dark svg.tx .hl,html.dark svg.tx .snk{filter:invert(1) hue-rotate(180deg)}
+html.dark svg.tx .hl rect.sel,html.dark svg.tx .hl rect.play{fill-opacity:.26}
 svg.tx.hasHL .hot path.sel,svg.tx.hasHL .hot path.play,svg.tx.hasHL .hot path.td{fill:transparent}
 .leaf.turning svg.tx .hl rect{transition:none}
 body.tm svg.tx .hl rect{fill-opacity:0}
 /* الوضع الليلي: الصفحة تُعكس بفلتر، فنعطي اللون المعكوس ليظهر ذهبيًا خافتًا */
-html.dark{--hlc:#95752F}
+html.dark{--hlc:#F2C230}
 /* تظليل التلاوة المتحرك: شريط ناعم بتدرج، يحل محل تظليل الآية الثابت أثناء التلاوة */
 svg.tx .snk{pointer-events:none;mix-blend-mode:multiply;transition:opacity .35s}
 svg.tx .snk stop{stop-color:var(--hlc,var(--acc,#A26F2A))}
@@ -614,7 +617,7 @@ html.glass .pprog{inset-inline:22px;bottom:5px;height:3px;background:rgba(255,25
 html.glass .pprog b{background:#fff}
 html.glass .hubtab{color:#f2f2f7;background:rgba(46,48,47,.7);border-color:var(--glb);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 /* تظليل الآية في الزجاجي: ذهبي هادئ (الصفحة معكوسة كالليلي، فهذا اللون يظهر ذهبيًا بعد العكس)، 10% لا يغطي الحروف */
-html.glass{--hlc:#936C00}
+html.glass{--hlc:#F2C230}
 html.glass .li.hub .n svg{color:#fff}
 html.glass .li.hub.tdl.done .n{background:rgba(242,194,48,.16);color:#F2C230}
 html.glass .li.hub.tdl.done .n svg{color:#F2C230}

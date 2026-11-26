@@ -232,7 +232,7 @@
    * الرأس يتقدم بانسياب مع وقت التلاوة (توقيت الآيات، وداخل الآية خطيًا)، بحافة متدرجة ناعمة،
    * والذيل يلحقه على بعد نحو آيتين ونصف ويمحو من بداية المقطع تدريجيًا، بطرف يتلاشى. */
   const SNK = { p: 0, raf: 0, H: null, T: null, uReset: 0, lastU: -1, last: 0, el: null };
-  const SNK_FH = 9, SNK_A = 0.10;
+  const SNK_FH = 9; let SNK_A = 0.15;   // 15% في الفاتح، 26% في الليلي والزجاجي
   function snkPath(el, p, pd) {
     if (el.__snkPath) return el.__snkPath;
     const pcs = hlPieces(p, pd); if (!pcs) return null;
@@ -362,6 +362,7 @@
     const g = el.querySelector('g.snk'), svg = el.querySelector('svg.tx');
     if (!g) return;
     svg.classList.add('snk-on');
+    SNK_A = document.documentElement.classList.contains('dark') ? 0.26 : 0.15;
     const FT = Math.max(2, Math.min(60, (H - T) * 0.45, (T - ln.ds) + 2));
     const alpha = d => SNK_A * Math.max(0, Math.min(1, (H - d) / SNK_FH)) * Math.max(0, Math.min(1, (d - T) / FT));
     const rx = hlRx(svg, pd).toFixed(2);
@@ -2307,7 +2308,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26r';
+  window.__BUILD = '26s';
   window.__app = { snk: SNK, snkKnots, snkPath, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
