@@ -196,3 +196,49 @@ html.dark .adh-big .in em.adh-fcta,html.glass .adh-big .in em.adh-fcta{color:var
 .adh-fleg i.fd{width:12px;height:12px;font-size:0;border-width:1.5px;text-decoration:none}
 .adh-entry.one{grid-template-columns:1fr}
 html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[data-view="e"] .adh-prog{box-shadow:0 -6px 0 0 var(--sheet,#fff),0 6px 14px -10px rgba(31,33,32,.25)}
+
+/* v26z3 — «متابعة الصلاة»: الصلوات الخمس وتقويم بدوائر (هجري / اليوم / ميلادي) */
+.adh-pday{background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:12px;margin:0 0 12px}
+.adh-pdh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.adh-pdh b{font-size:.98rem}.adh-pdh span{font-size:.84rem;color:var(--a-sub);font-variant-numeric:tabular-nums}
+.adh-pdd{margin:2px 0 0;font-size:.78rem;color:var(--a-sub)}
+.adh-pbtns{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 6px}
+.adh-pbtns button{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:58px;padding:8px 2px;border-radius:14px;border:1.5px solid var(--a-line);background:var(--a-soft);color:var(--a-ink);font:inherit;font-size:.8rem;font-weight:700;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.adh-pbtns button svg{width:20px;height:20px;fill:none;stroke:var(--a-line);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;border-radius:50%;border:1.5px solid var(--a-line);padding:2px;box-sizing:border-box}
+.adh-pbtns button.on{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120}
+.adh-pbtns button.on svg{stroke:#1F2120;border-color:#1F2120}
+.adh-phint{display:block;font-size:.74rem;color:var(--a-sub);line-height:1.6}
+.adh-pday .lnk{margin-top:2px}
+#sh-adhkar .adh-pf{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:4px 0 10px}
+#sh-adhkar .adh-pf button{font-size:.76rem;padding:7px 0;min-width:0;white-space:nowrap}
+.adh-cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;direction:rtl;margin:0 0 8px}
+.pd{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;aspect-ratio:1;border-radius:50%;border:1.5px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font:inherit;padding:0;line-height:1.25;font-variant-numeric:tabular-nums;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pd .h{font-size:.72rem;font-weight:700}
+.pd b{font-size:.68rem;font-weight:600;color:var(--a-sub)}
+.pd .g{font-size:.66rem;color:var(--a-sub)}
+.pd em{position:absolute;top:-4px;inset-inline-start:50%;transform:translateX(50%);font-style:normal;font-size:.62rem;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--a-card);border:1px solid var(--a-line);color:var(--a-ink);direction:ltr}
+.pd.p-done{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120}
+.pd.p-done b,.pd.p-done .g{color:#1F2120}
+.pd.p-done em{background:#1F2120;color:#F2C230;border-color:#1F2120}
+.pd.p-part{border-color:var(--a-gold);background:rgba(242,194,48,.14)}
+.pd.p-miss{background:var(--a-soft);color:var(--a-sub)}
+.pd.p-miss .h{font-weight:600}
+.pd.p-up{opacity:.55}
+.pd.is-t{box-shadow:0 0 0 2px var(--a-card),0 0 0 4px var(--a-gold)}
+.pd.sel:not(.is-t){box-shadow:0 0 0 2px var(--a-card),0 0 0 4px var(--a-ink)}
+.pd:disabled{cursor:default}
+.adh-fleg{flex-wrap:wrap;row-gap:4px}
+.adh-fleg i.pdl{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--a-line)}
+.adh-fleg i.p-done{background:var(--a-gold);border-color:var(--a-gold)}
+.adh-fleg i.p-part{background:rgba(242,194,48,.14);border-color:var(--a-gold)}
+.adh-fleg i.p-miss{background:var(--a-soft)}
+.adh-fleg i.p-up{opacity:.55}
+.adh-pper{background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:12px 14px;margin-top:12px}
+.adh-pph{display:block;font-size:.92rem;margin-bottom:6px}
+.adh-prow{display:grid;grid-template-columns:52px 1fr auto 40px;align-items:center;gap:8px;padding:6px 0;font-size:.82rem}
+.adh-prow b{font-weight:700}.adh-prow span{color:var(--a-sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.adh-prow em{font-style:normal;font-weight:800;text-align:end;font-variant-numeric:tabular-nums}
+.adh-prow .adh-bar{margin:0}
+@media (max-width:370px){.adh-cal{grid-template-columns:repeat(3,1fr);gap:7px}.adh-pbtns button{font-size:.74rem}#sh-adhkar .adh-pf button{font-size:.7rem}}
+/* v26z3: الزجاجي: شريط التبويبات الثابت بخلفية معتمة حتى لا تظهر الدوائر من خلاله عند التمرير */
+html.glass #sh-adhkar .adh-tabs{background:#1F2120;box-shadow:0 6px 0 0 #1F2120}
