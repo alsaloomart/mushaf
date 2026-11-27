@@ -26,7 +26,7 @@
     minute: { one: 'دقيقة واحدة', oneAcc: 'دقيقةً واحدةً', two: ['دقيقتان', 'دقيقتين'], pl: 'دقائق', acc: 'دقيقةً', sg: 'دقيقة' }
   };
   /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(1,'day','acc')='يومًا واحدًا'، cnt(2,'day','acc')='يومين'، cnt(15)='15 آية'، cnt(100)='100 آية' */
-  function cnt(n, w = 'aya', gen = false) {
+  function cnt(n, w = 'aya', gen = false, compact = false) {   // compact: الأسطر المختصرة (صفوف الفهرس وسطر عدد النتائج) بلا علامة التنوين: «286 آية»؛ ويبقى ما كُتب بألف («يومًا»)
     const f = NOUN[w]; n = +n;
     if (n === 0) return '0 ' + f.pl;   // v26z7: «0 أيام»، «0 صلوات» (المدقق)
     if (n === 1) return (gen === 'acc' && f.oneAcc) || f.one;   // gen='acc': مفعول به («أتممتها يومًا واحدًا من 7»)
@@ -34,7 +34,7 @@
     const r = n % 100;
     const t = n >= 1000 ? n.toLocaleString('en-US') : ar(n);   // فاصلة الآلاف الغربية: 1,240
     if (r >= 3 && r <= 10) return t + ' ' + f.pl;
-    if (r >= 11 && r <= 99) return t + ' ' + f.acc;
+    if (r >= 11 && r <= 99) return t + ' ' + (compact ? f.acc.replace(/\u064B$/, '') : f.acc);
     return t + ' ' + f.sg;   // 100، 200، 101، 102…
   }
   // الفواصل الفعلية للمراجعة [1،2،4،7،15،30،60] بعد «بعد»
@@ -1012,8 +1012,8 @@
     if (sp) { const k = sp.dataset.paper; if (k === 'glass') setTheme('glass'); else if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
     const dx = e.target.closest('.dlx');
-    if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (await ask('حذف سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'حذف')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
-    if (e.target.closest('#dlAll')) { if (await ask('حذف كل السور التي نزّلتها لجميع القرّاء؟', 'حذف')) { await AU.dl.removeAll(); toast('حُذِفت كل التنزيلات.'); dlBox(); } return; }
+    if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (await ask('حذف سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'احذف')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
+    if (e.target.closest('#dlAll')) { if (await ask('حذف كل السور التي نزّلتها لجميع القرّاء؟', 'احذف')) { await AU.dl.removeAll(); toast('حُذِفت كل التنزيلات.'); dlBox(); } return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
     const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openSettings(); return; }
     const tb = e.target.closest('.hubToday [data-act]');
@@ -1352,7 +1352,7 @@
       $('#plListen').onclick = async () => { closeSheets(); goPage(await pageOfKey(t.a)); await select(t.a, t.b); startPlay(ST.get().repeat.count || 1, ST.get().repeat.mode); };
     }
     $('#plEdit').onclick = () => openPlan(true);
-    $('#plDel').onclick = async () => { if (await ask('حذف الخطة؟ لن يُحذف المحفوظ ولا المراجعة.', 'حذف')) { ST.setPlan(null); refreshToday(); closeSheets(); } };
+    $('#plDel').onclick = async () => { if (await ask('حذف الخطة؟ لن يُحذف المحفوظ ولا المراجعة.', 'احذف')) { ST.setPlan(null); refreshToday(); closeSheets(); } };
   }
 
   /* ---------- المراجعة ---------- */
@@ -1394,7 +1394,7 @@
     const L = $('#ixList');
     if (kind === 's') {
       // الصف يفتح السورة للقراءة، وزر التشغيل المنفصل يشغّلها كاملة
-      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixdl" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تنزيل سورة ${c.name_arabic}">${IXI.dl}</button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
+      L.innerHTML = chapters.map(c => `<div class="li ixs"><button class="ixo" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · <span class="cnw" dir="rtl">${cnt(c.verses_count, 'aya', false, true)}</span></small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button><button class="ixdl" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تنزيل سورة ${c.name_arabic}">${IXI.dl}</button><button class="ixplay" data-s="${c.id}" data-name="${c.name_arabic}" aria-label="تشغيل سورة ${c.name_arabic}">${IXI.play}</button></div>`).join('');
       dlRid = ST.get().reciter;
       L.insertAdjacentHTML('afterbegin', `<div class="ixrc"><label for="ixRec">تنزيل السور بصوت</label><select id="ixRec">${AU.RECITERS.map(r => `<option value="${r.id}"${r.id === dlRid ? ' selected' : ''}>${r.name}${r.style !== 'مرتّل' || AU.RECITERS.filter(x => x.name === r.name).length > 1 ? ' (' + r.style + ')' : ''}</option>`).join('')}</select></div>`);
       $('#ixRec').onchange = e => { dlRid = +e.target.value; dlRefresh(); };
@@ -1464,7 +1464,7 @@
     const r = AU.reciter(rid);
     if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغِي تنزيل سورة ' + nm + '.'); return; }
     if ((await AU.dl.status(rid)).get(sNo) === 'done') {
-      if (!(await ask('حذف سورة ' + nm + ' بصوت ' + r.name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'حذف'))) return;
+      if (!(await ask('حذف سورة ' + nm + ' بصوت ' + r.name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'احذف'))) return;
       await AU.dl.remove(rid, sNo); toast('حُذِفت سورة ' + nm + ' من جهازك.'); return;
     }
     if (navigator.onLine === false) { toast('لا يوجد اتصال بالإنترنت. التنزيل يحتاج إلى اتصال.'); return; }
@@ -1530,7 +1530,7 @@
     if (norm($('#qText').value) !== nq) return;
     const words = nq.split(' ');
     const hits = rows.filter(r => words.every(w => r.n.includes(w)));
-    info.textContent = hits.length ? (hits.length > 100 ? `أول 100 من ${cnt(hits.length)}` : cnt(hits.length)) : 'لا توجد نتائج';
+    info.textContent = hits.length ? (hits.length > 100 ? `أول 100 من ${cnt(hits.length, 'aya', false, true)}` : cnt(hits.length, 'aya', false, true)) : 'لا توجد نتائج';
     const show = hits.slice(0, 100);
     const pages = await Promise.all(show.map(h => pageOfKey(h.k).catch(() => 0)));
     out.innerHTML = show.map((h, i) => `<button class="li res" data-k="${h.k}"><span class="m"><b>${keyLabel(h.k)}</b><small class="qt">${esc(h.t)}</small></span><span class="pgn">ص ${ar(pages[i])}</span></button>`).join('');
@@ -1543,7 +1543,7 @@
   function surahList(q = '') {
     const nq = norm(q), num = +q;
     const list = chapters.filter(c => !q.trim() || (num ? c.id === num : norm(c.name_arabic).includes(nq)));
-    $('#sList').innerHTML = list.map(c => `<button class="li" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · ${cnt(c.verses_count)}</small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button>`).join('');
+    $('#sList').innerHTML = list.map(c => `<button class="li" data-p="${c.pages[0]}"><span class="n">${ar(c.id)}</span><span class="m"><b>${c.name_arabic}</b><small>${c.revelation_place === 'makkah' ? 'مكية' : 'مدنية'} · <span class="cnw" dir="rtl">${cnt(c.verses_count, 'aya', false, true)}</span></small></span><span class="pgn">ص ${ar(c.pages[0])}</span></button>`).join('');
   }
   $('#qSurah').addEventListener('input', e => surahList(e.target.value));
   $('#sList').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { closeSheets(); goPage(+b.dataset.p); } };
@@ -2447,7 +2447,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z8';
+  window.__BUILD='26z9';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

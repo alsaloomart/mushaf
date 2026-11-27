@@ -684,3 +684,7 @@ body.immersive.playing .book{bottom:calc(var(--reserve) + var(--bbh))}
 
 /* v26z8: التشكيل الجزئي لنصوص الواجهة — مسافة أسطر أوسع قليلًا للفقرات الصغيرة حتى لا تتلامس الحركات (الضمة والشدة فوق، والكسرة تحت) بين سطرين. لا يمس المصحف. */
 p.sm,p.muted{line-height:1.6}
+
+/* v26z9: عدد الآيات في صفوف الفهرس: الرقم والكلمة لا ينفصلان، بعرض ثابت، ومسافة أسطر أوسع قليلًا */
+.li .m small{line-height:1.6}
+.li .m small .cnw{display:inline-block;white-space:nowrap;min-width:4.6em;text-align:start;unicode-bidi:isolate}

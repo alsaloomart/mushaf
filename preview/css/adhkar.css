@@ -274,3 +274,27 @@ html.dark #sh-adhkar{--a-pd:#262827;--a-pdt:#3A3C3B}
 .adh-fleg i.p-up{opacity:.45}
 html.dark .pd.p-part,html.dark .adh-fleg i.p-part{background:var(--a-pd)}
 @media (max-width:370px){.adh-cal{grid-template-columns:repeat(4,1fr);gap:7px 5px}.pd .h{font-size:.64rem}.pd b,.pd .g{font-size:.56rem}}
+
+/* v26z9 (سفيان) — التقويم الأسبوعي: 7 أعمدة تبدأ بالأحد، دائرة نحو 40px، حلقة ذهبية نحو 2px، رقم هجري وتحته الميلادي باهتًا، الشهران في الرأس */
+.adh-cal2{margin:4px 0 8px}
+.adh-calh{display:flex;flex-direction:column;align-items:center;gap:1px;margin:0 0 8px;text-align:center}
+.adh-calh b{font-size:.95rem;font-weight:700;color:var(--a-ink)}
+.adh-calh span{font-size:.78rem;color:var(--a-sub)}
+.adh-wdays,.adh-wk{display:grid;grid-template-columns:repeat(7,1fr);direction:rtl;justify-items:center}
+.adh-wdays{margin:0 0 4px}
+.adh-wdays span{font-size:.72rem;color:var(--a-sub);line-height:1.6}
+.adh-wk{row-gap:6px}
+.pc{position:relative;width:40px;height:40px;border-radius:50%;border:0;padding:0;background:transparent;color:var(--a-ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;cursor:pointer}
+.pc-e{cursor:default}
+.pc .pr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pc .pr .tr{fill:none;stroke:var(--a-pdt);stroke-width:2}
+.pc .pr .fl{fill:none;stroke:var(--a-gold);stroke-width:2;stroke-linecap:round}
+.pc .h{position:relative;font-size:.86rem;font-weight:700}
+.pc .g{position:relative;font-size:.56rem;color:var(--a-sub);opacity:.75;margin-top:2px}
+.pc.p-miss .h{color:var(--a-sub);font-weight:600}
+.pc.p-up{opacity:.4;cursor:default}
+.pc .tdot{position:absolute;bottom:-5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--a-gold)}
+.pc.sel:not(.is-t){box-shadow:0 0 0 1.5px var(--a-sub)}
+.pc:disabled{cursor:default}
+.adh-fleg i.pdl{width:11px;height:11px;border-width:1.5px;background:transparent}
+.adh-fleg i.p-done,.adh-fleg i.p-part{background:transparent}

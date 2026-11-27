@@ -209,6 +209,10 @@
   const HF = (() => { try { return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { year: 'numeric', month: 'numeric', day: 'numeric' }); } catch (e) { return null; } })();
   const WF = (() => { try { return new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'long' }); } catch (e) { return null; } })();
   const hij = d => { if (!HF) return ''; try { const o = {}; for (const x of HF.formatToParts(d)) o[x.type] = x.value; return o.year && o.month && o.day ? `${parseInt(o.year, 10)}/${+o.month}/${+o.day}` : ''; } catch (e) { return ''; } };
+  // v26z9: رقم اليوم واسم الشهر والسنة الهجرية (أم القرى) من Intl، واسم الشهر الميلادي بالعربية
+  const HM = (() => { try { return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { month: 'long' }); } catch (e) { return null; } })();
+  const GM = (() => { try { return new Intl.DateTimeFormat('ar-u-nu-latn', { month: 'long' }); } catch (e) { return null; } })();
+  const hParts = d => { const o = {}; try { if (HF) for (const x of HF.formatToParts(d)) o[x.type] = x.value; } catch (e) {} return { d: o.day ? String(+o.day) : '', y: o.year ? String(parseInt(o.year, 10)) : '', m: HM ? HM.format(d) : '' }; };
   const dParts = k => { const d = new Date(k + 'T12:00'); return { h: hij(d), w: WF ? WF.format(d) : '', g: `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}` }; };
   function fState() {
     const F = S.pr, t = today();
@@ -254,17 +258,33 @@
     const legend = pf === 'all'
       ? '<span><i class="pdl p-done"></i>الخمس كلها</span><span><i class="pdl p-part"></i>بعضها</span><span><i class="pdl p-miss"></i>لم يُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>'
       : '<span><i class="pdl p-done"></i>صلّيت</span><span><i class="pdl p-miss"></i>لم تُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>';
-    // v26z7: دوائر صغيرة رمادية فاتحة، وحلقة ذهبية رفيعة تمتلئ بعدد الصلوات (2 من 5 = خُمسا الحلقة)، ونقطة ذهبية لليوم فقط؛ وأسبوع واحد على الأكثر من الأيام القادمة
-    const CIRC = 295.31, lim = Math.max(st.ti, 0) + 7;
-    const cal = st.days.filter(d => d.i <= lim).map(d => { const p = dParts(d.k), s2 = dSt(d, pf), fr = d.fut ? 0 : pf === 'all' ? d.c / 5 : d.x[pf] ? 1 : 0;
+    // v26z9 (سفيان): شبكة أسبوعية من 7 أعمدة تبدأ بالأحد، وصف أسماء أيام قصيرة؛ في الدائرة رقم اليوم الهجري، وتحته اليوم الميلادي صغيرًا باهتًا؛
+    // اسما الشهرين الهجري والميلادي مرة واحدة في رأس التقويم؛ دائرة نحو 40px وحلقة ذهبية نحو 2px؛ نقطة ذهبية لليوم؛ الأيام القادمة باهتة بلا حلقة.
+    const CIRC = 138.23;   // 2πr، r=22 في viewBox 48
+    const pdays = st.days.map(d => { const dt = new Date(d.k + 'T12:00'); return { d, dt, h: hParts(dt) }; });
+    const off = pdays.length ? pdays[0].dt.getDay() : 0;   // 0 = الأحد
+    const cells = [];
+    for (let i = 0; i < off; i++) cells.push('<span class="pc pc-e" aria-hidden="true"></span>');
+    for (const { d, dt, h } of pdays) {
+      const p = dParts(d.k), s2 = dSt(d, pf), fr = d.fut ? 0 : pf === 'all' ? d.c / 5 : d.x[pf] ? 1 : 0;
       const lab = `${p.w} ${p.h} هـ، ${p.g} م` + (d.fut ? '' : pf === 'all' ? `، ${d.c} من 5` : d.x[pf] ? '، صلّيت' : '');
-      return `<button role="listitem" class="pd p-${s2}${d.isT ? ' is-t' : ''}${d.k === PSEL ? ' sel' : ''}" data-pday="${d.k}" ${d.fut ? 'disabled' : ''} aria-label="${esc(lab)}"><svg class="pr" viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="47"/>${fr > 0 ? `<circle class="fl" cx="50" cy="50" r="47" stroke-dasharray="${(fr * CIRC).toFixed(1)} ${CIRC}" transform="rotate(-90 50 50)"/>` : ''}</svg>${d.isT ? '<i class="tdot" aria-hidden="true"></i>' : ''}<span class="h" dir="ltr">${esc(p.h)}</span><b>يوم ${esc(p.w)}</b><span class="g" dir="ltr">${esc(p.g)}</span></button>`; }).join('');
+      cells.push(`<button role="listitem" class="pc p-${s2}${d.isT ? ' is-t' : ''}${d.k === PSEL ? ' sel' : ''}" data-pday="${d.k}" ${d.fut ? 'disabled' : ''} aria-label="${esc(lab)}"><svg class="pr" viewBox="0 0 48 48" aria-hidden="true">${d.fut ? '' : '<circle class="tr" cx="24" cy="24" r="22"/>'}${fr > 0 ? `<circle class="fl" cx="24" cy="24" r="22" stroke-dasharray="${(fr * CIRC).toFixed(1)} ${CIRC}" transform="rotate(-90 24 24)"/>` : ''}</svg><span class="h">${esc(h.d)}</span><span class="g">${dt.getDate()}</span>${d.isT ? '<i class="tdot" aria-hidden="true"></i>' : ''}</button>`);
+    }
+    const WD = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    const span = (a, b) => a === b ? a : `${a} – ${b}`;
+    const f0 = pdays[0], f1 = pdays[pdays.length - 1];
+    const hHead = f0 && f0.h.m ? (f0.h.y === f1.h.y ? `${span(f0.h.m, f1.h.m)} ${f0.h.y}` : `${f0.h.m} ${f0.h.y} – ${f1.h.m} ${f1.h.y}`) + ' هـ' : '';
+    const gm = x => GM ? GM.format(x.dt) : '', gy = x => x.dt.getFullYear();
+    const gHead = f0 ? (gy(f0) === gy(f1) ? `${span(gm(f0), gm(f1))} ${gy(f0)}` : `${gm(f0)} ${gy(f0)} – ${gm(f1)} ${gy(f1)}`) + ' م' : '';
+    const cal = `<div class="adh-calh"><b>${esc(hHead)}</b><span>${esc(gHead)}</span></div>
+      <div class="adh-wdays" aria-hidden="true">${WD.map(w => `<span>${w}</span>`).join('')}</div>
+      <div class="adh-wk" role="list" aria-label="أيام التقويم">${cells.join('')}</div>`;
     return `<p class="adh-fdate">${esc(fDate())}</p>
       <p class="adh-fday">${!st.started ? 'تقويم 30 يومًا يبدأ من أول تسجيل.' : ended ? 'انتهت الأيام الثلاثون.' : `اليوم ${fmt(st.ti + 1)} من ${FN}`}</p>
       ${dayCard}
       ${ended ? '<div class="adh-ctl"><button class="chip adh-fy" data-fnew>بدء تقويم جديد</button></div>' : ''}
       <div class="seg adh-pf" role="tablist" aria-label="عرض التقويم">${[['all', 'الكل'], ...PR].map(([k, l]) => `<button class="${pf === k ? 'on' : ''}" data-pf="${k}" role="tab" aria-selected="${pf === k}">${l}</button>`).join('')}</div>
-      <div class="adh-cal" role="list" aria-label="أيام التقويم">${cal}</div>
+      <div class="adh-cal2">${cal}</div>
       <div class="adh-fleg">${legend}</div>
       <div class="adh-entry one">
         <button data-v="freport"><b>التقرير</b><span class="lnk2">لكل صلاة وللصلوات كلها</span></button>
@@ -368,7 +388,7 @@
   }
   function go(v) { if (v === 'back') v = last; if (v === 'm' || v === 'e') last = v; V = v; render(); body().scrollTop = 0;
     // v26z7: التقويم يفتح على الأسبوع الحالي واليوم ظاهر
-    if (v === 'f') requestAnimationFrame(() => { const t = body().querySelector('.pd.is-t'); if (t) t.scrollIntoView({ block: 'nearest' }); }); }
+    if (v === 'f') requestAnimationFrame(() => { const t = body().querySelector('.pc.is-t'); if (t) t.scrollIntoView({ block: 'nearest' }); }); }
 
   function onClick(ev) {
     const t = ev.target, q = s => t.closest(s);
