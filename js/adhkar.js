@@ -6,7 +6,7 @@
   'use strict';
   const A = window.__app; if (!A) return;
   const esc = A.esc, cnt = A.cnt, toast = A.toast;
-  // v26z10: زر «المصدر» — رابط عميق متحقَّق منه لصفحة الحديث أو الآية (data/adhkar.json → url)؛ بلا رابط مؤكد لا زر
+  // v26z10: زر «المصدر» — رابط عميق متحقّق منه لصفحة الحديث أو الآية (data/adhkar.json → url)؛ بلا رابط مؤكد لا زر
   const LNK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>';
   const $ = s => document.querySelector(s);
   const KEY = /\/preview\//.test(location.pathname) ? 'mushaf.adhkar' : 'mushaf.adhkar';
@@ -65,12 +65,38 @@
     return `<svg class="adh-ring ${cls}" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="${R}" class="rt"/><circle cx="120" cy="120" r="${R}" class="rf" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}" transform="rotate(-90 120 120)"/></svg>${inner || ''}`;
   };
   const bar = f => `<div class="adh-bar"><i style="width:${(Math.max(0, Math.min(1, f)) * 100).toFixed(1)}%"></i></div>`;
-  function buzz(strong) { if (S.vib && navigator.vibrate) try { navigator.vibrate(strong ? [30, 60, 30] : 12); } catch (e) {} }
+  /* v26z16: الاهتزاز يُعرض فقط حيث يعمل فعلًا (navigator.vibrate دالة، وشاشة لمس، وليس iOS: سفاري الآيفون بلا vibrate).
+     النبضة 20ms على الأقل (بعض أجهزة أندرويد تتجاهل ما دونها)، ونمط أوضح عند تمام العدد. الاستدعاء دائمًا داخل نقرة المستخدم. */
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const VOK = typeof navigator.vibrate === 'function' && !IOS && matchMedia('(pointer: coarse)').matches;
+  function buzz(strong) { if (S.vib && VOK) try { navigator.vibrate(strong ? [40, 60, 40] : 20); } catch (e) {} }
   let AC = null;
-  function tick() {
-    if (!S.snd) return;
-    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = 1500; g.gain.setValueAtTime(.035, AC.currentTime); g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + .04); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + .05); } catch (e) {}
+  /* v26z16: «نقرة صوتية خفيفة» بـ WebAudio: دفقة ضجيج قصيرة جدًا (نحو 6ms) عبر مرشح عالٍ، بلا ملف ولا نغمة.
+     تُفتح على أول لمسة (شرط iOS)، وتُستأنف إن علّقها النظام. عند تمام العدد نقرتان. على الآيفون يكتمها مفتاح الصامت. */
+  let CLK = null;
+  function actx() {
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state !== 'running') AC.resume().catch(() => {});
+      if (!CLK) { const n = Math.round(AC.sampleRate * .006); CLK = AC.createBuffer(1, n, AC.sampleRate); const d = CLK.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); }
+      return AC;
+    } catch (e) { return null; }
   }
+  function unlock() {
+    if (!S.snd) return;   // لا نُنشئ سياق صوت لمن لم يفعّل النقرة (حتى لا يُقاطَع صوت آخر على الجهاز)
+    const a = actx(); if (!a) return;
+    try { const b = a.createBufferSource(); b.buffer = a.createBuffer(1, 1, a.sampleRate); b.connect(a.destination); b.start(0); } catch (e) {}
+    if (a.state === 'running') ['touchend', 'click'].forEach(t => document.removeEventListener(t, unlock, true));
+  }
+  ['touchend', 'click'].forEach(t => document.addEventListener(t, unlock, true));
+  function click1(at, vol) { const a = AC, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); src.buffer = CLK; f.type = 'highpass'; f.frequency.value = 1800; g.gain.value = vol; src.connect(f).connect(g).connect(a.destination); src.start(at); }
+  function tick(strong) {
+    if (!S.snd) return;
+    const a = actx(); if (!a || !CLK) return;
+    try { const t = a.currentTime + .005; click1(t, .22); if (strong) click1(t + .09, .18); } catch (e) {}
+  }
+  /* v26z16: ومضة خفيفة على العدّاد عند تمام الذكر (ذهبية خفيفة؛ وبلا حركة مع prefers-reduced-motion) */
+  function flash(sel) { requestAnimationFrame(() => { const el = body() && body().querySelector(sel); if (!el) return; el.classList.remove('adh-flash'); void el.offsetWidth; el.classList.add('adh-flash'); setTimeout(() => el.classList.remove('adh-flash'), 700); }); }
 
   /* ---------- البطاقات ---------- */
   function quranHTML(it) {
@@ -110,15 +136,15 @@
   }
   function tapCard(el, m) {
     const id = el.dataset.id, it = D.items[id];
-    if (m === 'p') { const P = progOf('p'); const n = total(it) || 1; if ((P[id] || 0) >= n) return; P[id] = (P[id] || 0) + 1; buzz(P[id] >= n); tick(); save(); el.outerHTML = card(id, 'p', P[id]); return; }
+    if (m === 'p') { const P = progOf('p'); const n = total(it) || 1; if ((P[id] || 0) >= n) return; P[id] = (P[id] || 0) + 1; const dn = P[id] >= n; buzz(dn); tick(dn); save(); el.outerHTML = card(id, 'p', P[id]); if (dn) flash('.adh-card[data-id="' + id + '"]'); return; }
     const P = progOf(m), n = total(it), key = m + '|' + id;
     if (n && (P[id] || 0) >= n) { OPEN.has(key) ? OPEN.delete(key) : OPEN.add(key); return render(); }
-    P[id] = (P[id] || 0) + 1; const justDone = n ? P[id] >= n : P[id] === 1; buzz(n && P[id] >= n); tick();
+    P[id] = (P[id] || 0) + 1; const justDone = n ? P[id] >= n : P[id] === 1; buzz(n && P[id] >= n); tick(n && P[id] >= n);
     const ids = D.sections[m === 'm' ? 'morning' : 'evening'];
     const isDone = x => { const k = total(D.items[x]); return k ? (P[x] || 0) >= k : (P[x] || 0) > 0; };
     const all = ids.every(isDone);
     if (all) { day(today())[m] = 1; toast('تقبّل الله منك.'); }
-    save(); render();
+    save(); render(); if (n && P[id] >= n) flash('.adh-card[data-id="' + id + '"]');
     if (justDone && !all) {   // تمرير هادئ إلى أول ذكر لم يكتمل بعد هذا الذكر (أو قبله إن لم يبق بعده شيء)
       const i = ids.indexOf(id), next = ids.slice(i + 1).find(x => !isDone(x)) || ids.find(x => !isDone(x));
       if (next) setTimeout(() => scrollToCard(next), 380);
@@ -162,7 +188,7 @@
     T.c++; T.h.push(1); if (T.h.length > 200) T.h.shift(); addT(p.t);
     const hit = T.target && T.c === T.target;
     if (hit) { const ls = DONE_LINES(T.target); T.msg = ls[Math.floor(Math.random() * ls.length)]; }
-    buzz(hit); tick(); save(); render();
+    buzz(hit); tick(hit); save(); render(); if (hit) flash('[data-tas]');
   }
 
   /* ---------- أذكار بعد الصلاة (تدفق موجَّه) ---------- */
@@ -187,10 +213,10 @@
   function tapFlow() {
     const F = S.flow, i = F.i, st = FLOW[i]; if (!st) return;
     if ((F.c[i] || 0) >= st[1]) { if (S.auto) { F.i++; save(); render(); } return; }
-    F.c[i] = (F.c[i] || 0) + 1; addT(st[0]); tick();
-    const full = F.c[i] >= st[1]; buzz(full);
+    F.c[i] = (F.c[i] || 0) + 1; addT(st[0]);
+    const full = F.c[i] >= st[1]; buzz(full); tick(full);
     if (full && (S.auto || i === 3)) { F.i++; if (F.i > 3) finishFlow(); }
-    save(); render();
+    save(); render(); if (full) flash(S.flow.i > 3 ? '.adh-end .adh-ring' : '[data-flow]');
   }
   function finishFlow() { const F = S.flow; F.skip = F.c.filter((x, k) => x < FLOW[k][1]).length; day(today()).p++; }
 
@@ -443,10 +469,13 @@
     render();
   }
   function settingsHTML() {
-    const vOK = !!navigator.vibrate;
-    const row = (k, l, on, dis) => `<div class="sw-row" data-adhopt="${k}" role="presentation"${dis ? ' aria-disabled="true"' : ''}><b>${l}</b><button class="switch" role="switch" aria-checked="${!!on}" aria-label="${l}"${dis ? ' aria-disabled="true" disabled' : ''}></button></div>`;
-    return `<label class="lbl">أذكاري</label>${row('vib', 'اهتزاز عند كل تسبيحة', vOK && S.vib, !vOK)}${vOK ? '' : '<p class="muted sm">الاهتزاز غير مدعوم في هذا المتصفح (بما في ذلك سفاري على الآيفون).</p>'}${row('snd', 'صوت نقرة خفيف', S.snd)}`;
+    const row = (k, l, on) => `<div class="sw-row" data-adhopt="${k}" role="presentation"><b>${l}</b><button class="switch" role="switch" aria-checked="${!!on}" aria-label="${l}"></button></div>`;
+    const note = VOK ? '' : `<p class="muted sm">${IOS ? 'الاهتزاز غير مدعوم في الآيفون، فاستخدم النقرة الصوتية بدلًا منه. وتُسمَع النقرة ما لم يكن الجهاز على الوضع الصامت.' : 'الاهتزاز غير مدعوم في هذا المتصفح، فاستخدم النقرة الصوتية بدلًا منه.'}</p>`;
+    return `<label class="lbl">أذكاري</label>${VOK ? row('vib', 'اهتزاز عند كل تسبيحة', S.vib) : ''}${row('snd', 'نقرة صوتية خفيفة', S.snd)}${note}`;
   }
-  const toggle = k => { if (k === 'vib' || k === 'snd') { S[k] = S[k] ? 0 : 1; save(); } };
-  window.ADHKAR = { open, go, settingsHTML, toggle, state: () => S, _reset: () => { S = def(); save(); } };
+  const toggle = k => {   // v26z16: يُستدعى داخل نقرة المستخدم، فنجرّب الإحساس فورًا عند التفعيل
+    if (k === 'vib' && VOK) { S.vib = S.vib ? 0 : 1; save(); if (S.vib) buzz(false); }
+    else if (k === 'snd') { S.snd = S.snd ? 0 : 1; save(); if (S.snd) { unlock(); tick(false); } }
+  };
+  window.ADHKAR = { open, go, settingsHTML, toggle, state: () => S, caps: () => ({ vib: VOK, ios: IOS, ac: AC ? AC.state : null }), _reset: () => { S = def(); save(); } };
 })();

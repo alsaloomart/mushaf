@@ -5,8 +5,8 @@
  * - ملفات التلاوة: بث مباشر، إلا السور التي يحمّلها المستخدم بطلبه للاستماع بدون إنترنت
  *   (كاش mushaf-audio-<القارئ>، لا يُحذف عند تحديث الإصدار، ويُحذف متى حذفها المستخدم).
  */
-const SHELL = 'mushaf-shell-v26z12';
-const V = '26z12';   // يطابق ?v= في index.html
+const SHELL = 'mushaf-shell-v26z19';
+const V = '26z19';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-tafsir-v1';
 const PAGES = 'mushaf-pages-v2';
 const DATA = 'mushaf-data-v3';
