@@ -28,13 +28,16 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://api.quran.com" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=26z3">
-<link rel="stylesheet" href="css/adhkar.css?v=26z3">
+<link rel="stylesheet" href="css/app.css?v=26z4">
+<link rel="stylesheet" href="css/adhkar.css?v=26z4">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="fBlue" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-1 2.75 -0.75 0 0  3.6667 -5.25 2.5833 0 0  6.3333 -9.5 4.1667 0 0  0 0 0 1 0"/></filter>
   <filter id="fCream" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.984 0 0 0 0  0 0.965 0 0 0  0 0 0.925 0 0  0 0 0 1 0"/></filter>
+  <!-- v26z3: زخارف الإطار وعلامات الآيات في الليلي والزجاجي: البكسلات الملوّنة فقط (R-B كبير) تُحوَّل إلى رمادي محايد يظهر بعد العكس تعبئةً بلون الخلفية وخطوطًا #EAEAEA بنحو 60%؛ بكسلات الحروف (محايدة) تمرّ كما هي تمامًا -->
+  <filter id="fNightOrn" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  12 0 -12 0 -0.6" result="m"/><feColorMatrix in="SourceGraphic" type="matrix" values="0 1.068 0 0 0.0055  0 1.068 0 0 0.0055  0 1.068 0 0 0.0055  0 0 0 1 0" result="g"/><feComposite in="g" in2="m" operator="in" result="gi"/><feComposite in="SourceGraphic" in2="m" operator="out" result="so"/><feComposite in="gi" in2="so" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/></filter>
+  <filter id="fGlassOrn" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  12 0 -12 0 -0.6" result="m"/><feColorMatrix in="SourceGraphic" type="matrix" values="0 0.983 0 0 0.004  0 0.983 0 0 0.004  0 0.983 0 0 0.004  0 0 0 1 0" result="g"/><feComposite in="g" in2="m" operator="in" result="gi"/><feComposite in="SourceGraphic" in2="m" operator="out" result="so"/><feComposite in="gi" in2="so" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/></filter>
 </svg>
 
 <main id="reader">
@@ -192,19 +195,19 @@
 <div id="toast" class="toast" role="status"></div>
 <div id="scrim" class="scrim" hidden></div>
 
-<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26z3';try{
+<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26z4';try{
 if('serviceWorker' in navigator){var had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had||done||sessionStorage.getItem('pv-cc')===V)return;done=true;sessionStorage.setItem('pv-cc',V);location.reload();});
 navigator.serviceWorker.getRegistration('/mushaf/preview/').then(function(r){if(r)r.update();}).catch(function(){});}
 addEventListener('load',function(){setTimeout(function(){if(window.__BUILD===V||sessionStorage.getItem('pv-fix')===V)return;sessionStorage.setItem('pv-fix',V);
 var a=navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(function(r){return r.scope.indexOf('/mushaf/preview/')>=0;}).map(function(r){return r.unregister();}));}):Promise.resolve();
 var b=window.caches?caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mushaf-preview-')===0;}).map(function(k){return caches.delete(k);}));}):Promise.resolve();
 Promise.all([a,b]).catch(function(){}).then(function(){location.reload();});},2000);});}catch(e){}})();</script>
-<script src="js/quran-data.js?v=26z3"></script>
-<script src="js/audio.js?v=26z3"></script>
-<script src="js/store.js?v=26z3"></script>
-<script src="js/tmatch.js?v=26z3"></script>
-<script src="js/app.js?v=26z3"></script>
-<script src="js/adhkar.js?v=26z3"></script>
-<script src="js/cloud.js?v=26z3"></script>
+<script src="js/quran-data.js?v=26z4"></script>
+<script src="js/audio.js?v=26z4"></script>
+<script src="js/store.js?v=26z4"></script>
+<script src="js/tmatch.js?v=26z4"></script>
+<script src="js/app.js?v=26z4"></script>
+<script src="js/adhkar.js?v=26z4"></script>
+<script src="js/cloud.js?v=26z4"></script>
 </body>
 </html>

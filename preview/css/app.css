@@ -292,6 +292,13 @@ html.dark #reader,html.dark .leaf{background:#0E0E0E}
 html.dark svg.tx{background:none!important;box-shadow:none!important}
 html.dark svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.92)}
 html.dark svg.tx .pimg{mix-blend-mode:normal;filter:none}
+/* v26z3: زخارف الإطار وعلامات الآيات بلا بنّي في الليلي والزجاجي (مرشّح لا يمسّ بكسلات الحروف)، وخط ذهبي رفيع على حدّ إطار اسم السورة فقط */
+html.dark:not(.vfull) svg.tx .pimg{filter:url(#fNightOrn)}
+html.glass:not(.vfull) svg.tx .pimg{filter:url(#fGlassOrn)}
+/* الخط الذهبي في طبقة SVG مستقلة فوق الصفحة (خارج مرشّح العكس)، فيظهر بلونه #F2C230 تمامًا */
+svg.sfr-ov{display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
+html.dark:not(.vfull) svg.sfr-ov{display:block}
+svg.sfr-ov .sfr{fill:none;stroke:#F2C230;stroke-width:.6}
 html.dark .ph{color:#a1a1a6}
 html.dark .pn{filter:invert(1) hue-rotate(180deg)}
 
@@ -526,15 +533,16 @@ svg.tx .hl rect{fill:var(--hlc,var(--acc,#1F2120));fill-opacity:0;transition:fil
 svg.tx .hl rect.td{fill-opacity:.05}
 svg.tx .hl rect.sel,svg.tx .hl rect.play{fill-opacity:.25}
 /* الليلي والزجاجي: الصفحة معكوسة، فنعكس طبقة التظليل عكسًا مقابلًا ليظهر لونها الحقيقي (ذهبي فاتح)، بنسبة أعلى ليُرى بوضوح والحروف واضحة */
-html.dark svg.tx .hl,html.dark svg.tx .snk{filter:invert(1) hue-rotate(180deg)}
-html.dark svg.tx .hl rect.sel,html.dark svg.tx .hl rect.play{fill-opacity:.22}
+/* v26z3: الليلي والزجاجي: أبيض بشفافية 10% (طلب فهد). الصفحة كلها معكوسة بمرشّح الـSVG، فنرسم الشريط أسود عاديًا بلا مرشّح داخلي ولا مزج، فيظهر أبيض بعد العكس. (مرشّحات CSS على عناصر SVG الداخلية لا يطبّقها سفاري على الجهاز) */
+html.dark svg.tx .hl,html.dark svg.tx .snk{filter:none}
+html.dark svg.tx .hl rect.sel,html.dark svg.tx .hl rect.play{fill-opacity:.10}
 /* التظليل خلف الحروف: دمج بالضرب فيبقى الحبر بكامل تباينه */
-html.dark svg.tx .hl,html.dark svg.tx .snk{mix-blend-mode:multiply}
+html.dark svg.tx .hl,html.dark svg.tx .snk{mix-blend-mode:normal}
 svg.tx.hasHL .hot path.sel,svg.tx.hasHL .hot path.play,svg.tx.hasHL .hot path.td{fill:transparent}
 .leaf.turning svg.tx .hl rect{transition:none}
 body.tm svg.tx .hl rect{fill-opacity:0}
 /* الوضع الليلي: الصفحة تُعكس بفلتر، فنعطي اللون المعكوس ليظهر ذهبيًا خافتًا */
-html.dark{--hlc:#EAEAEA}
+html.dark{--hlc:#000000}
 /* تظليل التلاوة المتحرك: شريط ناعم بتدرج، يحل محل تظليل الآية الثابت أثناء التلاوة */
 svg.tx .snk{pointer-events:none;mix-blend-mode:multiply;transition:opacity .35s}
 svg.tx .snk stop{stop-color:var(--hlc,var(--acc,#1F2120))}
@@ -622,9 +630,8 @@ html.glass .player #pToggle svg,html.glass .player #pStop svg{fill:currentColor;
 html.glass .pprog{inset-inline:22px;bottom:5px;height:3px;background:rgba(255,255,255,.14)}
 html.glass .pprog b{background:#fff}
 html.glass .hubtab{color:#f2f2f7;background:#2A2C2B;border-color:var(--glb);box-shadow:0 4px 14px rgba(0,0,0,.25)}
-/* v26z3: تظليل الآية في الزجاجي أبيض محايد خفيف 16% (الذهبي الشفاف فوق الفحمي كان يظهر بنيًّا) */
-html.glass{--hlc:#FFFFFF}
-html.glass svg.tx .hl rect.sel,html.glass svg.tx .hl rect.play{fill-opacity:.16}
+/* v26z3: تظليل الآية في الزجاجي كالليلي: أبيض 10% */
+html.glass{--hlc:#000000}
 html.glass .li.hub .n svg{color:#fff}
 html.glass .li.hub.tdl.done .n{background:rgba(242,194,48,.16);color:#F2C230}
 html.glass .li.hub.tdl.done .n svg{color:#F2C230}
@@ -665,3 +672,9 @@ html.dark .phimg,html.dark .pnimg{filter:invert(1) brightness(.9)}
 .tbar button.on{font-weight:700;color:#B98A00}
 .tbar button.on svg{stroke-width:2}
 html.dark .tbar button.on,html.glass .tbar button.on{color:#F2C230}
+/* v26z3: الزجاجي: المشغّل فوق شريط التبويبات لا فوقه، فلا يظهر من تحته طرف تبويب أو كلمة */
+html.glass body.playing .player{bottom:calc(var(--sab) + var(--bbh) + 8px)}
+html.glass body.immersive:not(.imm-show) .player{bottom:calc(var(--sab) + 8px)}
+html.glass body.playing .bbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:88px;background:#1F2120;pointer-events:none}
+/* v26z3: ظهر الورقة لا يُرسم إلا أثناء التقليب. في بعض محرّكات WebKit لا يُخفى الوجه الخلفي (rotateY 180 + backface-visibility) فيغطي الصفحة كلها بلون الورق فيختفي المصحف */
+.leaf:not(.turning) .leaf-back{visibility:hidden}
