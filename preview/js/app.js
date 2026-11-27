@@ -2375,7 +2375,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26y3';
+  window.__BUILD = '26z';
   window.__app = { closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

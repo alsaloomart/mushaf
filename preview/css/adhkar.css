@@ -143,3 +143,56 @@ html.glass .adh-menu{background:#2a2c2b}
 .adh-st b.s{font-size:.95rem;font-weight:700;line-height:1.6}
 #adhBody{padding-bottom:calc(40px + var(--sab,0px))}
 .adh-entry span.lnk2{color:var(--a-gold2);font-weight:700}
+/* v26z — أذكار الصباح والمساء في صفحة واحدة: بطاقات أخف، شريط الإنجاز ثابت أعلى القائمة، والبطاقة المكتملة تنطوي بهدوء */
+.adh-view[data-view="m"] .adh-prog,.adh-view[data-view="e"] .adh-prog{position:sticky;top:42px;z-index:1;padding:9px 14px;margin-bottom:10px;box-shadow:0 6px 14px -10px rgba(31,33,32,.25)}
+.adh-view[data-view="m"] .adh-prog .row,.adh-view[data-view="e"] .adh-prog .row{margin-bottom:6px}
+html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[data-view="e"] .adh-prog{background:var(--a-card)}
+html.glass #sh-adhkar .adh-view[data-view="m"] .adh-prog,html.glass #sh-adhkar .adh-view[data-view="e"] .adh-prog{background:rgba(30,30,32,.72)}
+.adh-view[data-view="m"] .adh-list,.adh-view[data-view="e"] .adh-list{gap:8px}
+.adh-view[data-view="m"] .adh-card,.adh-view[data-view="e"] .adh-card{padding:11px 13px 9px;border-radius:14px;transition:opacity .35s,border-color .2s}
+.adh-view[data-view="m"] .adh-x,.adh-view[data-view="e"] .adh-x{font-size:1.02rem;line-height:1.95;margin-bottom:6px}
+.adh-view[data-view="m"] .adh-pre,.adh-view[data-view="e"] .adh-pre{font-size:.92rem;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-bas,.adh-view[data-view="e"] .adh-bas{font-size:1.22rem;line-height:1.9;margin:0 0 2px}
+.adh-view[data-view="m"] .adh-qt,.adh-view[data-view="e"] .adh-qt{font-size:1.26rem;line-height:2}
+.adh-view[data-view="m"] .adh-an,.adh-view[data-view="e"] .adh-an{font-size:.95rem}
+.adh-view[data-view="m"] .adh-read,.adh-view[data-view="e"] .adh-read{margin:2px 0 6px;padding:5px 11px;font-size:.8rem}
+.adh-view[data-view="m"] .adh-meta,.adh-view[data-view="e"] .adh-meta{padding-top:6px}
+.adh-view[data-view="m"] .adh-src,.adh-view[data-view="e"] .adh-src{font-size:.76rem;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-v,.adh-view[data-view="e"] .adh-v{font-size:.8rem;line-height:1.75;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-tap,.adh-view[data-view="e"] .adh-tap{margin-top:8px;padding:7px 12px}
+.adh-view[data-view="m"] .adh-tap .cn b,.adh-view[data-view="e"] .adh-tap .cn b{font-size:1.12rem}
+/* البطاقة المكتملة: تنطوي إلى سطرين خافتين مع علامة الإتمام، وتنفتح بلمسة لإعادة القراءة */
+.adh-card.fin{opacity:.58}
+.adh-card.shut{padding-top:8px;padding-bottom:7px}
+.adh-card.shut .adh-meta,.adh-card.shut .adh-read,.adh-card.shut .adh-bas,.adh-card.shut .adh-pre{display:none}
+.adh-shut-t{margin:0;font-size:.95rem;font-weight:700;line-height:1.7;color:var(--a-ink)}
+.adh-card.shut .adh-tap{margin-top:6px;padding:5px 12px}
+.adh-card.shut .adh-tap .cn b{font-size:1rem}
+@media (prefers-reduced-motion:reduce){.adh-card{transition:none}}
+/* المسبحة: مجموع اليوم أوضح (نحو 1.35 ضعفًا) والرقم أثقل */
+.adh-today{font-size:1.2rem;font-weight:700;margin:14px 0 6px;line-height:1.5;display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap}
+.adh-today .n{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--a-ink);line-height:1}
+html.dark .adh-today .n,html.glass .adh-today .n{color:var(--a-gold)}
+/* v26z — أربع تبويبات: «متابعة الفجر» */
+#sh-adhkar .adh-tabs button{font-size:.8rem;padding:8px 2px;white-space:nowrap;min-width:0}
+html.glass #sh-adhkar .adh-tabs{gap:5px}
+html.glass #sh-adhkar .adh-tabs button{padding:8px 4px}
+@media (max-width:370px){#sh-adhkar .adh-tabs button{font-size:.74rem}}
+.adh-fdate{text-align:center;font-size:.86rem;color:var(--a-sub);margin:2px 0 2px;line-height:1.7}
+.adh-fday{text-align:center;font-size:.95rem;font-weight:700;margin:0 0 12px}
+.adh-big .in em.adh-fcta{font-style:normal;font-size:1.05rem;font-weight:800;color:var(--a-ink);margin-top:6px}
+html.dark .adh-big .in em.adh-fcta,html.glass .adh-big .in em.adh-fcta{color:var(--a-gold)}
+.adh-big .in em.adh-fcta+small{margin-top:2px}
+.adh-big[aria-disabled="true"]:active{transform:none}
+.adh-fy{font-size:.82rem}
+.adh-fgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;width:100%;max-width:340px;margin:14px auto 8px;direction:rtl}
+.fd{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:50%;font-size:.7rem;font-variant-numeric:tabular-nums;border:1.5px solid var(--a-line);color:var(--a-sub);background:transparent}
+.fd.f-done{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120;font-weight:700}
+.fd.f-miss{background:var(--a-soft);border-color:var(--a-line);color:var(--a-sub);text-decoration:line-through;text-decoration-thickness:1px}
+.fd.f-today{border-color:var(--a-gold);color:var(--a-ink);font-weight:700;box-shadow:0 0 0 2px rgba(242,194,48,.25)}
+.fd.f-up{opacity:.7}
+.adh-fleg{display:flex;justify-content:center;gap:14px;font-size:.76rem;color:var(--a-sub);margin:2px 0 4px}
+.adh-fleg span{display:inline-flex;align-items:center;gap:5px}
+.adh-fleg i.fd{width:12px;height:12px;font-size:0;border-width:1.5px;text-decoration:none}
+.adh-entry.one{grid-template-columns:1fr}
+html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[data-view="e"] .adh-prog{box-shadow:0 -6px 0 0 var(--sheet,#fff),0 6px 14px -10px rgba(31,33,32,.25)}
