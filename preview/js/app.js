@@ -12,18 +12,18 @@
 
   /* ---------- العدد والمعدود (دالة واحدة لكل الواجهة) ---------- */
   const NOUN = {
-    aya:  { one: 'آية واحدة', two: ['آيتان', 'آيتين'], pl: 'آيات', acc: 'آية', sg: 'آية' },
-    page: { one: 'صفحة واحدة', two: ['صفحتان', 'صفحتين'], pl: 'صفحات', acc: 'صفحة', sg: 'صفحة' },
-    line: { one: 'سطر واحد', two: ['سطران', 'سطرين'], pl: 'أسطر', acc: 'سطرًا', sg: 'سطر' },
+    aya:  { one: 'آية واحدة', oneAcc: 'آيةً واحدةً', two: ['آيتان', 'آيتين'], pl: 'آيات', acc: 'آيةً', sg: 'آية' },
+    page: { one: 'صفحة واحدة', oneAcc: 'صفحةً واحدةً', two: ['صفحتان', 'صفحتين'], pl: 'صفحات', acc: 'صفحةً', sg: 'صفحة' },
+    line: { one: 'سطر واحد', oneAcc: 'سطرًا واحدًا', two: ['سطران', 'سطرين'], pl: 'أسطر', acc: 'سطرًا', sg: 'سطر' },
     day:  { one: 'يوم واحد', oneAcc: 'يومًا واحدًا', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
-    note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' },
-    word: { one: 'كلمة واحدة', two: ['كلمتان', 'كلمتين'], pl: 'كلمات', acc: 'كلمة', sg: 'كلمة' },
-    surah: { one: 'سورة واحدة', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورة', sg: 'سورة' },
-    marra: { one: 'مرة واحدة', two: ['مرتان', 'مرتين'], pl: 'مرات', acc: 'مرة', sg: 'مرة' },
+    note: { one: 'ملاحظة واحدة', oneAcc: 'ملاحظةً واحدةً', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظةً', sg: 'ملاحظة' },
+    word: { one: 'كلمة واحدة', oneAcc: 'كلمةً واحدةً', two: ['كلمتان', 'كلمتين'], pl: 'كلمات', acc: 'كلمةً', sg: 'كلمة' },
+    surah: { one: 'سورة واحدة', oneAcc: 'سورةً واحدةً', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورةً', sg: 'سورة' },
+    marra: { one: 'مرّة واحدة', oneAcc: 'مرّةً واحدةً', two: ['مرّتان', 'مرّتين'], pl: 'مرّات', acc: 'مرّةً', sg: 'مرّة' },
     tasbeeha: { one: 'تسبيحة واحدة', oneAcc: 'تسبيحةً واحدةً', two: ['تسبيحتان', 'تسبيحتين'], pl: 'تسبيحات', acc: 'تسبيحةً', sg: 'تسبيحة' },
     salah: { one: 'صلاة واحدة', oneAcc: 'صلاةً واحدةً', two: ['صلاتان', 'صلاتين'], pl: 'صلوات', acc: 'صلاةً', sg: 'صلاة' },
-    step: { one: 'خطوة واحدة', two: ['خطوتان', 'خطوتين'], pl: 'خطوات', acc: 'خطوة', sg: 'خطوة' },
-    minute: { one: 'دقيقة واحدة', two: ['دقيقتان', 'دقيقتين'], pl: 'دقائق', acc: 'دقيقة', sg: 'دقيقة' }
+    step: { one: 'خطوة واحدة', oneAcc: 'خطوةً واحدةً', two: ['خطوتان', 'خطوتين'], pl: 'خطوات', acc: 'خطوةً', sg: 'خطوة' },
+    minute: { one: 'دقيقة واحدة', oneAcc: 'دقيقةً واحدةً', two: ['دقيقتان', 'دقيقتين'], pl: 'دقائق', acc: 'دقيقةً', sg: 'دقيقة' }
   };
   /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(1,'day','acc')='يومًا واحدًا'، cnt(2,'day','acc')='يومين'، cnt(15)='15 آية'، cnt(100)='100 آية' */
   function cnt(n, w = 'aya', gen = false) {
@@ -38,7 +38,7 @@
     return t + ' ' + f.sg;   // 100، 200، 101، 102…
   }
   // الفواصل الفعلية للمراجعة [1،2،4،7،15،30،60] بعد «بعد»
-  const AFTER = { 1: 'يوم', 2: 'يومين', 4: '4 أيام', 7: 'أسبوع', 15: '15 يومًا', 30: 'شهر', 60: 'شهرين' };
+  const AFTER = { 1: 'يومٍ', 2: 'يومين', 4: '4 أيام', 7: 'أسبوع', 15: '15 يومًا', 30: 'شهر', 60: 'شهرين' };
   const after = d => AFTER[d] || cnt(d, 'day', true);
 
   /* ---------- أدوات ---------- */
@@ -905,7 +905,7 @@
       `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ التلاوة من أول آية في هذه الصفحة، أو اضغط على آية لتبدأ منها.'}</p>` +
       `<div class="seg" id="lMode" role="radiogroup" aria-label="طريقة الاستماع">${[['surah', 'السورة كاملة'], ['ayah', 'الآية أو المقطع']].map(([v, n]) => `<button data-lm="${v}" role="radio" aria-checked="${listenMode() === v}" class="${listenMode() === v ? 'on' : ''}">${n}</button>`).join('')}</div>` +
       tdlHTML() +
-      hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'تستمر التلاوة حتى آخر السورة، وتتقلب الصفحات معها' : 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
+      hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'تستمر التلاوة حتى آخر السورة، وتتقلب الصفحات معها' : 'تلاوة الآية أو المقطع المحدد مرّة واحدة') +
       hi('repeat', 'repeat', 'تكرار', 'كرّر الآية أو المقطع بالعدد الذي تختاره') +
       hi('range', 'range', 'تحديد مقطع', 'اختر أول آية في المقطع، ثم آخر آية'), 'tilawa');
     tdlPaint();
@@ -1013,7 +1013,7 @@
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
     const dx = e.target.closest('.dlx');
     if (dx) { const nm = chapters[+dx.dataset.s - 1].name_arabic; if (await ask('حذف سورة ' + nm + ' بصوت ' + AU.reciter(+dx.dataset.rid).name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'حذف')) { await AU.dl.remove(+dx.dataset.rid, +dx.dataset.s); dlBox(); } return; }
-    if (e.target.closest('#dlAll')) { if (await ask('حذف كل السور التي نزّلتها لجميع القرّاء؟', 'حذف')) { await AU.dl.removeAll(); toast('حُذفت كل التنزيلات.'); dlBox(); } return; }
+    if (e.target.closest('#dlAll')) { if (await ask('حذف كل السور التي نزّلتها لجميع القرّاء؟', 'حذف')) { await AU.dl.removeAll(); toast('حُذِفت كل التنزيلات.'); dlBox(); } return; }
     const rr = e.target.closest('[data-r]'); if (rr) { ST.setReciter(+rr.dataset.r); openSettings(); return; }
     const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openSettings(); return; }
     const tb = e.target.closest('.hubToday [data-act]');
@@ -1087,7 +1087,7 @@
       clearTimeout(noteT);
       try { const dl = JSON.parse(localStorage.getItem('mushaf.preview.notes.del') || '{}'); dl[n.id] = Date.now(); localStorage.setItem('mushaf.preview.notes.del', JSON.stringify(dl)); } catch (e) {}
       notesSave(notesAll().filter(x => x.id !== n.id)); noteCur = null; c.hidden = true; c.innerHTML = '';
-      notesPaint(n.p); toast('حُذفت الملاحظة.');
+      notesPaint(n.p); toast('حُذِفت الملاحظة.');
     };
     if ($('#noteDel')) $('#noteDel').onclick = () => {
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -1106,7 +1106,7 @@
     if (!text) return;            // ملاحظة فارغة لا تُحفظ
     n.text = text; n.u = Date.now();
     if (i >= 0) all[i] = n; else all.push(n);
-    notesSave(all); const st = $('#noteSt'); if (st) st.textContent = 'حُفظت';
+    notesSave(all); const st = $('#noteSt'); if (st) st.textContent = 'حُفِظت';
     notesPaint(n.p);
   }
   function noteClose() {
@@ -1178,7 +1178,7 @@
     };
     if ($('#remOff')) $('#remOff').onclick = async () => {
       try { const reg = await navigator.serviceWorker.ready; const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); } catch (e) {}
-      const x = rem(); x.on = false; x.sub = null; ST.set('rem', x); await remSync(); toast('أُوقف التذكير.'); openRem();
+      const x = rem(); x.on = false; x.sub = null; ST.set('rem', x); await remSync(); toast('أُوقِف التذكير.'); openRem();
     };
     if ($('#remTest')) $('#remTest').onclick = async () => {
       try { const reg = await navigator.serviceWorker.ready; await reg.showNotification('ورد اليوم', { body: 'حان وقت وردك. اضغط لفتح ورد اليوم.', tag: 'wird', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: './?wird=1' } }); }
@@ -1216,17 +1216,17 @@
     if (!sel) return;
     const n = sel.list.length, allMem = sel.list.every(ST.isMem);
     if (allMem) {
-      if (await ask(n > 1 ? 'إزالة هذه الآيات من محفوظك؟' : 'إزالة هذه الآية من محفوظك؟', 'إزالة')) { ST.unMem(sel.list); toast('أُزيلت من محفوظك.'); }
+      if (await ask(n > 1 ? 'إزالة هذه الآيات من محفوظك؟' : 'إزالة هذه الآية من محفوظك؟', 'إزالة')) { ST.unMem(sel.list); toast('أُزِيلت من محفوظك.'); }
     } else {
       ST.markMem(sel.list);
-      toast(`أُضيفت ${cnt(n)} إلى محفوظك، ${n === 2 ? 'ومراجعتهما' : 'ومراجعتها'} غدًا.`);
+      toast(`أُضِيفت ${cnt(n)} إلى محفوظك، ${n === 2 ? 'ومراجعتهما' : 'ومراجعتها'} غدًا.`);
     }
     select(sel.a, sel.b); refreshToday(); badge();
   };
   $('#aRev').onclick = () => {
     if (!sel) return;
     ST.addReview(sel.list); badge();
-    toast(`أُضيفت ${rangeLabel(sel.a, sel.b)} إلى قائمة المراجعة.`);
+    toast(`أُضِيفت ${rangeLabel(sel.a, sel.b)} إلى قائمة المراجعة.`);
   };
   function badge() { const n = ST.due().length; const b = $('#dueBadge'); b.hidden = !n; b.textContent = ar(n); }
 
@@ -1328,7 +1328,7 @@
         ST.setPlan(npl);
         const t = await refreshToday();
         closeSheets();
-        toast('حُفظت الخطة');
+        toast('حُفِظت الخطة');
         if (t) goPage(await pageOfKey(t.a));
       };
       return;
@@ -1343,7 +1343,7 @@
       </div>
       <div class="card"><h4>تقدّمك</h4>
         <p>بدأت من ${keyLabel(pl.start)} · ${cnt(pl.amount, UW[pl.unit])} في اليوم · ${daysLabel(pl.days)}</p>
-        <p>${memN ? `حفظت ${cnt(memN, 'aya', true)} حتى الآن.` : 'بداية طيبة، واصل ورد اليوم.'}</p>
+        <p>${memN ? `حفظت ${cnt(memN, 'aya', 'acc')} حتى الآن.` : 'بداية طيبة، واصل ورد اليوم.'}</p>
       </div>
       <button class="btn full" id="plEdit">تعديل الخطة</button>
       <button class="btn full ghost" id="plDel">حذف الخطة</button>`;
@@ -1462,10 +1462,10 @@
   }
   async function dlTap(sNo, nm, rid = dlRid) {
     const r = AU.reciter(rid);
-    if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغي تنزيل سورة ' + nm + '.'); return; }
+    if (AU.dl.job(rid, sNo)) { AU.dl.cancel(rid, sNo); toast('أُلغِي تنزيل سورة ' + nm + '.'); return; }
     if ((await AU.dl.status(rid)).get(sNo) === 'done') {
       if (!(await ask('حذف سورة ' + nm + ' بصوت ' + r.name + ' من جهازك؟ ستحتاج إلى الإنترنت لتشغيلها بعد الحذف.', 'حذف'))) return;
-      await AU.dl.remove(rid, sNo); toast('حُذفت سورة ' + nm + ' من جهازك.'); return;
+      await AU.dl.remove(rid, sNo); toast('حُذِفت سورة ' + nm + ' من جهازك.'); return;
     }
     if (navigator.onLine === false) { toast('لا يوجد اتصال بالإنترنت. التنزيل يحتاج إلى اتصال.'); return; }
     AU.dl.start(rid, sNo);
@@ -1612,7 +1612,7 @@
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
        <button class="btn full" id="mInst">طريقة التثبيت على الآيفون</button>
-       <p class="muted sm" style="line-height:1.8;margin-top:14px">بياناتك (الخطة، والمحفوظ، والمراجعة، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم. صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبث عند التشغيل، إلا السور التي تنزّلها بنفسك فتُحفظ على جهازك.</p>` + creditHTML();
+       <p class="muted sm" style="line-height:1.8;margin-top:14px">بياناتك (الخطة، والمحفوظ، والمراجعة، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم. صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبَثّ عند التشغيل، إلا السور التي تنزّلها بنفسك فتُحفظ على جهازك.</p>` + creditHTML();
     $('#moreBody').onclick = e => {
       const r = e.target.closest('[data-r]');
       if (r) { ST.setReciter(+r.dataset.r); openMore(); return; }
@@ -1658,7 +1658,7 @@
       <h4>الأذكار</h4>
       <p>لا يدخل في الأذكار والمسبحة إلا القرآن الكريم وما رواه البخاري أو مسلم، بالرجوع إلى صحيحي البخاري ومسلم في ${L('sunnah.com')} والدرر السنية.</p>
       <p>نص الآيات في الأذكار: نص مجمع الملك فهد لطباعة المصحف الشريف (حفص) عبر ${L('Quran Foundation')}، بخط ${L('KFGQPC HAFS Uthmanic Script')} (الإصدار 2.2) من المجمع، يُستخدم مجانًا ولا يُعدَّل ولا يُباع.</p>
-      <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')}</p>
+      <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمِل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')}</p>
       <p>أوقات الشروق والغروب: ${L('adhan-js (MIT)')}، بطريقة أم القرى.</p>
       <h4>الخصوصية وشروط الاستخدام</h4>
       <p><a href="privacy.html" target="_blank">سياسة الخصوصية</a> · <a href="terms.html" target="_blank">شروط الاستخدام</a></p>`;
@@ -2213,7 +2213,7 @@
   function tmLog(ev, txt) { TM.log.push([Date.now() % 1e8, ev, String(txt || '').slice(0, 300)]); if (TM.log.length > 120) TM.log.shift(); if (TM.debug) tmDbgPaint(ev, txt); }
   $('#tmHeard').addEventListener('click', () => {
     const t = JSON.stringify({ ua: navigator.userAgent, standalone: STANDALONE, sr: !!SRC, page: TM.p, i: TM.i, keys: TM.keys, log: TM.log });
-    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('نُسخ سجل التسميع.')).catch(() => toast('تعذّر النسخ.'));
+    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('نُسِخ سجل التسميع.')).catch(() => toast('تعذّر النسخ.'));
   });
   function tmDrop(r) { r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null; }
   function tmListen(on, hard) {
@@ -2366,7 +2366,7 @@
   (function () {
     const el = $('#tm .tmh b'); if (!el) return;
     let id = 0;
-    const down = () => { clearTimeout(id); id = setTimeout(() => { TM.debug = !TM.debug; if (TM.debug) TM.dbgLines = TM.dbgLines || []; tmPaint(); toast(TM.debug ? 'وضع تشخيص التسميع.' : 'أُغلق التشخيص.'); }, 650); };
+    const down = () => { clearTimeout(id); id = setTimeout(() => { TM.debug = !TM.debug; if (TM.debug) TM.dbgLines = TM.dbgLines || []; tmPaint(); toast(TM.debug ? 'وضع تشخيص التسميع.' : 'أُغلِق التشخيص.'); }, 650); };
     const up = () => clearTimeout(id);
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
@@ -2447,7 +2447,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z7';
+  window.__BUILD='26z8';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

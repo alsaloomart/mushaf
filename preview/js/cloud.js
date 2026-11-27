@@ -135,7 +135,7 @@ const CLOUD = (() => {
         applying = true;
         try { ls('mushaf.preview.notes', out.notes); ls('mushaf.preview.notes.del', out.del); ST.replace(J(out.st, {})); } finally { applying = false; }
         try { window.__app.reloadData(); } catch (e) {}
-        if (firstHere) say('دُمجت بياناتك مع حسابك.');
+        if (firstHere) say('دُمِجت بياناتك مع حسابك.');
       }
       const mm = meta(); mm.uid = user.uid; mm.sync = +c.cu || 0; mm.dirty = false; setMeta(mm);
       if (changedThere) return upload();

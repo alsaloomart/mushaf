@@ -170,12 +170,12 @@
     const end = F.i > 3, P = progOf('p');
     const others = D.sections.after_prayer.filter(x => x !== 'p_tasbih_33');
     const head = `<div class="adh-sub"><button class="lnk back" data-v="t">رجوع</button><b>أذكار بعد الصلاة</b><span class="muted sm">${esc(D.items.p_tasbih_33.source)}</span></div>`;
-    if (end) return head + `<div class="adh-end">${ring(1, '<span class="in"><b>100</b><span>من 100</span></span>', 'sm')}<h3>تمّت أذكار بعد الصلاة</h3><p>${F.skip ? (F.skip === 1 ? 'تمّت، وتخطّيت خطوة واحدة.' : `تمّت، وتخطّيت ${cnt(F.skip, 'step')}.`) : 'تقبّل الله صلاتك وذكرك.'}</p><p class="adh-v c"><b>الفضل:</b> «${esc(D.items.p_tasbih_33.virtue)}»</p><div class="adh-nav"><button class="pri" data-frestart>ابدأ من جديد</button><button data-v="t">إغلاق</button></div></div>` + othersHTML(others, P);
+    if (end) return head + `<div class="adh-end">${ring(1, '<span class="in"><b>100</b><span>من 100</span></span>', 'sm')}<h3>تمّت أذكار بعد الصلاة</h3><p>${F.skip ? (F.skip === 1 ? 'تمّت، وتخطّيت خطوةً واحدةً.' : `تمّت، وتخطّيت ${cnt(F.skip, 'step', 'acc')}.`) : 'تقبّل الله صلاتك وذكرك.'}</p><p class="adh-v c"><b>الفضل:</b> «${esc(D.items.p_tasbih_33.virtue)}»</p><div class="adh-nav"><button class="pri" data-frestart>ابدأ من جديد</button><button data-v="t">إغلاق</button></div></div>` + othersHTML(others, P);
     return head + `<div class="adh-steps">${FLOW.map((s, k) => `<button class="${k === i ? 'on' : ''}${(F.c[k] || 0) >= s[1] ? ' ok' : ''}" data-fstep="${k}">${esc(short(s[0]))}${s[1] > 1 ? ' ' + s[1] : ''}</button>`).join('')}</div>
       <div class="adh-prog"><div class="row"><b>المرحلة ${i + 1} من 4</b><span>${tot} من 100</span></div>${bar(tot / 100)}</div>
       <div class="adh-tas">
         <p class="adh-dh">${esc(st[0])}</p>
-        <button class="adh-big" data-flow aria-label="اضغط للعدّ">${ring(c / st[1], `<span class="in"><b>${st[1] > 1 ? fmt(c) : (c ? '1' : '0')}</b><span>${st[1] > 1 ? 'من ' + st[1] : 'مرة واحدة'}</span><small>${st[1] > 1 ? 'اضغط للعدّ' : 'اضغط إذا قلته'}</small></span>`)}</button>
+        <button class="adh-big" data-flow aria-label="اضغط للعدّ">${ring(c / st[1], `<span class="in"><b>${st[1] > 1 ? fmt(c) : (c ? '1' : '0')}</b><span>${st[1] > 1 ? 'من ' + st[1] : 'مرّة واحدة'}</span><small>${st[1] > 1 ? 'اضغط للعدّ' : 'اضغط إذا قلته'}</small></span>`)}</button>
         ${i < 3 ? `<p class="muted sm c">التالي: ${esc(short(FLOW[i + 1][0]))}</p>` : ''}
         <div class="adh-nav"><button data-fprev ${i ? '' : 'disabled'}>السابق</button><button class="pri" data-fnext>التالي</button></div>
         <label class="adh-tog1"><input type="checkbox" data-opt="auto" ${S.auto ? 'checked' : ''}> الانتقال تلقائيًا عند تمام العدد</label>
@@ -248,7 +248,7 @@
         <div class="adh-pdh"><b>${isT ? 'صلوات اليوم' : `صلوات يوم ${esc(sp.w)}`}</b><span>${fmt(sd.c)} من 5</span></div>
         ${isT ? '' : `<p class="adh-pdd">${esc(sp.h)} هـ · ${esc(sp.g)} م</p>`}
         <div class="adh-pbtns" role="group" aria-label="${isT ? 'صلوات اليوم' : 'صلوات اليوم المختار'}">${PR.map(([p, l]) => `<button class="${sd.x[p] ? 'on' : ''}" data-pr="${p}" aria-pressed="${sd.x[p] ? 'true' : 'false'}">${CK}<span>${l}</span></button>`).join('')}</div>
-        <small class="adh-phint">${isT ? 'اضغط اسم الصلاة لتسجيلها، واضغطه مرة أخرى للتراجع.' : 'تعديل يوم سابق: اضغط اسم الصلاة لتسجيلها أو للتراجع عنها.'}</small>
+        <small class="adh-phint">${isT ? 'اضغط اسم الصلاة لتسجيلها، واضغطه مرّة أخرى للتراجع.' : 'تعديل يوم سابق: اضغط اسم الصلاة لتسجيلها أو للتراجع عنها.'}</small>
         ${isT ? '' : '<button class="lnk" data-ptoday>العودة إلى اليوم</button>'}
       </div>` : '';
     const legend = pf === 'all'

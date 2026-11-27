@@ -681,3 +681,6 @@ html.glass body.playing .bbar::before{background:#1F2120}
 body.immersive.playing .book{bottom:calc(var(--reserve) + var(--bbh))}
 /* v26z3: ظهر الورقة لا يُرسم إلا أثناء التقليب. في بعض محرّكات WebKit لا يُخفى الوجه الخلفي (rotateY 180 + backface-visibility) فيغطي الصفحة كلها بلون الورق فيختفي المصحف */
 .leaf:not(.turning) .leaf-back{visibility:hidden}
+
+/* v26z8: التشكيل الجزئي لنصوص الواجهة — مسافة أسطر أوسع قليلًا للفقرات الصغيرة حتى لا تتلامس الحركات (الضمة والشدة فوق، والكسرة تحت) بين سطرين. لا يمس المصحف. */
+p.sm,p.muted{line-height:1.6}
