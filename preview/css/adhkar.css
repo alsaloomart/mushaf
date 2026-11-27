@@ -142,3 +142,4 @@ html.glass .adh-menu{background:#2a2c2b}
 .adh-menu.wide button{white-space:normal;line-height:1.7}
 .adh-st b.s{font-size:.95rem;font-weight:700;line-height:1.6}
 #adhBody{padding-bottom:calc(40px + var(--sab,0px))}
+.adh-entry span.lnk2{color:var(--a-gold2);font-weight:700}
