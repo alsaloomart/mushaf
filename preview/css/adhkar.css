@@ -298,3 +298,9 @@ html.dark .pd.p-part,html.dark .adh-fleg i.p-part{background:var(--a-pd)}
 .pc:disabled{cursor:default}
 .adh-fleg i.pdl{width:11px;height:11px;border-width:1.5px;background:transparent}
 .adh-fleg i.p-done,.adh-fleg i.p-part{background:transparent}
+
+/* v26z10: زر «المصدر» — صغير، خط رفيع بأسلوب الأيقونات، بلا تعبئة ذهبية */
+.adh-slink{position:relative;display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:3px 9px;min-height:24px;border:1px solid var(--a-line);border-radius:999px;color:var(--a-ink);text-decoration:none;font-size:.76rem;line-height:1;vertical-align:middle;background:none}
+.adh-slink svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.adh-slink::after{content:"";position:absolute;inset:-10px -4px}
+.adh-slink:active{opacity:.6}

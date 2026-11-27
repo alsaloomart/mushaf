@@ -688,3 +688,24 @@ p.sm,p.muted{line-height:1.6}
 /* v26z9: عدد الآيات في صفوف الفهرس: الرقم والكلمة لا ينفصلان، بعرض ثابت، ومسافة أسطر أوسع قليلًا */
 .li .m small{line-height:1.6}
 .li .m small .cnw{display:inline-block;white-space:nowrap;min-width:4.6em;text-align:start;unicode-bidi:isolate}
+
+/* v26z10: ملاءمة الصفحة لكل جهاز — أكبر حجم يتسع للمساحة الفعلية (بين الشريط العلوي وأعلى المشغل أو شريط التبويبات، مع المناطق الآمنة)،
+   في الوسط أفقيًا ورأسيًا، بنسبة ثابتة: لا شدّ ولا قصّ. الصفحتان 1 و2: إطار السورة في وسط المساحة بفراغين متساويين،
+   والتظليل ومواضع اللمس في نفس الرسم فتبقى مطابقة. الأسطر ونص المصحف كما هي. */
+.pg.short .txw{position:absolute;inset:6px 8px;width:auto;height:auto}
+.pg.short .txw svg.tx{position:absolute;inset:0;width:100%;height:100%;flex:none}
+.book{transition:bottom .22s ease}
+html.wide #reader{padding-bottom:calc(40px + var(--reserve))}
+html.wide body.immersive.playing #reader{padding-bottom:calc(var(--reserve) + var(--bbh))}
+html.wide .book{transition:width .22s ease,height .22s ease}
+html.spread .leaf{transition:width .22s ease,height .22s ease}
+html.wide body.immersive .book,html.wide body.immersive.playing .book{bottom:auto}
+/* v26z10: الصفحة في الوسط أفقيًا: هامشان متساويان (المجموع كما كان، فلا يتغير عرض الصفحة)، وعلامة الملاحظة داخل الهامش الأيمن */
+.pg{padding-left:18px;padding-right:18px}
+.pg .nmk button{right:3px}
+/* v26z10: الجوال أفقيًا — الصفحة بعرض الشاشة وتمرير رأسي، والخط لا يُصغَّر؛ شريط الأجزاء يُخفى لمساحة أكبر */
+html.land{--qjh:0px}
+html.land .qj{display:none}
+html.land #reader{overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+html.land .book{bottom:auto;height:var(--landh);transition:none}
+html.land .pg{max-width:none}

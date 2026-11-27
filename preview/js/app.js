@@ -118,9 +118,9 @@
     if (!isWide()) return false;
     const rd = $('#reader');
     if (!rd) return false;
-    const H = rd.clientHeight, W = rd.clientWidth;
-    if (W < SPREAD_MIN_W || H < 280) return false;
-    const usableH = Math.max(200, H - 24 - CREDIT_H);
+    const cs = getComputedStyle(rd), H = rd.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), W = rd.clientWidth;
+    if (W < SPREAD_MIN_W || H < 240) return false;
+    const usableH = Math.max(200, H - 24);
     const aspect = viewFull() ? PAGE_ASPECT_FULL : PAGE_ASPECT_FILL;
     return W >= 2 * aspect * usableH + SPREAD_GUTTER;
   }
@@ -132,8 +132,8 @@
   }
   function slotSize(spread) {
     const rd = $('#reader');
-    const H = rd.clientHeight, W = rd.clientWidth;
-    const usableH = Math.max(200, H - 24 - CREDIT_H);
+    const cs = getComputedStyle(rd), H = rd.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), W = rd.clientWidth;   // v26z10: المساحة الفعلية بعد المشغل وسطر الحقوق
+    const usableH = Math.max(200, H - 24);
     const usableW = Math.max(200, W - 40);
     const aspect = viewFull() ? PAGE_ASPECT_FULL : PAGE_ASPECT_FILL;
     if (spread) {
@@ -162,6 +162,10 @@
       PW = sz.pw;
     } else {
       ['--pw', '--ph', '--bw', '--bh', '--gutter'].forEach(k => root.style.removeProperty(k));
+      // v26z10: الجوال أفقيًا — الصفحة بعرض الشاشة كاملًا وتمرير رأسي، دون تصغير الخط (قرار سابق)
+      const land = innerWidth > innerHeight && innerHeight < WIDE_MIN_H;
+      root.classList.toggle('land', land);
+      if (land) root.style.setProperty('--landh', Math.round(innerWidth / PAGE_ASPECT_FILL) + 'px'); else root.style.removeProperty('--landh');
       const R = book.getBoundingClientRect(); PW = R.width || innerWidth;
     }
     if (cur) showOnly(cur);
@@ -171,8 +175,11 @@
     const h = Math.max(t.hidden ? 0 : t.offsetHeight + 16, pl.hidden ? 0 : pl.offsetHeight + 16);
     document.documentElement.style.setProperty('--reserve', h + 'px');
     if (!pl.hidden && pl.offsetHeight) document.documentElement.style.setProperty('--plh', pl.offsetHeight + 'px');
-    requestAnimationFrame(layout);
+    requestAnimationFrame(layout); refitSoon();
   }
+  /* v26z10: إعادة الملاءمة بعد ظهور المشغل أو اختفائه أو تغيّر شريط سفاري أو الاتجاه — مؤجّلة حتى تنتهي الحركة (لا رسم للصفحة في كل إطار) */
+  let refitT = 0;
+  function refitSoon(ms) { clearTimeout(refitT); refitT = setTimeout(() => { layout(); showOnly(cur); requestAnimationFrame(() => { refit(); notesPaintVisible(cur); }); }, ms || 260); }
   const NS = 'http://www.w3.org/2000/svg';
   /* المسافة بين الأسطر: الأسطر الـ15 كما هي من صفحة المجمع (نفس الكلمات في كل سطر)،
      تُوزَّع رأسيًا لتملأ طول الشاشة كما في المصحف المطبوع، والعرض يملأ الشاشة. */
@@ -181,7 +188,7 @@
     const pg = el.querySelector('.pg'), ph = pg && pg.querySelector('.ph'), pf = pg && pg.querySelector('.pf');
     if (!ph) return null;
     const cs = getComputedStyle(pg);
-    const box = document.documentElement.classList.contains('wide') ? pg : $('#reader');
+    const rc = document.documentElement.classList, box = rc.contains('wide') ? pg : rc.contains('land') ? $('.book') : $('#reader');   // v26z10: الجوال أفقيًا: ارتفاع الصفحة بعرض الشاشة
     const H = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (ph.offsetHeight || 26) - (pf.offsetHeight || 40);
     const W = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     return { H, W };
@@ -516,7 +523,7 @@
       body = full ? `${clip}${im}` : `${clip}<g class="p12">${im}<rect class="tm-paper" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#FFFBF7" style="display:none"/></g>`;
     }
     const ss = pd.surahs;
-    return `<div class="pg">
+    return `<div class="pg${(!full && p <= 2) ? ' short' : ''}">
       <div class="ph prt">${p > 2 ? `<img class="phimg" src="phdr/${String(p).padStart(3, '0')}.webp" alt="" aria-hidden="true" decoding="async">` : ''}<span class="pj">الجزء ${ar(pd.juz)}</span><button class="pnote" hidden aria-label="ملاحظات هذه الصفحة"></button>${p > 2 && hzLabel(p) ? `<span class="phz" aria-label="${hzLabel(p)}">${hzLabel(p)}</span>` : ''}<span class="ps">${esc(surahsTitle(ss, 14))}</span></div>
       <div class="txw">
       <svg class="tx" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${body}
@@ -743,7 +750,9 @@
   }
   book.addEventListener('pointerup', endDrag);
   book.addEventListener('pointercancel', endDrag);
-  addEventListener('resize', () => { layout(); showOnly(cur); requestAnimationFrame(() => { refit(); notesPaintVisible(cur); }); });
+  addEventListener('resize', () => refitSoon(120));
+  addEventListener('orientationchange', () => refitSoon(300));
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => refitSoon(160));
 
   /* ---------- الأدوات تظهر باللمس ---------- */
   let chromeT = 0;
@@ -842,7 +851,7 @@
     $('#pRep').textContent = st.notime ? 'السورة كاملة · بلا تتبع للآيات' : st.kind === 'surah' ? `السورة كاملة · ${ar(st.i + 1)} من ${ar(st.keys.length)}` : st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
     reserve();
     if ('mediaSession' in navigator) {
-      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title, artist: r.name, album: 'المصحف الذكي' }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title, artist: r.name, album: APPN }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
     }
     const p = await pageOfKey(k);
     // الصفحة تتبع التلاوة؛ إن كان التقليب جاريًا نعيد المحاولة بعد انتهائه
@@ -936,6 +945,8 @@
   function openTafsirPanel() { return openTafsir(sel ? sel.list.slice() : null); }
   const PAPERS = [['madinah', 'مصحف المدينة', '#155A3A'], ['beige', 'بيج', '#FFFBF7'], ['blue', 'أزرق', '#F2F9FE'], ['white', 'أبيض', '#FFFFFF'], ['cream', 'كريمي', '#FBF3E2'], ['grey', 'رمادي فاتح', '#D9D6D2'], ['night', 'ليلي', '#0E0E0E'], ['glass', 'زجاجي', '#1F2120']];
 
+  // v26z10: الاسم ونوع النسخة من js/config.js؛ أيقونات التواصل والمعرّف اللاتيني لا تظهر في نسخة الجمعية
+  const APPN = (window.APP && APP.NAME) || 'المصحف الذكي', SOC = !window.APP || APP.SOCIAL;
   const SOCIAL = [
     ['x', 'إكس', 'https://x.com/alsaloomart', '<path d="M5 5l14 14M19 5L5 19"/>'],
     ['ig', 'إنستغرام', 'https://instagram.com/alsaloomart', '<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.7" cy="7.3" r=".8"/>'],
@@ -949,10 +960,10 @@
       `<li><a href="${href}" target="_blank" rel="noopener" aria-label="${name}" title="${name}"><svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg></a></li>`
     ).join('')}</ul>`;
     return `<div class="credit"${desk ? ' id="deskCreditInner"' : ''}>
-      ${desk ? '' : '<p class="credit-app">المصحف الذكي</p>'}
-      <p class="credit-name">تصميم وتطوير: فهد السلوم | alsaloomart</p>
+      ${desk ? '' : `<p class="credit-app">${APPN}</p>`}
+      <p class="credit-name">تصميم وتطوير: فهد السلوم${SOC ? ' | alsaloomart' : ''}</p>
       <p class="credit-note">هذا التصميم للتطبيق. نص المصحف وحقوقه لمجمع الملك فهد لطباعة المصحف الشريف.</p>
-      ${social}
+      ${SOC ? social : ''}
     </div>`;
   }
 
@@ -969,8 +980,8 @@
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
        ${window.ADHKAR ? ADHKAR.settingsHTML() : ''}
-       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '') + creditHTML(), 'settings');
-    if (window.CLOUD) CLOUD.prep();
+       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD && CLOUD.state().on ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '<label class="lbl">الحساب والمزامنة</label><p class="muted sm">هذه النسخة تعمل على جهازك فقط، دون حساب ولا مزامنة.</p>') + creditHTML(), 'settings');
+    if (window.CLOUD && CLOUD.state().on) CLOUD.prep();
     dlBox();
   }
   /* ---------- الأشرطة ---------- */
@@ -2447,7 +2458,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z9';
+  window.__BUILD='26z10';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

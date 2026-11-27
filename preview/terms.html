@@ -14,7 +14,7 @@
 </style>
 </head><body>
 <h1>شروط الاستخدام</h1>
-<p>آخر تحديث: 21 نوفمبر 2026. هذه نسخة تجريبية لتطبيق «المصحف الذكي»، مجانية، وغير تجارية.</p>
+<p>آخر تحديث: 21 نوفمبر 2026.<span class="bnote"> هذه نسخة تجريبية.</span> تطبيق «<span class="appn">المصحف الذكي</span>» مجاني وغير تجاري.</p>
 <h2>المصحف</h2>
 <p>صفحات المصحف هي النسخة الرقمية الرسمية الصادرة عن مجمع الملك فهد لطباعة المصحف الشريف (رواية حفص، إصدار 1441هـ)، وتُستخدم وفق إذن المجمع باستخدامها مجانًا في مواقع الإنترنت والبرامج الحاسوبية. لا يُعدَّل نص المصحف ولا توزيع كلمات أسطره.</p>
 <h2>التلاوات والبيانات</h2>
@@ -22,4 +22,6 @@
 <h2>إخلاء المسؤولية</h2>
 <p>التطبيق مقدَّم كما هو، دون ضمانات. إن لاحظت خطأ فنيًا فأخبرنا لنصلحه.</p>
 <p><a href="./">العودة إلى المصحف</a></p>
+<script src="js/config.js"></script>
+<script>/* الاسم ونوع النسخة والوضع المحلي من js/config.js */(function(){var A=window.APP;if(!A)return;var q=function(s){return document.querySelectorAll(s)};q(".appn").forEach(function(e){e.textContent=A.NAME});document.title=document.title.replace("المصحف الذكي",A.NAME);if(A.BUILD==="handover")q(".bnote").forEach(function(e){e.hidden=true});if(A.LOCAL_ONLY){q(".fbon").forEach(function(e){e.hidden=true});q(".fboff").forEach(function(e){e.hidden=false})}})()</script>
 </body></html>

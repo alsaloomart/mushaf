@@ -18,6 +18,7 @@
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "المصحف الذكي", "alternateName": "المصحف الذكي — مصحف المدينة النبوية", "description": "مصحف المدينة النبوية (مجمع الملك فهد) بتجربة تفاعلية للحفظ والمراجعة", "url": "https://alsaloomart.github.io/mushaf/preview/", "inLanguage": "ar", "applicationCategory": "EducationalApplication", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "SAR"}}</script>
 <meta name="theme-color" content="#FFFBF7">
+<script src="js/config.js?v=26z10"></script>
 <script>/* الوضع الليلي قبل الرسم */(function(){try{var s=JSON.parse(localStorage.getItem('mushaf.preview.v1')||'{}'),t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');document.documentElement.dataset.paper=s.paper||'beige';if(s.view==='full')document.documentElement.classList.add('vfull')}catch(e){}})()</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,10 +29,12 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://api.quran.com" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=26z9">
-<link rel="stylesheet" href="css/adhkar.css?v=26z9">
+<link rel="stylesheet" href="css/app.css?v=26z10">
+<link rel="stylesheet" href="css/adhkar.css?v=26z10">
 </head>
 <body>
+<div id="splash" aria-hidden="true" style="position:fixed;inset:0;z-index:9999;background:#1F2120;display:grid;place-items:center;transition:opacity .3s ease"><div style="text-align:center"><div id="splashN" style="font-family:'Thmanyah Serif Display','Thmanyah Sans',serif;font-size:30px;font-weight:700;color:#FFFBF7">المصحف الذكي</div><div style="width:28px;height:2px;background:#C9A227;margin:14px auto 0;border-radius:1px"></div></div></div>
+<script>try{document.getElementById('splashN').textContent=window.APP?APP.NAME:'المصحف الذكي'}catch(e){}</script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="fBlue" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-1 2.75 -0.75 0 0  3.6667 -5.25 2.5833 0 0  6.3333 -9.5 4.1667 0 0  0 0 0 1 0"/></filter>
   <filter id="fCream" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.984 0 0 0 0  0 0.965 0 0 0  0 0 0.925 0 0  0 0 0 1 0"/></filter>
@@ -192,19 +195,20 @@
 <div id="toast" class="toast" role="status"></div>
 <div id="scrim" class="scrim" hidden></div>
 
-<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26z9';try{
+<script>/* المعاينة: تحديث فوري وإصلاح ذاتي إن بقيت نسخة قديمة مخزنة */(function(){var V='26z10';try{
 if('serviceWorker' in navigator){var had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had||done||sessionStorage.getItem('pv-cc')===V)return;done=true;sessionStorage.setItem('pv-cc',V);location.reload();});
 navigator.serviceWorker.getRegistration('/mushaf/preview/').then(function(r){if(r)r.update();}).catch(function(){});}
 addEventListener('load',function(){setTimeout(function(){if(window.__BUILD===V||sessionStorage.getItem('pv-fix')===V)return;sessionStorage.setItem('pv-fix',V);
 var a=navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(function(r){return r.scope.indexOf('/mushaf/preview/')>=0;}).map(function(r){return r.unregister();}));}):Promise.resolve();
 var b=window.caches?caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mushaf-preview-')===0;}).map(function(k){return caches.delete(k);}));}):Promise.resolve();
 Promise.all([a,b]).catch(function(){}).then(function(){location.reload();});},2000);});}catch(e){}})();</script>
-<script src="js/quran-data.js?v=26z9"></script>
-<script src="js/audio.js?v=26z9"></script>
-<script src="js/store.js?v=26z9"></script>
-<script src="js/tmatch.js?v=26z9"></script>
-<script src="js/app.js?v=26z9"></script>
-<script src="js/adhkar.js?v=26z9"></script>
-<script src="js/cloud.js?v=26z9"></script>
+<script src="js/quran-data.js?v=26z10"></script>
+<script src="js/audio.js?v=26z10"></script>
+<script src="js/store.js?v=26z10"></script>
+<script src="js/tmatch.js?v=26z10"></script>
+<script src="js/app.js?v=26z10"></script>
+<script src="js/adhkar.js?v=26z10"></script>
+<script src="js/cloud.js?v=26z10"></script>
+<script>/* v26z10: شاشة البدء الفحمية تختفي بعد أول رسم للصفحة */(function(){var s=document.getElementById('splash');if(!s)return;var go=function(){s.style.opacity='0';setTimeout(function(){s.remove()},320)};requestAnimationFrame(function(){setTimeout(go,420)})})()</script>
 </body>
 </html>

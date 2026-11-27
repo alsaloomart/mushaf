@@ -6,6 +6,8 @@
   'use strict';
   const A = window.__app; if (!A) return;
   const esc = A.esc, cnt = A.cnt, toast = A.toast;
+  // v26z10: زر «المصدر» — رابط عميق متحقَّق منه لصفحة الحديث أو الآية (data/adhkar.json → url)؛ بلا رابط مؤكد لا زر
+  const LNK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>';
   const $ = s => document.querySelector(s);
   const KEY = /\/preview\//.test(location.pathname) ? 'mushaf.preview.adhkar' : 'mushaf.adhkar';
   const fmt = n => n >= 1000 ? n.toLocaleString('en-US') : String(n);
@@ -90,7 +92,7 @@
     if (shut) { const tt = (it.title || '').split(' / '); body = `<p class="adh-shut-t">${esc(tt[m === 'e' && tt[1] ? 1 : 0])}</p>`; }   // لا يُقتطع نص آية أو ذكر: يظهر عنوانه فقط حتى يُفتح
     return `<article class="adh-card${fin ? ' fin' : ''}${shut ? ' shut' : ''}" data-id="${id}"${fin && (m === 'm' || m === 'e') ? ` aria-expanded="${!shut}"` : ''}>
       ${body}
-      <div class="adh-meta"><p class="adh-src">المصدر: ${esc(it.source || '')}</p>${vir}</div>
+      <div class="adh-meta"><p class="adh-src">المصدر: ${esc(it.source || '')}${it.url ? ` <a class="adh-slink" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" data-src aria-label="افتح المصدر في صفحة جديدة">${LNK}<span>المصدر</span></a>` : ''}</p>${vir}</div>
       <button class="adh-tap" data-tap aria-label="اضغط للعدّ">${fin ? '<svg viewBox="0 0 24 24" class="ok"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : ''}<span class="cn">${cnum}</span><small>${fin ? 'تمّ' : 'اضغط للعدّ'}</small></button>
     </article>`;
   }
@@ -392,6 +394,7 @@
 
   function onClick(ev) {
     const t = ev.target, q = s => t.closest(s);
+    if (q('[data-src]')) { if (navigator.onLine === false) { ev.preventDefault(); toast('لا اتصال بالإنترنت الآن، افتح المصدر حين تتّصل.'); } return; }
     let el;
     if (MENU && !q('.adh-tsel')) { MENU = false; render(); return; }
     if (PMENU && !q('.adh-psel')) { PMENU = false; render(); return; }
