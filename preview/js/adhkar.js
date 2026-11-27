@@ -18,7 +18,7 @@
     { t: "اللَّهُ أَكْبَرُ", n: 33, src: "رواه مسلم" },
     { t: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ، وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", n: 100, src: "متفق عليه", v: "«كَانَتْ لَهُ عَدْلَ عَشْرِ رِقَابٍ، وَكُتِبَتْ لَهُ مِائَةُ حَسَنَةٍ، وَمُحِيَتْ عَنْهُ مِائَةُ سَيِّئَةٍ، وَكَانَتْ لَهُ حِرْزًا مِنَ الشَّيْطَانِ يَوْمَهُ ذَلِكَ حَتَّى يُمْسِيَ»" },
     { t: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", n: 100, src: "رواه مسلم", v: "«مَنْ قَالَ حِينَ يُصْبِحُ وَحِينَ يُمْسِي: سُبْحَانَ اللَّهِ وَبِحَمْدِهِ مِائَةَ مَرَّةٍ، لَمْ يَأْتِ أَحَدٌ يَوْمَ الْقِيَامَةِ بِأَفْضَلَ مِمَّا جَاءَ بِهِ، إِلَّا أَحَدٌ قَالَ مِثْلَ مَا قَالَ أَوْ زَادَ عَلَيْهِ»" },
-    { t: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ", n: 3, src: "رواه مسلم", v: "«لَوْ وُزِنَتْ بِمَا قُلْتِ مُنْذُ الْيَوْمِ لَوَزَنَتْهُنَّ»" },
+    { t: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ", n: 3, src: "رواه مسلم", v: "«لَقَدْ قُلْتُ بَعْدَكِ أَرْبَعَ كَلِمَاتٍ ثَلَاثَ مَرَّاتٍ، لَوْ وُزِنَتْ بِمَا قُلْتِ مُنْذُ الْيَوْمِ لَوَزَنَتْهُنَّ»" },
     { t: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ", n: 0, src: "متفق عليه", v: "«كَلِمَتَانِ خَفِيفَتَانِ عَلَى اللِّسَانِ، ثَقِيلَتَانِ فِي الْمِيزَانِ، حَبِيبَتَانِ إِلَى الرَّحْمَنِ»" },
     { t: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", n: 0, src: "متفق عليه", v: "«أَلَا أَدُلُّكَ عَلَى كَنْزٍ مِنْ كُنُوزِ الْجَنَّةِ»" },
     { t: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", n: 10, src: "رواه مسلم", v: "«كَانَ كَمَنْ أَعْتَقَ أَرْبَعَةَ أَنْفُسٍ مِنْ وَلَدِ إِسْمَاعِيلَ»" },
@@ -26,7 +26,7 @@
   ];
   const LABELS = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'اللَّهُ أَكْبَرُ', 'التهليل (100)', 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ (100)', 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ', 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', 'التهليل (10)', 'الاستغفار (100)'];
   const short = t => { const i = PRESETS.findIndex(x => x.t === t); return i >= 0 ? LABELS[i] : /^ل(?:َا|اَ) إِلَهَ/.test(t) ? 'التهليل' : t; };   // اسم كامل بلا قطع كلمات
-  const DONE_LINES = n => ['تقبّل الله منك.', n ? `أتممت ${cnt(n, 'tasbeeha')}. بارك الله فيك.` : 'تقبّل الله منك.', 'تمّ العدد. تقبّل الله.', 'أحسنت، تقبّل الله ذكرك.'];
+  const DONE_LINES = n => ['تقبّل الله منك.', n ? `أتممت ${cnt(n, 'tasbeeha', 'acc')}. بارك الله فيك.` : 'تقبّل الله منك.', 'تمّ العدد. تقبّل الله.', 'أحسنت، تقبّل الله ذكرك.'];
 
   /* ---------- الحالة ---------- */
   const def = () => ({ city: 0, prog: {}, tas: { p: 0, target: 33, c: 0, h: [] }, goal: 100, vib: 1, snd: 0, auto: 1, log: {}, flow: { i: 0, c: [0, 0, 0, 0], skip: 0 }, fajr: { start: null, d: {}, hist: [] } });
@@ -104,7 +104,7 @@
     return `<div class="adh-city"><span><b>${esc(c[0])}</b> · الشروق ${hm(TIMES && TIMES.sunrise)} · الغروب ${hm(TIMES && TIMES.maghrib)}</span><button class="lnk" data-v="city">تغيير المدينة</button></div>
       <div class="adh-prog"><div class="row"><b>اكتمل ${doneN} من ${ids.length}</b>${doneN === ids.length ? '<span class="ok">تقبّل الله منك.</span>' : ''}</div>${bar(doneN / ids.length)}</div>
       <div class="adh-list">${ids.map(id => card(id, m, P[id] || 0)).join('')}</div>
-      <p class="adh-note">التذكير: على الآيفون لا تصل إشعارات المصحف إلا إذا فُتح من الشاشة الرئيسية (iOS 16.4 فأحدث). ولم يُفعَّل بعدُ ضبط التذكير على الشروق والغروب تلقائيًا؛ والتذكير المجدول من الخادم غير مفعّل حاليًا.</p>`;
+      <p class="adh-note">التذكير: على الآيفون لا تصل إشعارات المصحف إلا إذا فُتح من الشاشة الرئيسية (iOS 16.4 فأحدث). ولم يُفعَّل بعدُ ضبط التذكير على الشروق والغروب تلقائيًا؛ والتذكير المجدول من الخادم غير مفعّل حاليًا.</p>`;
   }
   function tapCard(el, m) {
     const id = el.dataset.id, it = D.items[id];
@@ -163,7 +163,7 @@
     buzz(hit); tick(); save(); render();
   }
 
-  /* ---------- أذكار بعد الصلاة (تدفق موجَّه) ---------- */
+  /* ---------- أذكار بعد الصلاة (تدفق موجَّه) ---------- */
   let FLOW = [];   // من data/adhkar.json → items.p_tasbih_33.steps (رواه مسلم)
   function renderFlow() {
     const F = S.flow, i = Math.min(F.i, 3), st = FLOW[i], c = F.c[i] || 0, tot = F.c.reduce((a, b, k) => a + Math.min(b, FLOW[k][1]), 0);
@@ -248,14 +248,17 @@
         <div class="adh-pdh"><b>${isT ? 'صلوات اليوم' : `صلوات يوم ${esc(sp.w)}`}</b><span>${fmt(sd.c)} من 5</span></div>
         ${isT ? '' : `<p class="adh-pdd">${esc(sp.h)} هـ · ${esc(sp.g)} م</p>`}
         <div class="adh-pbtns" role="group" aria-label="${isT ? 'صلوات اليوم' : 'صلوات اليوم المختار'}">${PR.map(([p, l]) => `<button class="${sd.x[p] ? 'on' : ''}" data-pr="${p}" aria-pressed="${sd.x[p] ? 'true' : 'false'}">${CK}<span>${l}</span></button>`).join('')}</div>
-        <small class="adh-phint">${isT ? 'اضغط اسم الصلاة لتسجيلها، واضغطه مرة أخرى للتراجع.' : 'تعديل يوم سابق. اضغط اسم الصلاة لتسجيلها أو للتراجع.'}</small>
+        <small class="adh-phint">${isT ? 'اضغط اسم الصلاة لتسجيلها، واضغطه مرة أخرى للتراجع.' : 'تعديل يوم سابق: اضغط اسم الصلاة لتسجيلها أو للتراجع عنها.'}</small>
         ${isT ? '' : '<button class="lnk" data-ptoday>العودة إلى اليوم</button>'}
       </div>` : '';
     const legend = pf === 'all'
-      ? '<span><i class="pdl p-done"></i>الخمس كلها</span><span><i class="pdl p-part"></i>بعضها</span><span><i class="pdl p-miss"></i>لم يُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>'
-      : '<span><i class="pdl p-done"></i>صلّيت</span><span><i class="pdl p-miss"></i>لم يُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>';
-    const cal = st.days.map(d => { const p = dParts(d.k), s2 = dSt(d, pf), lab = `${p.w} ${p.h} هـ، ${p.g} م`;
-      return `<button role="listitem" class="pd p-${s2}${d.isT ? ' is-t' : ''}${d.k === PSEL ? ' sel' : ''}" data-pday="${d.k}" ${d.fut ? 'disabled' : ''} aria-label="${esc(lab)}">${pf === 'all' && !d.fut ? `<em>${fmt(d.c)}/5</em>` : ''}<span class="h" dir="ltr">${esc(p.h)}</span><b>يوم ${esc(p.w)}</b><span class="g" dir="ltr">${esc(p.g)}</span></button>`; }).join('');
+      ? '<span><i class="pdl p-done"></i>الخمس كلها</span><span><i class="pdl p-part"></i>بعضها</span><span><i class="pdl p-miss"></i>لم يُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>'
+      : '<span><i class="pdl p-done"></i>صلّيت</span><span><i class="pdl p-miss"></i>لم تُسجَّل</span><span><i class="pdl p-up"></i>قادم</span>';
+    // v26z7: دوائر صغيرة رمادية فاتحة، وحلقة ذهبية رفيعة تمتلئ بعدد الصلوات (2 من 5 = خُمسا الحلقة)، ونقطة ذهبية لليوم فقط؛ وأسبوع واحد على الأكثر من الأيام القادمة
+    const CIRC = 295.31, lim = Math.max(st.ti, 0) + 7;
+    const cal = st.days.filter(d => d.i <= lim).map(d => { const p = dParts(d.k), s2 = dSt(d, pf), fr = d.fut ? 0 : pf === 'all' ? d.c / 5 : d.x[pf] ? 1 : 0;
+      const lab = `${p.w} ${p.h} هـ، ${p.g} م` + (d.fut ? '' : pf === 'all' ? `، ${d.c} من 5` : d.x[pf] ? '، صلّيت' : '');
+      return `<button role="listitem" class="pd p-${s2}${d.isT ? ' is-t' : ''}${d.k === PSEL ? ' sel' : ''}" data-pday="${d.k}" ${d.fut ? 'disabled' : ''} aria-label="${esc(lab)}"><svg class="pr" viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="47"/>${fr > 0 ? `<circle class="fl" cx="50" cy="50" r="47" stroke-dasharray="${(fr * CIRC).toFixed(1)} ${CIRC}" transform="rotate(-90 50 50)"/>` : ''}</svg>${d.isT ? '<i class="tdot" aria-hidden="true"></i>' : ''}<span class="h" dir="ltr">${esc(p.h)}</span><b>يوم ${esc(p.w)}</b><span class="g" dir="ltr">${esc(p.g)}</span></button>`; }).join('');
     return `<p class="adh-fdate">${esc(fDate())}</p>
       <p class="adh-fday">${!st.started ? 'تقويم 30 يومًا يبدأ من أول تسجيل.' : ended ? 'انتهت الأيام الثلاثون.' : `اليوم ${fmt(st.ti + 1)} من ${FN}`}</p>
       ${dayCard}
@@ -266,7 +269,7 @@
       <div class="adh-entry one">
         <button data-v="freport"><b>التقرير</b><span class="lnk2">لكل صلاة وللصلوات كلها</span></button>
       </div>
-      <p class="adh-note">متابعة الصلاة محفوظة على جهازك فقط، ولا تُرسل إلى أي خادم.</p>`;
+      <p class="adh-note">متابعة الصلاة محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم.</p>`;
   }
   function renderFReport() {
     const st = fState(), [cur, best] = fStreaks(st), T = FN * 5;
@@ -281,13 +284,13 @@
       <div class="adh-goal">${ring(st.n / T, `<span class="in"><b>${fmt(st.n)}</b><span>من ${T}</span></span>`)}<div><b>${st.n ? `سجّلت ${cnt(st.n, 'salah', 'acc')} من ${T}` : 'لم تسجّل أي صلاة بعد.'}</b></div></div>
       <div class="adh-grid">
         <div class="adh-st"><span>نسبة الالتزام حتى اليوم</span><b>${fmt(pct)}%</b><small>${eAll ? 'من الصلوات التي مضى وقتها منذ البدء' : 'تبدأ مع أول تسجيل.'}</small></div>
-        <div class="adh-st"><span>أيام كاملة (الخمس)</span><b>${cnt(full, 'day')}</b><small>من ${FN}</small></div>
+        <div class="adh-st"><span>أيام كاملة (الصلوات الخمس)</span><b>${cnt(full, 'day')}</b><small>من ${FN}</small></div>
         <div class="adh-st"><span>أيام كاملة متتالية</span><b>${cnt(cur, 'day')}</b></div>
         <div class="adh-st"><span>أطول سلسلة</span><b>${cnt(best, 'day')}</b></div>
         <div class="adh-st w"><span>الأيام المتبقية</span><b>${st.ti >= FN ? 'انتهى التقويم' : cnt(left, 'day')}</b>${prev ? `<small>${prev.fajrOnly ? `التحدي السابق (الفجر): ${fmt(prev.n)} من ${FN}` : `التقويم السابق: ${fmt(prev.n)} من ${FN * 5}`}</small>` : ''}</div>
       </div>
       <div class="adh-pper"><b class="adh-pph">لكل صلاة</b>${per.map(x => `<div class="adh-prow"><b>${x.l}</b>${bar(x.e ? x.n / x.e : 0)}<span>${fmt(x.n)} من ${fmt(x.e)}</span><em>${fmt(x.pct)}%</em></div>`).join('')}</div>
-      <p class="adh-note">التقرير محسوب على جهازك فقط، ولا يُرسل إلى أي خادم.</p>`;
+      <p class="adh-note">التقرير محسوب على جهازك فقط، ولا يُرسَل إلى أي خادم.</p>`;
   }
   function tapPray(p) {
     const F = S.pr, t = today(), k = PSEL || t;
@@ -296,14 +299,14 @@
     const x = F.d[k] || (F.d[k] = {});
     if (x[p]) { delete x[p]; if (!Object.keys(x).length) delete F.d[k]; if (!Object.keys(F.d).length && F.start === t) F.start = null; save(); return render(); }
     x[p] = 1; const all = PR.every(([q]) => x[q]); buzz(all); tick(); save(); render();
-    toast(all ? (k === t ? 'أتممت صلوات اليوم الخمس. تقبّل الله منك.' : 'اكتملت صلوات ذلك اليوم الخمس.') : `سُجِّلت صلاة ${PN[p]}.`);
+    toast(all ? (k === t ? 'أتممت الصلوات الخمس اليوم. تقبّل الله منك.' : 'اكتملت صلوات ذلك اليوم الخمس.') : `سُجِّلت صلاة ${PN[p]}.`);
   }
   function tapFajr(what) {
     const F = S.pr;
     if (what === 'new') {
-      if (!confirm('بدء تقويم جديد لمدة 30 يومًا؟ تبقى نتيجة التقويم السابق في التقرير.')) return;
+      A.ask('بدء تقويم جديد لمدة 30 يومًا؟ تبقى نتيجة التقويم السابق في التقرير.', 'ابدأ').then(ok => { if (!ok) return;
       const st = fState(), by = {}; for (const [p] of PR) by[p] = st.days.filter(d => d.x[p]).length;
-      (F.hist = F.hist || []).push({ start: F.start, n: st.n, by }); F.start = null; F.d = {}; PSEL = null; save(); return render();
+      (F.hist = F.hist || []).push({ start: F.start, n: st.n, by }); F.start = null; F.d = {}; PSEL = null; save(); render(); }); return;
     }
   }
 
@@ -329,7 +332,7 @@
     Ls.forEach(L => Object.entries(L.by || {}).forEach(([k, v]) => by[k] = (by[k] || 0) + v));
     const top = Object.entries(by).sort((a, b) => b[1] - a[1])[0];
     const td = S.log[today()] || { t: 0 }, g = S.goal || 100, [cur, best] = streaks();
-    const empty = { d: 'لم تُسجَّل أذكار اليوم بعد.', w: 'لا إحصاءات لهذا الأسبوع بعد.', m: 'لا إحصاءات لهذا الشهر بعد.', a: 'لا إحصاءات بعد.' }[period];
+    const empty = { d: 'لم تُسجَّل أذكار اليوم بعد.', w: 'لا إحصاءات لهذا الأسبوع بعد.', m: 'لا إحصاءات لهذا الشهر بعد.', a: 'لا إحصاءات بعد.' }[period];
     const daysLine = n => n ? `أتممتها ${cnt(n, 'day', 'acc')} من ${fmt(R.length)}` : 'لم تُتمّها بعد.';
     return `<div class="adh-sub"><button class="lnk back" data-v="t">رجوع</button><b>الإحصاءات</b><span></span></div>
       <div class="adh-goal">${ring(td.t / g, td.t >= g ? `<span class="in"><b>${fmt(td.t)}</b><span class="met">الهدف ${fmt(g)} <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>` : `<span class="in"><b>${fmt(td.t)}</b><span>من ${fmt(g)}</span></span>`, 'sm')}<div><b>هدف اليوم</b><p class="muted sm">${td.t >= g ? 'أحسنت، تقبّل الله ذكرك.' : `${cnt(g, 'tasbeeha')} في اليوم`}</p><button class="lnk" data-goal>تعديل الهدف</button></div></div>
@@ -343,14 +346,14 @@
         <div class="adh-st w"><span>أذكار بعد الصلاة</span><b>${cnt(p, 'salah')}</b><small>من ${fmt(5 * R.length)}</small></div>
         <div class="adh-st w"><span>أكثر ذكر</span><small>${top ? `أكثر ما سبّحت به: ${esc(short(top[0]))} (${fmt(top[1])})` : 'يظهر هنا الذكر الذي تكثر منه.'}</small></div>
       </div>
-      <p class="adh-note">إحصاءاتك محفوظة على جهازك فقط، ولا تُرسل إلى أي خادم.</p>
+      <p class="adh-note">إحصاءاتك محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم.</p>
       <button class="adh-clear" data-clear>مسح الإحصاءات</button>`;
   }
 
   function renderCity() {
     return `<div class="adh-sub"><button class="lnk back" data-v="back">رجوع</button><b>اختر المدينة</b><span></span></div>
       <div class="adh-cities">${CITIES.map((c, i) => `<button class="${i === S.city ? 'on' : ''}" data-city="${i}">${esc(c[0])}</button>`).join('')}</div>
-      <p class="adh-note">تُحسب أوقات الشروق والغروب على الجهاز بطريقة أم القرى، ولا يُرسل موقعك إلى أي خادم.</p>`;
+      <p class="adh-note">تُحسب أوقات الشروق والغروب على الجهاز بطريقة أم القرى، ولا يُرسَل موقعك إلى أي خادم.</p>`;
   }
 
   /* ---------- الهيكل ---------- */
@@ -363,7 +366,9 @@
       <div class="adh-view" data-view="${V}">${V === 'm' || V === 'e' ? renderME(V) : V === 't' ? renderT() : V === 'f' ? renderFajr() : V === 'freport' ? renderFReport() : V === 'flow' ? renderFlow() : V === 'stats' ? renderStats() : renderCity()}</div>`;
     b.scrollTop = sy;
   }
-  function go(v) { if (v === 'back') v = last; if (v === 'm' || v === 'e') last = v; V = v; render(); body().scrollTop = 0; }
+  function go(v) { if (v === 'back') v = last; if (v === 'm' || v === 'e') last = v; V = v; render(); body().scrollTop = 0;
+    // v26z7: التقويم يفتح على الأسبوع الحالي واليوم ظاهر
+    if (v === 'f') requestAnimationFrame(() => { const t = body().querySelector('.pd.is-t'); if (t) t.scrollIntoView({ block: 'nearest' }); }); }
 
   function onClick(ev) {
     const t = ev.target, q = s => t.closest(s);
@@ -376,7 +381,7 @@
     if ((el = q('[data-preset]'))) { PMENU = false; const i = +el.dataset.preset; S.tas.p = i; S.tas.target = PRESETS[i].n; S.tas.c = 0; S.tas.h = []; S.tas.msg = ''; save(); return render(); }
     if (q('[data-tas]')) return tapTas();
     if (q('[data-undo]')) { const T = S.tas; if (T.h.length && T.c > 0) { T.h.pop(); T.c--; addT((PRESETS[T.p] || PRESETS[0]).t, -1); save(); render(); } return; }
-    if (q('[data-reset]')) { if (S.tas.c && !confirm('تصفير العداد؟ سيبقى مجموع اليوم محفوظًا.')) return; S.tas.c = 0; S.tas.h = []; S.tas.msg = ''; save(); return render(); }
+    if (q('[data-reset]')) { const z = () => { S.tas.c = 0; S.tas.h = []; S.tas.msg = ''; save(); render(); }; if (!S.tas.c) return z(); A.ask('تصفير العداد؟ سيبقى مجموع اليوم محفوظًا.', 'صفّر').then(ok => ok && z()); return; }
     if (q('[data-tmenu]')) { MENU = !MENU; return render(); }
     if ((el = q('[data-target]'))) {
       let v = el.dataset.target; MENU = false;
@@ -395,7 +400,7 @@
     if (q('[data-frestart]')) { S.flow = { i: 0, c: [0, 0, 0, 0], skip: 0 }; save(); return render(); }
     if ((el = q('[data-per]'))) { period = el.dataset.per; return render(); }
     if (q('[data-goal]')) { const r = prompt('تعديل الهدف — اكتب العدد', S.goal); if (r === null) return; const v = parseInt(String(r).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10); if (!(v >= 1 && v <= 9999)) { toast('اكتب عددًا من 1 إلى 9999.'); return; } S.goal = v; save(); return render(); }
-    if (q('[data-clear]')) { if (!confirm('مسح كل الإحصاءات؟ لا يمكن التراجع.')) return; S.log = {}; save(); return render(); }
+    if (q('[data-clear]')) { A.ask('مسح كل الإحصاءات؟ لا يمكن التراجع.', 'امسح').then(ok => { if (ok) { S.log = {}; save(); render(); } }); return; }
     if ((el = q('[data-city]'))) { S.city = +el.dataset.city; save(); calcTimes(); return go('back'); }
     if (q('details, summary, input, label, a')) return;
     if ((el = q('.adh-card'))) { const m = V === 'flow' ? 'p' : V; if (m === 'm' || m === 'e' || m === 'p') tapCard(el, m); }

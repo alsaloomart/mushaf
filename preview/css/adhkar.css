@@ -242,3 +242,35 @@ html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[d
 @media (max-width:370px){.adh-cal{grid-template-columns:repeat(3,1fr);gap:7px}.adh-pbtns button{font-size:.74rem}#sh-adhkar .adh-pf button{font-size:.7rem}}
 /* v26z3: الزجاجي: شريط التبويبات الثابت بخلفية معتمة حتى لا تظهر الدوائر من خلاله عند التمرير */
 html.glass #sh-adhkar .adh-tabs{background:#1F2120;box-shadow:0 6px 0 0 #1F2120}
+
+/* v26z7 — التقويم: دوائر أصغر رمادية فاتحة، حلقة ذهبية رفيعة تمتلئ بعدد الصلوات، نقطة ذهبية لليوم فقط، بلا تعبئة صفراء */
+#sh-adhkar{--a-pd:#F1F1EF;--a-pdt:#E2E2DF}
+html[data-paper="beige"]:not(.dark) #sh-adhkar{--a-pd:#F4F1EA;--a-pdt:#E4DFD3}
+html.dark #sh-adhkar{--a-pd:#262827;--a-pdt:#3A3C3B}
+.adh-cal{grid-template-columns:repeat(4,1fr);gap:8px 6px}
+.pd,.pd.p-done,.pd.p-part,.pd.p-miss,.pd.p-today{background:var(--a-pd);border:0;color:var(--a-ink);box-shadow:none}
+.pd .pr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pd .pr .tr{fill:none;stroke:var(--a-pdt);stroke-width:2.5}
+.pd .pr .fl{fill:none;stroke:var(--a-gold);stroke-width:3.2;stroke-linecap:round}
+.pd .h{font-size:.68rem;font-weight:700;position:relative}
+.pd b{font-size:.6rem;font-weight:600;color:var(--a-sub);position:relative;white-space:nowrap}
+.pd .g{font-size:.6rem;color:var(--a-sub);position:relative}
+.pd.p-done b,.pd.p-done .g{color:var(--a-sub)}
+.pd.p-miss .h{color:var(--a-sub)}
+.pd.p-up{opacity:.45}
+.pd .tdot{position:absolute;bottom:9%;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--a-gold)}
+.pd.is-t{box-shadow:none}
+.pd.is-t .h{color:var(--a-ink)}
+.pd.sel:not(.is-t){box-shadow:0 0 0 1.5px var(--a-sub)}
+.pd em{display:none}
+/* أزرار الصلوات: بلا تعبئة صفراء — إطار ذهبي رفيع وعلامة ذهبية صغيرة */
+.adh-pbtns button.on{background:var(--a-card);border-color:var(--a-gold);color:var(--a-ink)}
+.adh-pbtns button.on svg{stroke:#1F2120;border-color:var(--a-gold);background:var(--a-gold)}
+/* مفتاح الألوان على شكل الحلقات نفسها */
+.adh-fleg i.pdl{background:var(--a-pd);border:2px solid var(--a-pdt)}
+.adh-fleg i.p-done{background:var(--a-pd);border-color:var(--a-gold)}
+.adh-fleg i.p-part{background:var(--a-pd);border-color:var(--a-gold) var(--a-gold) var(--a-pdt) var(--a-pdt)}
+.adh-fleg i.p-miss{background:var(--a-pd)}
+.adh-fleg i.p-up{opacity:.45}
+html.dark .pd.p-part,html.dark .adh-fleg i.p-part{background:var(--a-pd)}
+@media (max-width:370px){.adh-cal{grid-template-columns:repeat(4,1fr);gap:7px 5px}.pd .h{font-size:.64rem}.pd b,.pd .g{font-size:.56rem}}

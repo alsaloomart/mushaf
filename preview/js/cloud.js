@@ -1,7 +1,7 @@
 /* الدخول بحساب Google (اختياري) ومزامنة الملاحظات والورد والإعدادات.
    الجهاز هو الأصل: التطبيق يعمل كاملًا بدون دخول، وإن تعذّر تحميل Firebase يبقى كل شيء على الجهاز.
    يُعاد استخدام مشروع Firebase الموجود (english-hub-1d37b). مسار البيانات: users/{uid}/apps/mushaf
-   (مستند مستقل، لا يلمس مستند منصة الإنجليزية users/{uid}). لا تُحمَّل مكتبة Firebase إلا عند فتح الإعدادات أو إن كان الجهاز داخلًا من قبل. */
+   (مستند مستقل، لا يلمس مستند منصة الإنجليزية users/{uid}). لا تُحمَّل مكتبة Firebase إلا عند فتح الإعدادات أو إن كان الجهاز داخلًا من قبل. */
 const CLOUD = (() => {
   'use strict';
   const ON = !/[?&]nocloud\b/.test(location.search);   // مفتاح التشغيل
@@ -164,7 +164,7 @@ const CLOUD = (() => {
     if (!ON) return '';
     if (failed && !user) return `<p class="muted sm cl-st bad">خدمة الدخول غير متاحة الآن. التطبيق يعمل كاملًا بدونها، وبياناتك على جهازك.</p>`;
     const s = st.t ? `<p class="cl-st ${st.c}" role="status">${esc(st.t)}</p>` : '';
-    if (!user) return `<button class="cl-g" data-cl-in type="button">${G}<span>الدخول بحساب Google</span></button><p class="muted sm">اختياري: يحفظ ملاحظاتك وخطة الورد والمحفوظ والإعدادات في حسابك لتنتقل معك إلى أي جهاز. التطبيق يعمل كاملًا بدون دخول.</p>${s}`;
+    if (!user) return `<button class="cl-g" data-cl-in type="button">${G}<span>الدخول بحساب Google</span></button><p class="muted sm">اختياري: يحفظ ملاحظاتك وخطة الورد والمحفوظ والإعدادات في حسابك لتنتقل معك إلى أي جهاز. التطبيق يعمل كاملًا دون تسجيل دخول.</p>${s}`;
     const av = user.photoURL ? `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="cl-av">${esc(((user.displayName || user.email || '?').trim()[0]) || '?')}</span>`;
     return `<div class="cl-u">${av}<div><b>${esc(user.displayName || 'حسابي')}</b><small>${esc(user.email || '')}</small></div></div>${s || '<p class="cl-st ok">متصل بحسابك</p>'}<button class="cl-out" data-cl-out type="button">تسجيل الخروج</button>`;
   }
