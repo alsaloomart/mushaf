@@ -460,7 +460,7 @@
   const ORN = new Map(), ORNQ = [];
   let ornBusy = false;
   /* v26z17: وفي «الصفحة بإطارها» (صور pages/) في الليلي والزجاجي: الإطار وإطارات أسماء السور وعلامات الآيات بالأبيض.
-     الطريقة نفسها (صورة شفافة تُحسب مرة لكل صفحة وتُخزَّن): البكسلات الخضراء فقط (G أكبر بوضوح من R وB؛ الحروف محايدة فلا تُؤخذ أبدًا)،
+     الطريقة نفسها (صورة شفافة تُحسب مرة لكل صفحة وتُخزَّن): البكسلات الخضراء فقط (G أكبر بوضوح من R وB؛ الحروف محايدة فلا تُؤخذ أبدًا)،
      حدودها مع الورق ← خط أبيض ناعم (#EBEBEB بعد العكس)، وداخلها ← لون الورق. المفتاح السالب = صورة الصفحة الكاملة. */
   const ornOn = () => document.documentElement.classList.contains('dark');
   const ornKey = p => viewFull() ? -p : p;
@@ -858,6 +858,7 @@
   AU.on('blocked', () => (!AU.state() && document.body.classList.remove('snkm'), toast('اضغط زر التشغيل للمتابعة.')));
   $('#aListen').onclick = () => { AU.prime(); if (!viewFull() && TMK && !TM.on) document.body.classList.add('snkm'); listenNow(); };
   AU.on('note', m => toast(m, 3600));
+  const MS_ART = () => [['icons/icon-192.png', '192x192'], ['icons/apple-touch-icon.png', '180x180'], ['icons/icon-512.png', '512x512']].map(([u, z]) => ({ src: new URL(u, document.baseURI).href, sizes: z, type: 'image/png' }));
   AU.on('ayah', async (k, st) => {
     // قارئ بلا توقيت آيات: لا تظليل لآية بعينها، والعنوان باسم السورة
     playingKey = st.notime ? null : k;
@@ -872,7 +873,8 @@
     $('#pRep').textContent = st.notime ? 'السورة كاملة · بلا تتبع للآيات' : st.kind === 'surah' ? `السورة كاملة · ${ar(st.i + 1)} من ${ar(st.keys.length)}` : st.mode === 'ayah' ? `تكرار الآية ${ar(st.ayRep + 1)}/${tot}` : (st.count !== 1 ? `التكرار ${ar(st.rep + 1)}/${tot}` : 'تلاوة');
     reserve();
     if ('mediaSession' in navigator) {
-      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title, artist: r.name, album: APPN }); navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+      // v26z20: بطاقة «يُشغَّل الآن» في شاشة القفل ومركز التحكم: السورة ورقم الآية، والقارئ، واسم التطبيق، وأيقونته بعدة مقاسات
+      try { st.meta = true; navigator.mediaSession.metadata = new MediaMetadata({ title, artist: r.name, album: APPN, artwork: MS_ART() }); } catch (e) {}
     }
     const p = await pageOfKey(k);
     // الصفحة تتبع التلاوة؛ إن كان التقليب جاريًا نعيد المحاولة بعد انتهائه
@@ -885,7 +887,7 @@
     try { const was = IMM.st; IMM.st = s; immSet(s === 'playing' && !TM.on); if (s === 'playing' && was === 'paused' && IMM.on) immShow(); } catch (e) {}
     document.body.classList.toggle('playing', s !== 'stopped');
     if (s === 'stopped') { playingKey = null; document.body.classList.remove('snkm'); $('#player').hidden = true; paint(); }
-    if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; } catch (e) {} }
+    if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = s === 'stopped' ? 'none' : s; if (s === 'stopped') navigator.mediaSession.metadata = null; } catch (e) {} }
     try { ixPaint(); } catch (e) {}
     const paused = s === 'paused';
     $('#pToggle').setAttribute('aria-label', paused ? 'تشغيل' : 'إيقاف مؤقت');
@@ -1652,11 +1654,11 @@
       'بياناتك محفوظة على جهازك، والتطبيق يعمل كاملًا دون تسجيل دخول.',
       'إن سجّلت الدخول بحساب Google تُحفظ نسخة من الملاحظات والخطة والمحفوظ والمراجعة والإعدادات في حسابك لتنتقل معك بين أجهزتك. الخروج لا يحذفها، ولك أن تحذفها من الإعدادات.',
       'الأذكار ومتابعة الصلاة والمدينة، ورابط إشعارات التذكير، تبقى على جهازك فقط.',
-      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
+      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
     ] : [
       'بياناتك محفوظة على جهازك فقط، ولا دخول ولا مزامنة في هذه النسخة.',
       'لك أن تحفظ نسخة احتياطية في ملف من الإعدادات.',
-      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
+      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
     ];
     $('#pvBody').innerHTML = '<ul class="pvl">' + li.map(t => `<li>${esc(t)}</li>`).join('') + '</ul>';
     const prev = $$('.sheet').find(s => !s.hidden && s.id !== 'sh-priv');
@@ -2558,7 +2560,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z19';
+  window.__BUILD='26z20';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

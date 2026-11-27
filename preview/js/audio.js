@@ -277,11 +277,13 @@ const AU = (() => {
   const pre = new Audio(); pre.preload = 'auto';
   let st = null; // {keys, i, rid, count, mode, rep, ayRep}
   const ev = { ayah: () => {}, state: () => {}, error: () => {}, blocked: () => {}, note: () => {} };
-  function on(name, fn) { ev[name] = fn; }
+  let ui = null;   // v26z20: آخر حالة أُبلغت بها الواجهة (لمزامنتها إذا غيّر النظام حالة الصوت من شاشة القفل أو عند العودة)
+  function on(name, fn) { ev[name] = name === 'state' ? (s, x) => { ui = s; fn(s, x); } : fn; }
   async function playAt() {
     if (!st) return;
-    const key = st.keys[st.i];
+    const key = st.keys[st.i], s1 = st;
     try {
+      s1.loading = true;
       const url = await urlFor(st.rid, key);
       st.cur = { key, url };
       el.src = url;
@@ -291,6 +293,7 @@ const AU = (() => {
         if (e && e.name === 'NotAllowedError') { ev.ayah(key, st); ev.state('paused', st); ev.blocked(st); return; }
         throw e;
       }
+      s1.loading = false;
       ev.ayah(key, st);
       ev.state('playing', st);
       // تحميل مسبق للآية التالية
@@ -299,7 +302,8 @@ const AU = (() => {
       if ('mediaSession' in navigator && !st.meta) {
         try { navigator.mediaSession.metadata = new MediaMetadata({ title: 'الآية ' + key, artist: reciter(st.rid).name, album: 'المصحف الذكي' }); } catch (e) {}
       }
-    } catch (e) { ev.error(e); stop(); }
+    } catch (e) { s1.loading = false; ev.error(e); stop(); }
+    finally { s1.loading = false; }
   }
   el.addEventListener('ended', () => {
     if (!st) return;
@@ -445,7 +449,36 @@ const AU = (() => {
   function stop(silent) { if (st) clearTimeout(st.bt); el.pause(); el.removeAttribute('src'); const had = st; st = null; if (had && !silent) ev.state('stopped', had); }
   function state() { return st; }
   const reciter = id => RECITERS.find(r => r.id === id) || RECITERS[0];
+  /* v26z20: التشغيل خارج التطبيق (الخلفية وشاشة القفل ومركز التحكم).
+     عنصر صوت واحد دائم (el) لكل التلاوة؛ السورة/المقطع ملف واحد بتوقيتات، فالانتقال بين الآيات بلا play() جديد.
+     لا نسجّل seekbackward/seekforward: على iOS تستبدل زرّي «السابق/التالي» (الآية السابقة/التالية) بزرّي القفز. */
+  const MS = 'mediaSession' in navigator ? navigator.mediaSession : null;
+  let posT = 0;
+  function pos(force) {
+    if (!MS || !MS.setPositionState || !st) return;
+    const now = Date.now(); if (!force && now - posT < 1000) return; posT = now;
+    const d = el.duration;
+    if (!isFinite(d) || !(d > 0)) return;
+    try { MS.setPositionState({ duration: d, playbackRate: el.playbackRate || 1, position: Math.min(Math.max(0, el.currentTime || 0), d) }); } catch (e) {}
+  }
+  el.addEventListener('timeupdate', () => pos(false));
+  ['loadedmetadata', 'seeked', 'ratechange', 'play', 'pause'].forEach(t => el.addEventListener(t, () => pos(true)));
+  // النظام أوقف الصوت (مكالمة، سمّاعة، شاشة القفل دون معالجنا): نُبلغ الواجهة. ننتظر قليلًا حتى لا نخلط بانتقال آية إلى آية.
+  el.addEventListener('pause', () => setTimeout(() => {
+    if (st && !st.loading && el.paused && !el.ended && ui === 'playing' && el.getAttribute('src') && el.src !== SILENT) ev.state('paused', st);
+  }, 350));
+  el.addEventListener('playing', () => { if (st && ui === 'paused' && el.src !== SILENT) ev.state('playing', st); });
+  // عند العودة إلى التطبيق: الحالة والآية والصفحة كما هي في الصوت فعلًا
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !st) return;
+    if (st.full && st.full.t) tick();
+    const want = el.paused ? 'paused' : 'playing';
+    if (ui !== want) ev.state(want, st);
+    const k = st.keys[st.i]; if (k && !st.notime) ev.ayah(k, st);
+    pos(true);
+  });
   if ('mediaSession' in navigator) {
+    try { navigator.mediaSession.setActionHandler('seekto', d => { if (!st || !d || d.seekTime == null) return; try { el.currentTime = d.seekTime; } catch (e) {} st.want = null; if (st.full && st.full.t) tick(); pos(true); }); } catch (e) {}
     navigator.mediaSession.setActionHandler('play', resume);
     navigator.mediaSession.setActionHandler('pause', pause);
     navigator.mediaSession.setActionHandler('stop', () => stop());
