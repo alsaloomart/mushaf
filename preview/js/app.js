@@ -76,7 +76,7 @@
   function pageVisible(p) { if (p === cur) return true; if (!document.documentElement.classList.contains('spread')) return false; const sp = spreadPair(cur); return sp.left === p || sp.right === p; }
   async function pageOfKey(k) { return keyPage.get(k) || QD.pageOf(k); }
   const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
-  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc = window.ESC;   // v26z11: دالة التهريب الموحّدة (js/esc.js)
   /* عنوان الصفحة: أسماء السور كلها إن اتسعت، وإلا الأولى — الأخيرة */
   function surahsTitle(ss, max = 26) {
     const names = ss.map(sName), all = names.join(' · ');
@@ -86,7 +86,7 @@
   /* ---------- نافذة تأكيد داخل التطبيق ---------- */
   function ask(msg, yes = 'نعم') {
     return new Promise(res => {
-      $('#cfMsg').textContent = msg; $('#cfYes').textContent = yes;
+      $('#cfMsg').textContent = msg; $('#cfYes').textContent = yes; $('#cfYes').classList.toggle('red', yes === 'احذف');   // v26z11: الحذف بالأحمر
       const prev = $$('.sheet').find(s => !s.hidden && s.id !== 'sh-confirm');
       $('#sh-confirm').hidden = false; $('#scrim').hidden = false; $('#scrim').classList.add('top');
       const done = v => { $('#sh-confirm').hidden = true; $('#scrim').classList.remove('top'); if (!prev) $('#scrim').hidden = true; res(v); };
@@ -892,7 +892,10 @@
     note: '<path d="M5 19l1-4 9.5-9.5a2.1 2.1 0 013 3L9 18z"/><path d="M14 7l3 3"/>',
     play: '<path d="M8 5l11 7-11 7z"/>',
     range: '<path d="M4 7h16M4 12h10M4 17h16"/><path d="M17 10l3 2-3 2"/>',
-    bell: '<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15zM10 20a2 2 0 004 0"/>'
+    bell: '<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15zM10 20a2 2 0 004 0"/>',
+    dl: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+    up: '<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>'
   };
   const hi = (k, id, t, sub, extra = '') => `<button class="li hub" data-h="${id}"><span class="n"><svg viewBox="0 0 24 24">${IC[k]}</svg></span><span class="m"><b>${t}</b><small>${sub}</small></span>${extra}</button>`;
   /* لوحة قائمة عامة (وردي، التلاوة، التفسير، الإعدادات) داخل #sh-hub */
@@ -980,7 +983,7 @@
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
        ${window.ADHKAR ? ADHKAR.settingsHTML() : ''}
-       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD && CLOUD.state().on ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '<label class="lbl">الحساب والمزامنة</label><p class="muted sm">هذه النسخة تعمل على جهازك فقط، دون حساب ولا مزامنة.</p>') + creditHTML(), 'settings');
+       <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD && CLOUD.state().on ? `<label class="lbl">الحساب</label><div id="clBox">${CLOUD.html()}</div>` : '<label class="lbl">الحساب</label><p class="muted sm">هذه النسخة تعمل على جهازك فقط، دون حساب ولا مزامنة.</p>') + BKP_HTML() + SRC_HTML() + creditHTML(), 'settings');
     if (window.CLOUD && CLOUD.state().on) CLOUD.prep();
     dlBox();
   }
@@ -1043,6 +1046,9 @@
     if (h === 'range') { closeSheets(); if (!sel) await selectFirst(); $('#btnRange').click(); }
     if (h === 'more') openMore();
     if (h === 'rem') openRem();
+    if (h === 'bkx') bkpExport();
+    if (h === 'bki') bkpPick();
+    if (h === 'priv') openPriv();
     if (h === 'notes') openNotes();
   };
 
@@ -1069,14 +1075,14 @@
     const used = []; let free = 0;
     box.innerHTML = ns.sort((a, b) => a.t - b.t).map(n => {
       let y = null;
-      if (n.k) { const pa = el.querySelector(`g.hot path[data-k="${n.k}"]`); if (pa) { const r = pa.getBoundingClientRect(); if (r.height) y = r.top - pr.top + 2; } }
+      if (n.k && /^\d{1,3}:\d{1,3}$/.test(n.k)) { const pa = el.querySelector(`g.hot path[data-k="${n.k}"]`); if (pa) { const r = pa.getBoundingClientRect(); if (r.height) y = r.top - pr.top + 2; } }
       if (y == null) y = sr.top - pr.top + 4 + 26 * free++;
       while (used.some(u => Math.abs(u - y) < 24)) y += 24;
       used.push(y);
-      return `<button data-id="${n.id}" style="top:${Math.round(y - 2)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
+      return `<button data-id="${esc(n.id)}" style="top:${Math.round(y - 2)}px" aria-label="ملاحظة${n.k ? ' على ' + esc(keyLabel(n.k)) : ''}"></button>`;
     }).join('');
   }
-  function noteMeta(n) { return `<bdi>صفحة ${ar(n.p)}</bdi>${n.k ? ' · <bdi>' + esc(n.kb && n.kb !== n.k ? rangeLabel(n.k, n.kb) : keyLabel(n.k)) + '</bdi>' : ''} · <bdi>${dLabel(n.u || n.t)}</bdi>`; }
+  function noteMeta(n) { return `<bdi>صفحة ${esc(ar(n.p))}</bdi>${n.k ? ' · <bdi>' + esc(n.kb && n.kb !== n.k ? rangeLabel(n.k, n.kb) : keyLabel(n.k)) + '</bdi>' : ''} · <bdi>${dLabel(n.u || n.t)}</bdi>`; }
   function noteNew() {
     const n = { id: 'n' + Date.now().toString(36), p: cur, k: sel ? sel.a : null, kb: sel ? sel.b : null, text: '', t: Date.now() };
     if (sel) clearSel();
@@ -1127,7 +1133,7 @@
   function openNotes(page) {
     const all = notesAll().filter(n => !page || n.p === page).sort((a, b) => (b.u || b.t) - (a.u || a.t));
     $('#sh-notes .sh-h b').textContent = page ? `ملاحظات صفحة ${ar(page)}` : 'ملاحظاتي';
-    $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${n.id}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
+    $('#notesBody').innerHTML = all.length ? all.map(n => `<button class="li" data-id="${esc(n.id)}"><span class="m"><b>${esc(n.text.length > 90 ? n.text.slice(0, 90) + '…' : n.text)}</b><small>${noteMeta(n)}</small></span></button>`).join('')
       : '<p class="muted">لا توجد ملاحظات بعد. اضغط «ملاحظة» في الشريط العلوي لتكتب ملاحظة على الصفحة.</p>';
     openSheet('notes');
   }
@@ -1149,7 +1155,10 @@
   const REM_DEF = { on: false, times: ['06:00', '20:00'] };
   const rem = () => Object.assign({}, REM_DEF, ST.get().rem || {});
   const tLabel = t => { let [h, m] = t.split(':').map(Number); const pm = h >= 12; h = h % 12 || 12; return `${h}:${String(m).padStart(2, '0')} ${pm ? 'مساءً' : 'صباحًا'}`; };
-  function remSub() { const r = rem(); return r.on ? `${tLabel(r.times[0])} و${tLabel(r.times[1])}` : 'غير مفعّل'; }
+  // v26z11: قيم مزامَنة تُعرض في حقول: تُقبل بالشكل المتوقع فقط
+  const tOK = t => /^\d{2}:\d{2}$/.test(String(t)) ? String(t) : '';
+  const nOK = n => { n = parseInt(n, 10); return n > 0 && n < 10000 ? n : ''; };
+  function remSub() { const r = rem(); return r.on ? `${esc(tLabel(tOK(r.times[0])))} و${esc(tLabel(tOK(r.times[1])))}` : 'غير مفعّل'; }
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -1166,8 +1175,8 @@
     else if (perm === 'denied') note = 'الإشعارات مرفوضة لهذا التطبيق. فعّلها من إعدادات الجهاز ← الإشعارات، ثم ارجع هنا.';
     $('#remBody').innerHTML = `
       <p class="muted sm">تذكير يومي بورد الحفظ. اضغط الإشعار ليفتح لك ورد اليوم.</p>
-      <label class="lbl">التذكير الأول</label><input type="time" id="remT1" value="${r.times[0]}" step="300">
-      <label class="lbl">التذكير الثاني</label><input type="time" id="remT2" value="${r.times[1]}" step="300">
+      <label class="lbl">التذكير الأول</label><input type="time" id="remT1" value="${esc(tOK(r.times[0]))}" step="300">
+      <label class="lbl">التذكير الثاني</label><input type="time" id="remT2" value="${esc(tOK(r.times[1]))}" step="300">
       <p class="muted sm">بتوقيت الرياض.</p>
       ${note ? `<p class="muted sm warn" id="remNote">${note}</p>` : ''}
       ${r.on ? '<button class="btn full" id="remTest">إشعار تجريبي</button><button class="btn full" id="remOff">إيقاف التذكير</button>'
@@ -1313,10 +1322,10 @@
     return `
       <label class="lbl">من أين تبدأ؟</label>
       <div class="row"><select id="plS">${chapters.map(c => `<option value="${c.id}" ${c.id == s ? 'selected' : ''}>${ar(c.id)}. ${c.name_arabic}</option>`).join('')}</select>
-      <input id="plA" type="number" min="1" value="${a}" style="max-width:96px" inputmode="numeric" aria-label="الآية"></div>
+      <input id="plA" type="number" min="1" value="${esc(nOK(a))}" style="max-width:96px" inputmode="numeric" aria-label="الآية"></div>
       <label class="lbl">مقدار الحفظ اليومي</label>
       <div class="seg" id="plU">${Object.entries(UNITS).map(([k, v]) => `<button data-u="${k}" class="${k === pl.unit ? 'on' : ''}">${v}</button>`).join('')}</div>
-      <input id="plN" type="number" min="1" max="50" value="${pl.amount}" inputmode="numeric">
+      <input id="plN" type="number" min="1" max="50" value="${esc(nOK(pl.amount))}" inputmode="numeric">
       <label class="lbl">أيام الحفظ</label>
       <div class="days" id="plD">${DAYS.map(([v, n]) => `<button data-d="${v}" class="${pl.days.includes(v) ? 'on' : ''}">${n}</button>`).join('')}</div>
       <button class="btn gold full" id="plSave">احفظ الخطة</button>
@@ -1612,6 +1621,71 @@
   mqDark.addEventListener ? mqDark.addEventListener('change', applyTheme) : mqDark.addListener(applyTheme);
   $('#btnTheme').onclick = () => { setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'); };
 
+  /* ---------- v26z11: الخصوصية (نافذة قصيرة تطابق المزامنة الفعلية) والنسخة الاحتياطية في ملف ---------- */
+  const SYNC_ON = () => !!(window.CLOUD && CLOUD.state().on);
+  const PRIV_LINE = () => SYNC_ON()
+    ? 'بياناتك (الخطة، والمحفوظ، والمراجعة، والملاحظات، وآخر صفحة) محفوظة على جهازك، ولا تُرسَل إلى أي خادم إلا إن سجّلت الدخول بحساب Google، فتُحفظ نسخة منها في حسابك لتنتقل معك بين أجهزتك.'
+    : 'بياناتك (الخطة، والمحفوظ، والمراجعة، والملاحظات، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم.';
+  function openPriv() {
+    const li = SYNC_ON() ? [
+      'بياناتك محفوظة على جهازك، والتطبيق يعمل كاملًا دون تسجيل دخول.',
+      'إن سجّلت الدخول بحساب Google تُحفظ نسخة من الملاحظات والخطة والمحفوظ والمراجعة والإعدادات في حسابك لتنتقل معك بين أجهزتك. الخروج لا يحذفها، ولك أن تحذفها من الإعدادات.',
+      'الأذكار ومتابعة الصلاة والمدينة، ورابط إشعارات التذكير، تبقى على جهازك فقط.',
+      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
+    ] : [
+      'بياناتك محفوظة على جهازك فقط، ولا دخول ولا مزامنة في هذه النسخة.',
+      'لك أن تحفظ نسخة احتياطية في ملف من الإعدادات.',
+      'لا تتبُّع ولا إعلانات. والتلاوات تُبَثّ من خوادم مصادرها عند التشغيل.'
+    ];
+    $('#pvBody').innerHTML = '<ul class="pvl">' + li.map(t => `<li>${esc(t)}</li>`).join('') + '</ul>';
+    const prev = $$('.sheet').find(s => !s.hidden && s.id !== 'sh-priv');
+    $('#sh-priv').hidden = false; $('#scrim').hidden = false; $('#scrim').classList.add('top');
+    $('#pvOk').onclick = () => { $('#sh-priv').hidden = true; $('#scrim').classList.remove('top'); if (!prev) $('#scrim').hidden = true; };
+  }
+  document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('a[data-priv]'); if (a) { e.preventDefault(); openPriv(); } });
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#sSrcD,[data-srcd]')) { e.preventDefault(); openSources(); } });
+  // v26z12: «مصادر المحتوى» — سطر لكل مصدر «الاسم: الاستعمال» مع رابطه، والتفاصيل (الرخص والإصدارات) في openSources()
+  const SRC_HTML = () => `<label class="lbl">مصادر المحتوى</label><ul class="srcl"><li><b>مجمع الملك فهد لطباعة المصحف الشريف:</b> صفحات المصحف (مصحف المدينة النبوية). <bdi dir="ltr"><a href="https://qurancomplex.gov.sa/mushaf-printing" target="_blank" rel="noopener">qurancomplex.gov.sa</a></bdi></li><li><b>مركز تفسير للدراسات القرآنية:</b> «المختصر في تفسير القرآن الكريم». <bdi dir="ltr"><a href="https://tafsir.net" target="_blank" rel="noopener">tafsir.net</a></bdi></li><li><b>موسوعة القرآن الكريم QuranEnc.com:</b> نصّا المختصر وتفسير السعدي، منقولان كما وردا دون تعديل. <bdi dir="ltr"><a href="https://quranenc.com/ar" target="_blank" rel="noopener">quranenc.com</a></bdi></li><li><b>الدرر السنية:</b> مراجعة تخريج الأحاديث والأذكار. <bdi dir="ltr"><a href="https://dorar.net" target="_blank" rel="noopener">dorar.net</a></bdi></li><li><b>صحيح البخاري وصحيح مسلم:</b> مصدر الأذكار وفضائلها، بالرجوع إلى sunnah.com. <bdi dir="ltr"><a href="https://sunnah.com" target="_blank" rel="noopener">sunnah.com</a></bdi></li><li><b>Quran Foundation:</b> التلاوات (الحصري، والعفاسي، والمنشاوي، والسديس، والشريم، وعبد الباسط) وتوقيت آياتها. <bdi dir="ltr"><a href="https://quran.com" target="_blank" rel="noopener">quran.com</a></bdi></li><li><b>المكتبة الصوتية للقرآن الكريم MP3Quran.net:</b> تلاوتا ماهر المعيقلي وبدر التركي، وتوقيت آيات «المصحف المجوّد». <bdi dir="ltr"><a href="https://www.mp3quran.net" target="_blank" rel="noopener">mp3quran.net</a></bdi></li><li><b>quran-ws/quran-svg:</b> مواضع الآيات على الصفحة. <bdi dir="ltr"><a href="https://github.com/quran-ws/quran-svg" target="_blank" rel="noopener">github.com/quran-ws/quran-svg</a></bdi></li><li><b>Tanzil:</b> أسماء السور والأجزاء والأحزاب. <bdi dir="ltr"><a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a></bdi></li><li><b>adhan-js:</b> أوقات الصلاة بطريقة أم القرى، محسوبة على جهازك. <bdi dir="ltr"><a href="https://github.com/batoulapps/adhan-js" target="_blank" rel="noopener">github.com/batoulapps/adhan-js</a></bdi></li></ul><button class="btn full" id="sSrcD" type="button">التفاصيل</button>`;
+  const BK_PFX = /\/preview\//.test(location.pathname) ? 'mushaf.preview.' : 'mushaf.';
+  const BK_KEYS = { v1: 'o', notes: 'a', 'notes.del': 'o', adhkar: 'o' };   // المفاتيح ونوع كل منها (كائن/مصفوفة)
+  const BK_MAX = 5 * 1024 * 1024;
+  const BKP_HTML = () => `<label class="lbl">النسخة الاحتياطية</label>` + hi('dl', 'bkx', 'احفظ نسخة في ملف', 'ملاحظاتك وخطتك ومحفوظك وإعداداتك وأذكارك') + hi('up', 'bki', 'استرجع من ملف', 'يحلّ محلّ بيانات هذا الجهاز بعد التأكيد') + hi('lock', 'priv', 'الخصوصية', 'ما يُحفظ على جهازك وما يُزامَن');
+  function bkpExport() {
+    const data = {};
+    for (const [k, t] of Object.entries(BK_KEYS)) { const v = localStorage.getItem(BK_PFX + k); if (v == null) continue; try { const o = JSON.parse(v); if (k === 'v1' && o && o.rem) { o.rem = Object.assign({}, o.rem); delete o.rem.sub; } data[k] = o; } catch (e) {} }
+    const out = JSON.stringify({ app: 'mushaf', kind: 'backup', v: 1, created: new Date().toISOString(), data }, null, 1);
+    const d = new Date(), stamp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' })); a.download = `mushaf-backup-${stamp}.json`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('حُفِظت النسخة في ملف.');
+  }
+  function bkpCheck(txt) {   // يرجع البيانات المقبولة أو رسالة خطأ
+    if (txt.length > BK_MAX) return 'الملف أكبر من المسموح.';
+    let j; try { j = JSON.parse(txt); } catch (e) { return 'الملف ليس نسخة احتياطية صالحة.'; }
+    if (!j || j.app !== 'mushaf' || j.kind !== 'backup' || j.v !== 1 || !j.data || typeof j.data !== 'object') return 'الملف ليس نسخة احتياطية من هذا التطبيق.';
+    const out = {};
+    for (const [k, v] of Object.entries(j.data)) {
+      const t = BK_KEYS[k]; if (!t) return 'في الملف بيانات غير معروفة.';
+      if (t === 'a' ? !Array.isArray(v) : (!v || typeof v !== 'object' || Array.isArray(v))) return 'بنية الملف غير صحيحة.';
+      out[k] = v;
+    }
+    if (out.notes && !out.notes.every(n => n && typeof n.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(n.id) && Number.isInteger(+n.p) && +n.p >= 1 && +n.p <= 604 && typeof n.text === 'string' && (n.k == null || /^\d{1,3}:\d{1,3}$/.test(n.k)))) return 'في الملاحظات قيم غير صحيحة.';
+    if (out.v1 && out.v1.rem) delete out.v1.rem.sub;
+    return out;
+  }
+  function bkpPick() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      if (f.size > BK_MAX) { toast('الملف أكبر من المسموح.'); return; }
+      const r = bkpCheck(await f.text()); if (typeof r === 'string') { toast(r); return; }
+      const ok = await ask('سيحلّ محتوى الملف محلّ بياناتك الحالية على هذا الجهاز (الملاحظات، والخطة، والمحفوظ، والإعدادات، والأذكار). أتريد المتابعة؟', 'استرجع');
+      if (!ok) return;
+      for (const [k, v] of Object.entries(r)) { if (k === 'v1') { const cur = JSON.parse(localStorage.getItem(BK_PFX + 'v1') || '{}'); if (cur.rem && cur.rem.sub) { v.rem = Object.assign({}, v.rem, { sub: cur.rem.sub }); } } localStorage.setItem(BK_PFX + k, JSON.stringify(v)); }
+      toast('استُرجِعت بياناتك.'); setTimeout(() => location.reload(), 900);
+    };
+    inp.click();
+  }
   /* ---------- المزيد والمصادر ---------- */
   const CK = '<svg class="ck" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
   function openMore() {
@@ -1623,13 +1697,15 @@
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
        <button class="btn full" id="mInst">طريقة التثبيت على الآيفون</button>
-       <p class="muted sm" style="line-height:1.8;margin-top:14px">بياناتك (الخطة، والمحفوظ، والمراجعة، وآخر صفحة) محفوظة على جهازك فقط، ولا تُرسَل إلى أي خادم. صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبَثّ عند التشغيل، إلا السور التي تنزّلها بنفسك فتُحفظ على جهازك.</p>` + creditHTML();
+       <button class="btn full" id="mPriv">الخصوصية</button>
+       <p class="muted sm" style="line-height:1.8;margin-top:14px">${PRIV_LINE()} صفحات المصحف هي النسخة الرسمية من مجمع الملك فهد، وتُحفظ على جهازك بعد فتحها. والتلاوات تُبَثّ عند التشغيل، إلا السور التي تنزّلها بنفسك فتُحفظ على جهازك.</p>` + creditHTML();
     $('#moreBody').onclick = e => {
       const r = e.target.closest('[data-r]');
       if (r) { ST.setReciter(+r.dataset.r); openMore(); return; }
       const vw = e.target.closest('#mView [data-v]'); if (vw) { ST.set('view', vw.dataset.v); applyTheme(); layout(); rebuildLeaves(); requestAnimationFrame(refit); openMore(); return; }
       if (e.target.closest('#mDl')) downloadAll();
       if (e.target.closest('#mSrc')) openSources();
+      if (e.target.closest('#mPriv')) openPriv();
       if (e.target.closest('#mInst')) { closeSheets(); showInstall(true); }
     };
   }
@@ -1663,16 +1739,17 @@
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
       <h4>التفسير</h4>
-      <p><b>المختصر في تفسير القرآن الكريم</b>، إعداد مركز تفسير للدراسات القرآنية. منقول كما ورد دون تعديل من موسوعة القرآن الكريم ${L('QuranEnc.com')} (المفتاح ${L('arabic_mokhtasar')})، عبر واجهتها البرمجية. الإصدار V1.0.1، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_mokhtasar" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_mokhtasar</a>')}</p>
-      <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات ${L('QuranEnc.com')} (${L('arabic_saadi')})، الإصدار V1.0.3، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
-      <p>شروط ${L('QuranEnc.com')} لإعادة النشر: عدم التعديل أو الإضافة أو الحذف، والإشارة إلى الناشر والمصدر، وذكر الإصدار، وتحديث النص وفق الإصدارات الجديدة، وعدم عرض إعلانات. التطبيق مجاني وبلا إعلانات.</p>
+      <p><b>المختصر في تفسير القرآن الكريم</b>، إعداد مركز تفسير للدراسات القرآنية ${L('<a href="https://tafsir.net" target="_blank" rel="noopener">tafsir.net</a>')}. منقول كما ورد دون تعديل من موسوعة القرآن الكريم ${L('QuranEnc.com')} (المفتاح ${L('arabic_mokhtasar')})، عبر واجهتها البرمجية. الإصدار على صفحة المصدر في 27 نوفمبر 2026: ${L('V1.0.0')} (${L('15/02/2017')}). تاريخ نقل نسخة التطبيق: 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_mokhtasar" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_mokhtasar</a>')}</p>
+      <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات موسوعة القرآن الكريم ${L('QuranEnc.com')} (${L('arabic_saadi')}). الإصدار على صفحة المصدر في 27 نوفمبر 2026: ${L('V1.0.0')} (${L('27/07/2026')}). تاريخ نقل نسخة التطبيق: 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
+      <p>شروط ${L('QuranEnc.com')} لإعادة النشر: عدم التعديل أو الإضافة أو الحذف، والإشارة بوضوح إلى الناشر وإلى المصدر (${L('QuranEnc.com')})، وذكر رقم الإصدار، وإبقاء معلومات النسخة، وإفادة المصدر بأي ملاحظة، وتحديث النص وفق الإصدارات الجديدة، وعدم تضمين إعلانات لا تليق بمعاني القرآن. التطبيق مجاني وبلا إعلانات.</p>
       <h4>الأذكار</h4>
-      <p>لا يدخل في الأذكار والمسبحة إلا القرآن الكريم وما رواه البخاري أو مسلم، بالرجوع إلى صحيحي البخاري ومسلم في ${L('sunnah.com')} والدرر السنية.</p>
+      <p>لا يدخل في الأذكار والمسبحة إلا القرآن الكريم وما رواه البخاري أو مسلم، بالرجوع إلى صحيحي البخاري ومسلم في ${L('<a href="https://sunnah.com" target="_blank" rel="noopener">sunnah.com</a>')} والدرر السنية ${L('<a href="https://dorar.net" target="_blank" rel="noopener">dorar.net</a>')}. ولكل ذكر زر «المصدر» يفتح صفحة الحديث أو الآية نفسها.</p>
       <p>نص الآيات في الأذكار: نص مجمع الملك فهد لطباعة المصحف الشريف (حفص) عبر ${L('Quran Foundation')}، بخط ${L('KFGQPC HAFS Uthmanic Script')} (الإصدار 2.2) من المجمع، يُستخدم مجانًا ولا يُعدَّل ولا يُباع.</p>
-      <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمِل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')}</p>
-      <p>أوقات الشروق والغروب: ${L('adhan-js (MIT)')}، بطريقة أم القرى.</p>
+      <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمِل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')} · ${L('<a href="https://tanzil.net/docs/text_license" target="_blank" rel="noopener">text_license</a>')}</p>
+      <p>أوقات الصلاة والشروق: ${L('adhan-js')} (رخصة ${L('MIT')})، بطريقة أم القرى، والحساب على جهازك دون إرسال موقعك. ${L('<a href="https://github.com/batoulapps/adhan-js" target="_blank" rel="noopener">github.com/batoulapps/adhan-js</a>')}</p>
+      <p>التاريخ الهجري: تقويم أم القرى من تقويم المتصفح على جهازك.</p>
       <h4>الخصوصية وشروط الاستخدام</h4>
-      <p><a href="privacy.html" target="_blank">سياسة الخصوصية</a> · <a href="terms.html" target="_blank">شروط الاستخدام</a></p>`;
+      <p><a href="privacy.html" target="_blank" rel="noopener" data-priv>سياسة الخصوصية</a> · <a href="terms.html" target="_blank" rel="noopener">شروط الاستخدام</a></p>`;
   }
 
   /* ---------- الشاشات المنبثقة والتبويب ---------- */
@@ -2403,7 +2480,9 @@
   function tfDate(iso) { try { return new Date(iso).toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso.slice(0, 10); } }
   function tfSource(t, d, s) {
     const m = TF[t];
-    return `<p class="tfsrc"><b>${esc(m.title)}</b> · ${esc(m.pub)}<br>المصدر: موسوعة القرآن الكريم ${L('QuranEnc.com')} (${L(m.key)})، منقول كما ورد دون تعديل. الإصدار ${t === 'mukhtasar' ? 'V1.0.1' : 'V1.0.3'}؛ تاريخ النقل: ${tfDate(d.fetched)}.<br>${L(`<a href="${esc(d.src)}" target="_blank" rel="noopener">${esc(d.src.replace('https://', ''))}</a>`)}</p>`;
+    // v26z12: نسبة قصيرة تشمل QuranEnc (شرطها الثاني)؛ السعدي لا يُنسب إلى مركز تفسير. الإصدار وتاريخه في نافذة التفاصيل
+    const line = t === 'mukhtasar' ? `المختصر في تفسير القرآن الكريم، مركز تفسير للدراسات القرآنية، عبر موسوعة القرآن الكريم ${L('QuranEnc.com')}` : `تفسير السعدي، عبر ${L('QuranEnc.com')}`;
+    return `<p class="tfsrc">${line}<br>${L(`<a href="${esc(d.src)}" target="_blank" rel="noopener">${esc(d.src.replace('https://', ''))}</a>`)} · <button class="lnk" type="button" data-srcd>التفاصيل</button></p>`;
   }
   async function tfRender() {
     const t = tfWhich(), body = $('#tfBody');
@@ -2458,7 +2537,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z10';
+  window.__BUILD='26z12';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

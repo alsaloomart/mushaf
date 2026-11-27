@@ -709,3 +709,22 @@ html.land .qj{display:none}
 html.land #reader{overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 html.land .book{bottom:auto;height:var(--landh);transition:none}
 html.land .pg{max-width:none}
+
+/* v26z11: الحذف بالأحمر في نافذة التأكيد، وأزرارها لا تقل عن 44px؛ زر حذف السحابة؛ نافذة الخصوصية */
+.cf .row .btn{min-height:44px}
+#cfYes.red{background:#B3261E;color:#fff;border-color:#B3261E}
+.cl-del{display:block;margin-top:4px;min-height:44px;padding:0 4px;background:none;border:0;color:#B3261E;font:inherit;font-weight:700;touch-action:manipulation}
+html.dark .cl-del,html.glass .cl-del{color:#F2867D}
+.pvl{margin:4px 0 12px;padding-inline-start:20px;line-height:1.8;font-size:.95rem}
+.pvl li{margin:0 0 6px}
+#sh-priv h3{margin:4px 0 6px;font-size:1.1rem}
+#sh-priv a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}
+html.dark #cfYes.red,html.glass #cfYes.red{background:#B3261E;color:#fff}
+#sh-priv{z-index:41;max-height:88vh;max-height:88dvh;overflow:auto}
+#sh-priv a.btn{color:inherit}
+/* v26z12: مصادر المحتوى في الإعدادات */
+.srcl{list-style:none;margin:2px 0 10px;padding:0;font-size:.86rem;line-height:1.75}
+.srcl li{padding:6px 0;border-bottom:1px solid var(--barline)}
+.srcl li:last-child{border-bottom:0}
+.srcl a{color:inherit;text-decoration:underline;text-underline-offset:2px;opacity:.8;font-size:.8rem}
+.tfsrc .lnk{background:none;border:0;padding:0 2px;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}

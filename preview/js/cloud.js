@@ -11,7 +11,8 @@ const CLOUD = (() => {
   const G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
   const IN_APP = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Twitter|Snapchat|TikTok|Line\/|LinkedInApp|; wv\)/i.test(navigator.userAgent || '');
   let fb = null, loading = null, user = null, failed = false, st = { c: '', t: '' }, upT = 0, applying = false, lastPull = 0, busyIn = false;
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const USER = () => user;
+  const esc = window.ESC;   // v26z11: دالة التهريب الموحّدة (js/esc.js)
   const rawSet = Storage.prototype.setItem;
   const lg = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const ls = (k, v) => { try { rawSet.call(localStorage, k, v); } catch (e) {} };
@@ -22,9 +23,12 @@ const CLOUD = (() => {
   const tm = t => { try { return new Date(t).toLocaleTimeString('ar-SA-u-nu-latn', { hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
 
   /* ---------- الدمج: لا يضيع شيء من الجهازين ---------- */
+  // v26z11: لا يُقبل من السحابة إلا ملاحظة بالشكل المتوقع (معرّف ضيق، صفحة رقم، آية بصيغة س:آ، نص)
+  const okNote = n => !!n && typeof n.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(n.id) && Number.isInteger(+n.p) && +n.p >= 1 && +n.p <= 604
+    && (n.k == null || /^\d{1,3}:\d{1,3}$/.test(n.k)) && (n.kb == null || /^\d{1,3}:\d{1,3}$/.test(n.kb)) && typeof n.text === 'string';
   function mergeNotes(L, C, dl) {
     const m = new Map();
-    for (const n of [...(C || []), ...(L || [])]) { if (!n || !n.id) continue; const o = m.get(n.id); if (!o || (n.u || n.t || 0) >= (o.u || o.t || 0)) m.set(n.id, n); }
+    for (const n of [...(C || []), ...(L || [])]) { if (!okNote(n)) continue; const o = m.get(n.id); if (!o || (n.u || n.t || 0) >= (o.u || o.t || 0)) m.set(n.id, n); }
     return [...m.values()].filter(n => !(dl[n.id] && dl[n.id] >= (n.u || n.t || 0))).sort((a, b) => a.t - b.t);
   }
   function mergeDel(a, b) { const o = Object.assign({}, a || {}); for (const [k, v] of Object.entries(b || {})) if (!o[k] || v > o[k]) o[k] = v; return o; }
@@ -35,9 +39,12 @@ const CLOUD = (() => {
     const rev = Object.assign({}, C.rev || {});
     for (const [k, r] of Object.entries(L.rev || {})) { const o = rev[k]; if (!o || (r.last || 0) > (o.last || 0) || ((r.last || 0) === (o.last || 0) && (r.due || 0) >= (o.due || 0))) rev[k] = r; }
     base.mem = mem; base.rev = rev;
+    const lr = L.rem || {}; base.rem = Object.assign({}, base.rem || {}); delete base.rem.sub; if (lr.sub) base.rem.sub = lr.sub;   // اشتراك هذا الجهاز وحده
     return base;
   }
-  function snapshot() { return { st: lg('mushaf.preview.v1') || '{}', notes: lg('mushaf.preview.notes') || '[]', del: lg('mushaf.preview.notes.del') || '{}' }; }
+  // v26z11: اشتراك الإشعارات (rem.sub) يبقى على الجهاز فقط: يُحذف من نسخة المزامنة، ويُحفظ اشتراك هذا الجهاز عند الدمج
+  const noSub = s => { try { const o = JSON.parse(s || '{}'); if (o && o.rem && 'sub' in o.rem) { o.rem = Object.assign({}, o.rem); delete o.rem.sub; } return JSON.stringify(o); } catch (e) { return '{}'; } };
+  function snapshot() { return { st: noSub(lg('mushaf.preview.v1')), notes: lg('mushaf.preview.notes') || '[]', del: lg('mushaf.preview.notes.del') || '{}' }; }
   const sig = s => s.st + '|' + s.notes + '|' + s.del;
 
   /* ---------- مراقبة حفظ التطبيق ---------- */
@@ -89,6 +96,18 @@ const CLOUD = (() => {
     flush().then(() => fb.A.signOut(fb.auth)).then(() => { const m = meta(); delete m.uid; setMeta(m); say('خرجت من حسابك. بياناتك باقية على هذا الجهاز.'); });
   }
 
+  /* v26z11: «احذف بياناتي من السحابة» — يحذف مستند هذا التطبيق وحده (users/{uid}/apps/mushaf) بعد تأكيد، ولا يمس بيانات الجهاز ولا مستند منصة الإنجليزية users/{uid} */
+  async function delCloud() {
+    const ok = await window.__app.ask('ستُحذف نسخة بياناتك المحفوظة في حسابك (الملاحظات، والخطة، والمحفوظ، والإعدادات) نهائيًّا، وتبقى كما هي على هذا الجهاز. ثم تخرج من حسابك.', 'احذف');
+    if (!ok) return;
+    if (!user || !fb) { say('سجّل الدخول أوّلًا.'); return; }
+    clearTimeout(upT);
+    try {
+      await fb.F.deleteDoc(ref());
+      await fb.A.signOut(fb.auth); const m = meta(); delete m.uid; m.dirty = false; setMeta(m);
+      say('حُذِفت بياناتك من السحابة، وبقيت على هذا الجهاز.');
+    } catch (e) { say(navigator.onLine === false ? 'لا اتصال بالإنترنت الآن. حاول حين تتّصل.' : 'تعذّر الحذف، حاول مرّة أخرى.'); }
+  }
   /* ---------- المزامنة ---------- */
   const ref = () => fb.F.doc(fb.db, 'users', user.uid, 'apps', 'mushaf-preview');
   function denied(e) { return e && (e.code === 'permission-denied' || /permission/i.test(e.message || '')); }
@@ -123,7 +142,8 @@ const CLOUD = (() => {
         notes: JSON.stringify(mergeNotes(J(L.notes, []), J(c.notes, []), dl)),
         del: JSON.stringify(dl)
       };
-      const changedHere = sig(out) !== sig(L), changedThere = sig(out) !== sig({ st: c.st, notes: c.notes, del: c.del });
+      const outS = { st: noSub(out.st), notes: out.notes, del: out.del };   // المقارنة بلا اشتراك الإشعارات
+      const changedHere = sig(outS) !== sig(L), changedThere = sig(outS) !== sig({ st: c.st, notes: c.notes, del: c.del });
       if (changedHere) {
         applying = true;
         try { ls('mushaf.preview.notes', out.notes); ls('mushaf.preview.notes.del', out.del); ST.replace(J(out.st, {})); } finally { applying = false; }
@@ -153,18 +173,20 @@ const CLOUD = (() => {
 
   /* ---------- الواجهة (داخل الإعدادات) ---------- */
   function status(c, t) { st = { c, t }; render(); }
-  function html() {
+  function html(mock) {   // mock: للاختبار واللقطات فقط (لا دخول حقيقي)
     if (!ON) return '';
+    const user = mock || USER();
     if (failed && !user) return `<p class="muted sm cl-st bad">خدمة الدخول غير متاحة الآن. التطبيق يعمل كاملًا بدونها، وبياناتك على جهازك.</p>`;
     const s = st.t ? `<p class="cl-st ${st.c}" role="status">${esc(st.t)}</p>` : '';
     if (!user) return `<button class="cl-g" data-cl-in type="button">${G}<span>الدخول بحساب Google</span></button><p class="muted sm">اختياري: يحفظ ملاحظاتك وخطة الورد والمحفوظ والإعدادات في حسابك لتنتقل معك إلى أي جهاز. التطبيق يعمل كاملًا دون تسجيل دخول.</p>${s}`;
     const av = user.photoURL ? `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="cl-av">${esc(((user.displayName || user.email || '?').trim()[0]) || '?')}</span>`;
-    return `<div class="cl-u">${av}<div><b>${esc(user.displayName || 'حسابي')}</b><small>${esc(user.email || '')}</small></div></div>${s || '<p class="cl-st ok">متصل بحسابك</p>'}<button class="cl-out" data-cl-out type="button">تسجيل الخروج</button>`;
+    return `<div class="cl-u">${av}<div><b>${esc(user.displayName || 'حسابي')}</b><small>${esc(user.email || '')}</small></div></div>${s || '<p class="cl-st ok">متصل بحسابك</p>'}<button class="cl-out" data-cl-out type="button">تسجيل الخروج</button><button class="cl-del" data-cl-del type="button">احذف بياناتي من السحابة</button><p class="muted sm">الخروج لا يحذف نسختك في السحابة. الحذف يمسح نسخة هذا التطبيق من حسابك فقط، وتبقى بياناتك على هذا الجهاز.</p>`;
   }
   function render() { const b = document.getElementById('clBox'); if (b) b.innerHTML = html(); }
   document.addEventListener('click', e => {
     if (e.target.closest('[data-cl-in]')) { e.preventDefault(); e.stopPropagation(); signIn(); }
     else if (e.target.closest('[data-cl-out]')) { e.preventDefault(); e.stopPropagation(); signOut(); }
+    else if (e.target.closest('[data-cl-del]')) { e.preventDefault(); e.stopPropagation(); delCloud(); }
   }, true);
   const prep = () => { if (ON && !fb) load().catch(() => {}); };
   // إن كان هذا الجهاز داخلًا من قبل: نحمّل المكتبة بعد أول رسم لاستعادة الجلسة
