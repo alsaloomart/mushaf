@@ -18,7 +18,12 @@
     day:  { one: 'يوم واحد', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
     note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' },
     word: { one: 'كلمة واحدة', two: ['كلمتان', 'كلمتين'], pl: 'كلمات', acc: 'كلمة', sg: 'كلمة' },
-    surah: { one: 'سورة واحدة', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورة', sg: 'سورة' }
+    surah: { one: 'سورة واحدة', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورة', sg: 'سورة' },
+    marra: { one: 'مرة واحدة', two: ['مرتان', 'مرتين'], pl: 'مرات', acc: 'مرة', sg: 'مرة' },
+    tasbeeha: { one: 'تسبيحة واحدة', two: ['تسبيحتان', 'تسبيحتين'], pl: 'تسبيحات', acc: 'تسبيحة', sg: 'تسبيحة' },
+    salah: { one: 'صلاة واحدة', two: ['صلاتان', 'صلاتين'], pl: 'صلوات', acc: 'صلاة', sg: 'صلاة' },
+    step: { one: 'خطوة واحدة', two: ['خطوتان', 'خطوتين'], pl: 'خطوات', acc: 'خطوة', sg: 'خطوة' },
+    minute: { one: 'دقيقة واحدة', two: ['دقيقتان', 'دقيقتين'], pl: 'دقائق', acc: 'دقيقة', sg: 'دقيقة' }
   };
   /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(15)='15 آية'، cnt(100)='100 آية' */
   function cnt(n, w = 'aya', gen = false) {
@@ -26,9 +31,10 @@
     if (n === 1) return f.one;
     if (n === 2) return f.two[gen ? 1 : 0];
     const r = n % 100;
-    if (r >= 3 && r <= 10) return ar(n) + ' ' + f.pl;
-    if (r >= 11 && r <= 99) return ar(n) + ' ' + f.acc;
-    return ar(n) + ' ' + f.sg;   // 100، 200، 101، 102…
+    const t = n >= 1000 ? n.toLocaleString('en-US') : ar(n);   // فاصلة الآلاف الغربية: 1,240
+    if (r >= 3 && r <= 10) return t + ' ' + f.pl;
+    if (r >= 11 && r <= 99) return t + ' ' + f.acc;
+    return t + ' ' + f.sg;   // 100، 200، 101، 102…
   }
   // الفواصل الفعلية للمراجعة [1،2،4،7،15،30،60] بعد «بعد»
   const AFTER = { 1: 'يوم', 2: 'يومين', 4: '4 أيام', 7: 'أسبوع', 15: '15 يومًا', 30: 'شهر', 60: 'شهرين' };
@@ -911,6 +917,7 @@
     if (k === 'tilawa') openTilawa();
     if (k === 'tafsir') openTafsirPanel();
     if (k === 'more') { openMore(); navOn('more'); }
+    if (k === 'adhkar' && window.ADHKAR) { window.ADHKAR.open(); navOn('adhkar'); }
   });
   /* خط الانتقال السريع: الصفحة 1 يمينًا */
   const qjR = $('#qjR'), qjB = $('#qjB');
@@ -1571,9 +1578,14 @@
       <p>التطبيق يتأكد قبل التشغيل أن التسجيل يطابق الآية المحددة.</p>
       <p>${L('<a href="https://api-docs.quran.com/legal/developer-terms/" target="_blank" rel="noopener">Quran Foundation — Developer Terms</a>')}</p>
       <h4>التفسير</h4>
-      <p><b>المختصر في تفسير القرآن الكريم</b>، إعداد مركز تفسير للدراسات القرآنية. منقول كما ورد دون تعديل من موسوعة القرآن الكريم ${L('QuranEnc.com')} (المفتاح ${L('arabic_mokhtasar')})، عبر واجهتها البرمجية. رقم الإصدار غير منشور في المصدر، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_mokhtasar" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_mokhtasar</a>')}</p>
-      <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات ${L('QuranEnc.com')} (${L('arabic_saadi')})، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
+      <p><b>المختصر في تفسير القرآن الكريم</b>، إعداد مركز تفسير للدراسات القرآنية. منقول كما ورد دون تعديل من موسوعة القرآن الكريم ${L('QuranEnc.com')} (المفتاح ${L('arabic_mokhtasar')})، عبر واجهتها البرمجية. الإصدار V1.0.1، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_mokhtasar" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_mokhtasar</a>')}</p>
+      <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات ${L('QuranEnc.com')} (${L('arabic_saadi')})، الإصدار V1.0.3، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
       <p>شروط ${L('QuranEnc.com')} لإعادة النشر: عدم التعديل أو الإضافة أو الحذف، والإشارة إلى الناشر والمصدر، وذكر الإصدار، وتحديث النص وفق الإصدارات الجديدة، وعدم عرض إعلانات. التطبيق مجاني وبلا إعلانات.</p>
+      <h4>الأذكار</h4>
+      <p>النصوص من «حصن المسلم» لسعيد بن علي بن وهف القحطاني، مع تخريج كل ذكر وحكمه منسوبًا إلى قائله.</p>
+      <p>نص الآيات في الأذكار: نص مجمع الملك فهد لطباعة المصحف الشريف (حفص) عبر ${L('Quran Foundation')}، بخط ${L('KFGQPC HAFS Uthmanic Script')} (الإصدار 2.2) من المجمع، يُستخدم مجانًا ولا يُعدَّل ولا يُباع.</p>
+      <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')}</p>
+      <p>أوقات الشروق والغروب: ${L('adhan-js (MIT)')}، بطريقة أم القرى.</p>
       <h4>الخصوصية وشروط الاستخدام</h4>
       <p><a href="privacy.html" target="_blank">سياسة الخصوصية</a> · <a href="terms.html" target="_blank">شروط الاستخدام</a></p>`;
   }
@@ -2306,7 +2318,7 @@
   function tfDate(iso) { try { return new Date(iso).toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso.slice(0, 10); } }
   function tfSource(t, d, s) {
     const m = TF[t];
-    return `<p class="tfsrc"><b>${esc(m.title)}</b> · ${esc(m.pub)}<br>المصدر: موسوعة القرآن الكريم ${L('QuranEnc.com')} (${L(m.key)})، منقول كما ورد دون تعديل. ${t === 'mukhtasar' ? 'رقم الإصدار غير منشور في المصدر؛ ' : ''}تاريخ النقل: ${tfDate(d.fetched)}.<br>${L(`<a href="${esc(d.src)}" target="_blank" rel="noopener">${esc(d.src.replace('https://', ''))}</a>`)}</p>`;
+    return `<p class="tfsrc"><b>${esc(m.title)}</b> · ${esc(m.pub)}<br>المصدر: موسوعة القرآن الكريم ${L('QuranEnc.com')} (${L(m.key)})، منقول كما ورد دون تعديل. الإصدار ${t === 'mukhtasar' ? 'V1.0.1' : 'V1.0.3'}؛ تاريخ النقل: ${tfDate(d.fetched)}.<br>${L(`<a href="${esc(d.src)}" target="_blank" rel="noopener">${esc(d.src.replace('https://', ''))}</a>`)}</p>`;
   }
   async function tfRender() {
     const t = tfWhich(), body = $('#tfBody');
@@ -2326,8 +2338,19 @@
           }
         } else {
           const B = d.blocks, want = new Set(ayat), used = new Set();
-          const hit = i => B[i].k === 'a' && ayat.some(a => a >= B[i].a && a <= B[i].b);
+          // آية بلا فقرة مرقّمة وحدها: هي داخل كتلة مجموعة (k=g)؛ نعرض المجموعة والفقرتين المجاورتين داخلها
+          const force = new Set(), grp = new Map();
+          for (const a of ayat) {
+            if (B.some(b => b.k === 'a' && a >= b.a && a <= b.b)) continue;
+            const gi = B.findIndex(b => b.k === 'g' && a >= b.a && a <= b.b); if (gi < 0) continue;
+            const g = B[gi]; grp.set(a, g.l);
+            let pv = -1, nx = -1;
+            for (let i = 0; i < B.length; i++) { const b = B[i]; if (b.k !== 'a' || b.b < g.a || b.a > g.b) continue; if (b.b < a) pv = i; else if (b.a > a && nx < 0) nx = i; }
+            if (pv >= 0) force.add(pv); if (nx >= 0) force.add(nx); if (pv < 0 && nx < 0) force.add(gi);
+          }
+          const hit = i => force.has(i) || (B[i].k === 'a' && ayat.some(a => a >= B[i].a && a <= B[i].b));
           const shown = new Set();
+          for (const [a, l] of grp) html += `<p class="muted sm tfgrp" data-k="${s}:${a}">${esc(sName(s))} · الآية ${ar(a)}: ليس لها في المصدر فقرة مستقلة، ويشرحها السعدي ضمن المجموعة (${esc(l)})؛ وهذا تفسير ما يجاورها منها.</p>`;
           for (let i = 0; i < B.length; i++) {
             if (!hit(i)) continue;
             let j = i; while (j > 0 && B[j - 1].k !== 'a') j--;   // ما قبل الفقرة من تمهيد أو نص الآيات يُعرض معها كما في المصدر
@@ -2335,7 +2358,7 @@
               if (b.k === 'a') for (let a = b.a; a <= b.b; a++) shown.add(a);
               html += `<article class="tfa tfs-${b.k}" data-k="${s}:${b.k === 'i' ? '' : b.a}">${b.l ? `<h5>${esc(sName(s))} · ${esc(b.l)}</h5>` : ''}<div class="tftx">${segHTML(b.x)}</div></article>`; }
           }
-          for (const a of ayat) if (!shown.has(a)) html += `<article class="tfa tfgap" data-k="${s}:${a}"><h5>${esc(sName(s))} · الآية ${ar(a)}</h5><p class="muted">لا توجد في المصدر فقرة مستقلة لهذه الآية.</p></article>`;
+          for (const a of ayat) if (!shown.has(a) && !grp.has(a)) html += `<article class="tfa tfgap" data-k="${s}:${a}"><h5>${esc(sName(s))} · الآية ${ar(a)}</h5><p class="muted">لا توجد في المصدر فقرة مستقلة لهذه الآية.</p></article>`;
         }
         html += tfSource(t, d, s);
       }
@@ -2350,7 +2373,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26v';
-  window.__app = { hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
+  window.__BUILD = '26w';
+  window.__app = { closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

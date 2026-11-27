@@ -1,0 +1,274 @@
+/* أذكاري — أذكار الصباح والمساء، المسبحة، أذكار بعد الصلاة، الإحصاءات.
+   النصوص من data/adhkar.json (حصن المسلم بعد التدقيق) وadhkar/tasbeeh_texts.md فقط.
+   كل شيء محفوظ على الجهاز فقط (localStorage). */
+(() => {
+  'use strict';
+  const A = window.__app; if (!A) return;
+  const esc = A.esc, cnt = A.cnt, toast = A.toast;
+  const $ = s => document.querySelector(s);
+  const KEY = /\/preview\//.test(location.pathname) ? 'mushaf.preview.adhkar' : 'mushaf.adhkar';
+  const fmt = n => n >= 1000 ? n.toLocaleString('en-US') : String(n);
+  const CITIES = [['الرياض',24.7136,46.6753],['بريدة',26.3260,43.9750],['عنيزة',26.0840,43.9940],['جدة',21.5433,39.1728],['مكة المكرمة',21.3891,39.8579],['المدينة المنورة',24.5247,39.5692],['الدمام',26.4207,50.0888],['الخبر',26.2172,50.1971],['الأحساء',25.3830,49.5860],['تبوك',28.3838,36.5550],['أبها',18.2164,42.5053],['حائل',27.5114,41.7208],['الطائف',21.2703,40.4158],['جازان',16.8892,42.5511],['نجران',17.4924,44.1277],['الجوف',29.8117,39.8678]];
+  // أذكار المسبحة الجاهزة — tasbeeh_texts.md (القسم 1)
+  const PRESETS = [
+    { t: 'سُبْحَانَ اللَّهِ', n: 33, src: 'رواه مسلم 597 (ضمن تسبيح دبر الصلاة)' },
+    { t: 'الْحَمْدُ لِلَّهِ', n: 33, src: 'رواه مسلم 597' },
+    { t: 'اللَّهُ أَكْبَرُ', n: 33, src: 'رواه مسلم 597' },
+    { t: 'لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', n: 100, src: 'المئة: البخاري 3293، مسلم 2691 · العشر: البخاري 6404، مسلم 2693', v: '«كانت له عدل عشر رقاب، وكُتبت له مائة حسنة، ومُحيت عنه مائة سيئة، وكانت له حرزًا من الشيطان يومه ذلك حتى يمسي» (البخاري 3293، مسلم 2691)' },
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', n: 100, src: 'رواه مسلم 2692', v: '«لم يأتِ أحد يوم القيامة بأفضل مما جاء به إلا أحد قال مثل ما قال أو زاد عليه» (مسلم 2692)' },
+    { t: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', n: 100, src: 'البخاري 6307 (اللفظ)، مسلم 2702 (المئة في اليوم)' },
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ', n: 3, src: 'رواه مسلم 2726' },
+    { t: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', n: 0, src: 'البخاري 4205، مسلم 2704', v: '«كنز من كنوز الجنة» (البخاري 4205، مسلم 2704)' },
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', n: 0, src: 'البخاري 6682، مسلم 2694', v: '«كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن» (البخاري 6682، مسلم 2694)' },
+    { t: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبَيِّنَا مُحَمَّدٍ', n: 0, src: 'نص حصن المسلم (98)' }
+  ];
+  const short = t => { const w = t.split(' '); return w.length > 3 ? w.slice(0, 3).join(' ') + '…' : t; };
+  const DONE_LINES = n => ['تقبّل الله منك.', n ? `أتممت ${cnt(n, 'tasbeeha')}. بارك الله فيك.` : 'تقبّل الله منك.', 'تمّ العدد. تقبّل الله.', 'أحسنت، تقبّل الله ذكرك.'];
+
+  /* ---------- الحالة ---------- */
+  const def = () => ({ city: 0, prog: {}, tas: { p: 0, target: 33, c: 0, h: [] }, goal: 100, vib: 1, snd: 0, auto: 1, log: {}, flow: { i: 0, c: [0, 0, 0, 0], skip: 0 } });
+  let S; try { S = Object.assign(def(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = def(); }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const dkey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const today = () => dkey(new Date());
+  const day = k => S.log[k] || (S.log[k] = { t: 0, by: {}, m: 0, e: 0, p: 0 });
+  const addT = (t, n = 1) => { const L = day(today()); L.t = Math.max(0, L.t + n); L.by[t] = Math.max(0, (L.by[t] || 0) + n); };
+
+  let D = null, V = null, TIMES = null, period = 'd';
+  const body = () => $('#adhBody');
+
+  /* ---------- أوقات الشروق والغروب (adhan-js، أم القرى) ---------- */
+  function loadAdhan() {
+    if (window.adhan) return Promise.resolve();
+    return new Promise(r => { const s = document.createElement('script'); s.src = 'js/adhan.js'; s.onload = r; s.onerror = r; document.head.appendChild(s); });
+  }
+  function calcTimes() {
+    TIMES = null; if (!window.adhan) return;
+    try {
+      const c = CITIES[S.city] || CITIES[0], ad = window.adhan;
+      const pt = new ad.PrayerTimes(new ad.Coordinates(c[1], c[2]), new Date(), ad.CalculationMethod.UmmAlQura());
+      TIMES = pt;
+    } catch (e) { TIMES = null; }
+  }
+  const hm = d => d ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '—';
+  const autoTab = () => { const n = new Date(); if (!TIMES) return n.getHours() >= 15 || n.getHours() < 4 ? 'e' : 'm'; return (n >= TIMES.asr || n < TIMES.fajr) ? 'e' : 'm'; };
+
+  /* ---------- أدوات العرض ---------- */
+  const ring = (frac, inner, cls = '') => {
+    const R = 100, C = 2 * Math.PI * R, f = Math.max(0, Math.min(1, frac || 0));
+    return `<svg class="adh-ring ${cls}" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="${R}" class="rt"/><circle cx="120" cy="120" r="${R}" class="rf" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}" transform="rotate(-90 120 120)"/></svg>${inner || ''}`;
+  };
+  const bar = f => `<div class="adh-bar"><i style="width:${(Math.max(0, Math.min(1, f)) * 100).toFixed(1)}%"></i></div>`;
+  function buzz(strong) { if (S.vib && navigator.vibrate) try { navigator.vibrate(strong ? [30, 60, 30] : 12); } catch (e) {} }
+  let AC = null;
+  function tick() {
+    if (!S.snd) return;
+    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = 1500; g.gain.setValueAtTime(.035, AC.currentTime); g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + .04); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + .05); } catch (e) {}
+  }
+
+  /* ---------- البطاقات ---------- */
+  function quranHTML(it) {
+    return it.quran.map(q => `<div class="adh-q">${q.bas ? `<p class="adh-bas">${esc(D.basmala_qpc)}</p>` : ''}<p class="adh-qt">${q.ayat.map(a => `${esc(a.t)} <span class="adh-an">﴿${a.k.split(':')[1]}﴾</span>`).join(' ')}</p></div>`).join('') +
+      `<button class="adh-read" data-page="${it.quran[0].page}">اقرأ في المصحف (صفحة ${it.quran[0].page})</button>`;
+  }
+  const txt = (it, m) => (m === 'e' ? it.text_evening : m === 'm' ? it.text_morning : null) || it.text || it.text_morning || '';
+  function card(id, m, done) {
+    const it = D.items[id]; if (!it) return '';
+    const n = it.count || 0, left = Math.max(0, n - done), fin = n ? done >= n : done > 0;
+    const tk = (m === 'e' && it.takhrij_evening) || it.takhrij;
+    const body = it.type === 'quran' ? (it.prefix ? `<p class="adh-x adh-pre">${esc(it.prefix)}</p>` : '') + quranHTML(it) : `<p class="adh-x">${esc(txt(it, m))}</p>`;
+    const vir = it.virtue ? (it.virtue_weak ? `<p class="adh-v weak">${esc(it.virtue_source || '')}: «${esc(it.virtue)}»</p>` : `<p class="adh-v"><b>الفضل:</b> ${esc(it.virtue)}${it.virtue_source && it.virtue_source !== tk ? ` (${esc(it.virtue_source)})` : ''}</p>`) : '';
+    const cnum = n ? `<b>${fmt(fin ? n : left)}</b><span>من ${fmt(n)}</span>` : `<b>${fmt(done)}</b><span>بلا عدد</span>`;
+    return `<article class="adh-card${fin ? ' fin' : ''}" data-id="${id}">
+      ${it.time ? `<span class="adh-tag t">${esc(it.time)}</span>` : ''}${it.disputed ? '<span class="adh-tag d">مختلف فيه</span>' : ''}
+      ${body}
+      <div class="adh-meta"><p class="adh-src">المصدر: ${esc(tk || '')}</p>${vir}${it.disputed && it.grading ? `<details class="adh-g"><summary>الحكم: مختلف فيه</summary><p>${esc(it.grading)}</p></details>` : ''}</div>
+      <button class="adh-tap" data-tap aria-label="اضغط للعدّ">${fin ? '<svg viewBox="0 0 24 24" class="ok"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : ''}<span class="cn">${cnum}</span><small>${fin ? 'تمّ' : 'اضغط للعدّ'}</small></button>
+    </article>`;
+  }
+
+  /* ---------- الصباح والمساء ---------- */
+  function progOf(m) { const k = today() + '|' + m; for (const x of Object.keys(S.prog)) if (!x.startsWith(today())) delete S.prog[x]; return S.prog[k] || (S.prog[k] = {}); }
+  function renderME(m) {
+    const ids = D.sections[m === 'm' ? 'morning' : 'evening'], P = progOf(m);
+    const doneN = ids.filter(id => { const n = D.items[id].count || 0; return n ? (P[id] || 0) >= n : (P[id] || 0) > 0; }).length;
+    const c = CITIES[S.city] || CITIES[0];
+    return `<div class="adh-city"><span><b>${esc(c[0])}</b> · الشروق ${hm(TIMES && TIMES.sunrise)} · الغروب ${hm(TIMES && TIMES.maghrib)}</span><button class="lnk" data-v="city">تغيير المدينة</button></div>
+      <div class="adh-prog"><div class="row"><b>اكتمل ${doneN} من ${ids.length}</b>${doneN === ids.length ? '<span class="ok">تقبّل الله منك.</span>' : ''}</div>${bar(doneN / ids.length)}</div>
+      <div class="adh-list">${ids.map(id => card(id, m, P[id] || 0)).join('')}</div>
+      <p class="adh-note">التذكير: على الآيفون لا تصل إشعارات المصحف إلا إذا فُتح من الشاشة الرئيسية (iOS 16.4 فأحدث)، ولا يُضبط التذكير على الشروق والغروب تلقائيًا بعد؛ والتذكير المجدول من الخادم غير مفعّل حاليًا.</p>`;
+  }
+  function tapCard(el, m) {
+    const id = el.dataset.id, it = D.items[id];
+    if (m === 'p') { const P = progOf('p'); const n = it.count || 1; if ((P[id] || 0) >= n) return; P[id] = (P[id] || 0) + 1; buzz(P[id] >= n); tick(); save(); el.outerHTML = card(id, 'p', P[id]); return; }
+    const P = progOf(m), n = it.count || 0;
+    if (n && (P[id] || 0) >= n) return;
+    P[id] = (P[id] || 0) + 1; buzz(n && P[id] >= n); tick();
+    const ids = D.sections[m === 'm' ? 'morning' : 'evening'];
+    const all = ids.every(x => { const k = D.items[x].count || 0; return k ? (P[x] || 0) >= k : (P[x] || 0) > 0; });
+    if (all) { day(today())[m] = 1; toast('تقبّل الله منك.'); }
+    save(); render();
+  }
+
+  /* ---------- المسبحة ---------- */
+  function renderT() {
+    const T = S.tas, p = PRESETS[T.p] || PRESETS[0], tg = T.target, L = day(today());
+    const fin = tg && T.c >= tg;
+    return `<div class="adh-chips" role="listbox" aria-label="اختر الذكر">${PRESETS.map((x, i) => `<button class="${i === T.p ? 'on' : ''}" data-preset="${i}">${esc(short(x.t))}</button>`).join('')}</div>
+      <div class="adh-tas">
+        <p class="adh-dh">${esc(p.t)}</p>
+        <button class="adh-big${fin ? ' fin' : ''}" data-tas aria-label="سبّح">${ring(tg ? T.c / tg : (T.c ? 1 : 0), `<span class="in"><b>${fmt(T.c)}</b><span>${tg ? 'من ' + fmt(tg) : 'بلا عدد'}</span><small>${fin ? esc(T.msg || 'تمّ العدد. تقبّل الله.') : 'اضغط للعدّ'}</small></span>`)}</button>
+        <div class="adh-ctl">
+          <button data-undo ${T.h.length ? '' : 'disabled'}><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg>تراجع</button>
+          <div class="seg adh-tg">${[33, 100].map(n => `<button class="${tg === n ? 'on' : ''}" data-target="${n}">${n}</button>`).join('')}<button class="${tg && tg !== 33 && tg !== 100 ? 'on' : ''}" data-target="c">${tg && tg !== 33 && tg !== 100 ? fmt(tg) : 'مخصص'}</button><button class="${!tg ? 'on' : ''}" data-target="0">بلا عدد</button></div>
+          <button data-reset><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v4h4"/></svg>تصفير</button>
+        </div>
+        <p class="adh-src c">المصدر: ${esc(p.src)}</p>${p.v ? `<p class="adh-v c"><b>الفضل:</b> ${esc(p.v)}</p>` : ''}
+        <p class="adh-today">${L.t ? `مجموع تسبيحك اليوم: ${fmt(L.t)}` : 'لم تبدأ تسبيح اليوم بعد.'}</p>
+        <div class="adh-tog">
+          ${navigator.vibrate ? `<label><input type="checkbox" data-opt="vib" ${S.vib ? 'checked' : ''}> اهتزاز عند كل تسبيحة</label>` : '<p class="muted sm">الاهتزاز غير مدعوم في هذا المتصفح (ومنه سفاري على الآيفون).</p>'}
+          <label><input type="checkbox" data-opt="snd" ${S.snd ? 'checked' : ''}> صوت نقرة خفيف</label>
+        </div>
+      </div>
+      <div class="adh-entry">
+        <button data-v="flow"><b>أذكار بعد الصلاة</b><span>${cnt(4, 'step')} · نحو ${cnt(2, 'minute', true)}</span></button>
+        <button data-v="stats"><b>الإحصاءات</b><span>${L.t ? `مجموع تسبيحك اليوم: ${fmt(L.t)}` : 'لم تُسجَّل أذكار اليوم بعد.'}</span></button>
+      </div>`;
+  }
+  function tapTas() {
+    const T = S.tas, p = PRESETS[T.p] || PRESETS[0];
+    T.c++; T.h.push(1); if (T.h.length > 200) T.h.shift(); addT(p.t);
+    const hit = T.target && T.c === T.target;
+    if (hit) { const ls = DONE_LINES(T.target); T.msg = ls[Math.floor(Math.random() * ls.length)]; }
+    buzz(hit); tick(); save(); render();
+  }
+
+  /* ---------- أذكار بعد الصلاة (تدفق موجَّه) ---------- */
+  const FLOW = [['سُبْحَانَ اللَّهِ', 33], ['الْحَمْدُ لِلَّهِ', 33], ['اللَّهُ أَكْبَرُ', 33], ['لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', 1]];
+  function renderFlow() {
+    const F = S.flow, i = Math.min(F.i, 3), st = FLOW[i], c = F.c[i] || 0, tot = F.c.reduce((a, b, k) => a + Math.min(b, FLOW[k][1]), 0);
+    const end = F.i > 3, P = progOf('p');
+    const others = D.sections.after_prayer.filter(x => x !== 'p_tasbih_33');
+    const head = `<div class="adh-sub"><button class="lnk back" data-v="t">رجوع</button><b>أذكار بعد الصلاة</b><span class="muted sm">رواه مسلم 597</span></div>`;
+    if (end) return head + `<div class="adh-end">${ring(1, '<span class="in"><b>100</b><span>من 100</span></span>', 'sm')}<h3>تمّت أذكار بعد الصلاة</h3><p>${F.skip ? (F.skip === 1 ? 'تمّت، وتخطّيت خطوة واحدة.' : `تمّت، وتخطّيت ${cnt(F.skip, 'step')}.`) : 'تقبّل الله صلاتك وذكرك.'}</p><p class="adh-v c">«غُفرت خطاياه وإن كانت مثل زبد البحر» (مسلم 597)</p><div class="adh-nav"><button class="pri" data-frestart>ابدأ من جديد</button><button data-v="t">إغلاق</button></div></div>` + othersHTML(others, P);
+    return head + `<div class="adh-steps">${FLOW.map((s, k) => `<button class="${k === i ? 'on' : ''}${(F.c[k] || 0) >= s[1] ? ' ok' : ''}" data-fstep="${k}">${esc(short(s[0]))}${s[1] > 1 ? ' ' + s[1] : ''}</button>`).join('')}</div>
+      <div class="adh-prog"><div class="row"><b>المرحلة ${i + 1} من 4</b><span>${tot} من 100</span></div>${bar(tot / 100)}</div>
+      <div class="adh-tas">
+        <p class="adh-dh">${esc(st[0])}</p>
+        <button class="adh-big" data-flow aria-label="اضغط للعدّ">${ring(c / st[1], `<span class="in"><b>${st[1] > 1 ? fmt(c) : (c ? '1' : '0')}</b><span>${st[1] > 1 ? 'من ' + st[1] : 'مرة واحدة'}</span><small>${st[1] > 1 ? 'اضغط للعدّ' : 'اضغط إذا قلته'}</small></span>`)}</button>
+        ${i < 3 ? `<p class="muted sm c">التالي: ${esc(short(FLOW[i + 1][0]))}</p>` : ''}
+        <div class="adh-nav"><button data-fprev ${i ? '' : 'disabled'}>رجوع</button><button class="pri" data-fnext>التالي</button></div>
+        <label class="adh-tog1"><input type="checkbox" data-opt="auto" ${S.auto ? 'checked' : ''}> الانتقال تلقائيًا عند تمام العدد</label>
+      </div>` + othersHTML(others, P);
+  }
+  const othersHTML = (ids, P) => `<h4 class="adh-h4">بقية أذكار بعد الصلاة</h4><div class="adh-list">${ids.map(id => card(id, 'p', P[id] || 0)).join('')}</div>`;
+  function tapFlow() {
+    const F = S.flow, i = F.i, st = FLOW[i]; if (!st) return;
+    if ((F.c[i] || 0) >= st[1]) { if (S.auto) { F.i++; save(); render(); } return; }
+    F.c[i] = (F.c[i] || 0) + 1; addT(st[0]); tick();
+    const full = F.c[i] >= st[1]; buzz(full);
+    if (full && (S.auto || i === 3)) { F.i++; if (F.i > 3) finishFlow(); }
+    save(); render();
+  }
+  function finishFlow() { const F = S.flow; F.skip = F.c.filter((x, k) => x < FLOW[k][1]).length; day(today()).p++; }
+
+  /* ---------- الإحصاءات ---------- */
+  function range() {
+    const keys = Object.keys(S.log).sort(), t = new Date(); const out = [];
+    const n = period === 'd' ? 1 : period === 'w' ? 7 : period === 'm' ? 30 : (keys.length ? Math.max(1, Math.round((t - new Date(keys[0] + 'T00:00')) / 864e5) + 1) : 1);
+    for (let k = 0; k < n; k++) { const d = new Date(t); d.setDate(t.getDate() - k); out.push(dkey(d)); }
+    return out;
+  }
+  const active = L => L && (L.t || L.m || L.e || L.p);
+  function streaks() {
+    let cur = 0; const d = new Date(); if (!active(S.log[dkey(d)])) d.setDate(d.getDate() - 1);
+    while (active(S.log[dkey(d)])) { cur++; d.setDate(d.getDate() - 1); }
+    const ks = Object.keys(S.log).filter(k => active(S.log[k])).sort(); let best = 0, run = 0, prev = null;
+    for (const k of ks) { const dt = new Date(k + 'T00:00'); run = prev && Math.round((dt - prev) / 864e5) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = dt; }
+    return [cur, best];
+  }
+  const streakLine = n => n === 0 ? 'ابدأ اليوم، وتُحسب الأيام من أول ذكر.' : n === 1 ? 'بداية طيبة.' : n === 2 ? 'يومان متتاليان، ثبّتك الله.' : n <= 10 ? `${cnt(n, 'day')} متتالية، ثبّتك الله.` : n % 100 >= 11 ? `${cnt(n, 'day')} متتاليًا، ثبّتك الله.` : `${cnt(n, 'day')} متتالٍ، ثبّتك الله.`;
+  function renderStats() {
+    const R = range(), Ls = R.map(k => S.log[k]).filter(Boolean), sum = f => Ls.reduce((a, L) => a + (L[f] || 0), 0);
+    const tT = sum('t'), m = sum('m'), e = sum('e'), p = sum('p'), by = {};
+    Ls.forEach(L => Object.entries(L.by || {}).forEach(([k, v]) => by[k] = (by[k] || 0) + v));
+    const top = Object.entries(by).sort((a, b) => b[1] - a[1])[0];
+    const td = S.log[today()] || { t: 0 }, g = S.goal || 100, [cur, best] = streaks();
+    const empty = { d: 'لم تُسجَّل أذكار اليوم بعد.', w: 'لا إحصاءات لهذا الأسبوع بعد.', m: 'لا إحصاءات لهذا الشهر بعد.', a: 'لا إحصاءات بعد.' }[period];
+    const daysLine = n => n ? `أتممتها ${n} من ${cnt(R.length, "day")}` : 'لم تُتمّها بعد.';
+    return `<div class="adh-sub"><button class="lnk back" data-v="t">رجوع</button><b>الإحصاءات</b><span></span></div>
+      <div class="adh-goal">${ring(td.t / g, `<span class="in"><b>${fmt(td.t)}</b><span>من ${fmt(g)}</span></span>`, 'sm')}<div><b>هدف اليوم</b><p class="muted sm">${td.t >= g ? 'أحسنت، تقبّل الله ذكرك.' : `${cnt(g, 'tasbeeha')} في اليوم`}</p><button class="lnk" data-goal>تعديل الهدف</button></div></div>
+      <div class="seg adh-per">${[['d', 'اليوم'], ['w', 'الأسبوع'], ['m', 'الشهر'], ['a', 'الكل']].map(([k, l]) => `<button class="${period === k ? 'on' : ''}" data-per="${k}">${l}</button>`).join('')}</div>
+      ${Ls.some(active) ? '' : `<p class="adh-empty">${empty}</p>`}
+      <div class="adh-grid">
+        <div class="adh-st"><span>مجموع التسبيح</span><b>${tT ? cnt(tT, 'tasbeeha') : '0'}</b></div>
+        <div class="adh-st"><span>أيام متتالية</span><b>${cnt(cur, 'day')}</b><small>${streakLine(cur)}</small>${best > cur ? `<small>أطول سلسلة: ${cnt(best, 'day')}</small>` : ''}</div>
+        <div class="adh-st"><span>أذكار الصباح</span><b>${period === 'd' ? (m ? 'تمّت' : '—') : fmt(m)}</b><small>${period === 'd' ? (m ? 'تقبّل الله منك.' : 'لم تُتمّها بعد.') : daysLine(m)}</small></div>
+        <div class="adh-st"><span>أذكار المساء</span><b>${period === 'd' ? (e ? 'تمّت' : '—') : fmt(e)}</b><small>${period === 'd' ? (e ? 'تقبّل الله منك.' : 'لم تُتمّها بعد.') : daysLine(e)}</small></div>
+        <div class="adh-st w"><span>أذكار بعد الصلاة</span><b>${p ? cnt(p, 'salah') : '0'}</b><small>${period === 'd' ? `اليوم: ${p ? cnt(p, 'salah') : '0'} من 5` : ''}</small></div>
+        <div class="adh-st w"><span>أكثر ذكر</span><small>${top ? `أكثر ما سبّحت به: ${esc(short(top[0]))} (${fmt(top[1])})` : 'يظهر هنا الذكر الذي تكثر منه.'}</small></div>
+      </div>
+      <p class="adh-note">إحصاءاتك محفوظة على جهازك فقط، ولا تُرسل إلى أي خادم.</p>
+      <button class="adh-clear" data-clear>مسح الإحصاءات</button>`;
+  }
+
+  function renderCity() {
+    return `<div class="adh-sub"><button class="lnk back" data-v="back">رجوع</button><b>اختر المدينة</b><span></span></div>
+      <div class="adh-cities">${CITIES.map((c, i) => `<button class="${i === S.city ? 'on' : ''}" data-city="${i}">${esc(c[0])}</button>`).join('')}</div>
+      <p class="adh-note">تُحسب أوقات الشروق والغروب على الجهاز بطريقة أم القرى، ولا يُرسل موقعك إلى أي خادم.</p>`;
+  }
+
+  /* ---------- الهيكل ---------- */
+  let last = 'm';
+  function render() {
+    const b = body(); if (!b || !D) return;
+    const tabs = ['m', 'e', 't'], tb = tabs.includes(V) ? V : (V === 'flow' || V === 'stats' ? 't' : last);
+    const sy = b.scrollTop;
+    b.innerHTML = `<div class="seg adh-tabs">${[['m', 'أذكار الصباح'], ['e', 'أذكار المساء'], ['t', 'التسبيح']].map(([k, l]) => `<button class="${tb === k ? 'on' : ''}" data-v="${k}">${l}</button>`).join('')}</div>
+      <div class="adh-view" data-view="${V}">${V === 'm' || V === 'e' ? renderME(V) : V === 't' ? renderT() : V === 'flow' ? renderFlow() : V === 'stats' ? renderStats() : renderCity()}</div>`;
+    b.scrollTop = sy;
+  }
+  function go(v) { if (v === 'back') v = last; if (v === 'm' || v === 'e') last = v; V = v; render(); body().scrollTop = 0; }
+
+  function onClick(ev) {
+    const t = ev.target, q = s => t.closest(s);
+    let el;
+    if ((el = q('[data-v]'))) return go(el.dataset.v);
+    if ((el = q('.adh-read'))) { const pg = +el.dataset.page; A.closeSheets(); A.goPage(pg, false, true); return; }
+    if ((el = q('[data-preset]'))) { const i = +el.dataset.preset; S.tas.p = i; S.tas.target = PRESETS[i].n; S.tas.c = 0; S.tas.h = []; S.tas.msg = ''; save(); return render(); }
+    if (q('[data-tas]')) return tapTas();
+    if (q('[data-undo]')) { const T = S.tas; if (T.h.length && T.c > 0) { T.h.pop(); T.c--; addT((PRESETS[T.p] || PRESETS[0]).t, -1); save(); render(); } return; }
+    if (q('[data-reset]')) { if (S.tas.c && !confirm('تصفير العداد؟ سيبقى مجموع اليوم محفوظًا.')) return; S.tas.c = 0; S.tas.h = []; S.tas.msg = ''; save(); return render(); }
+    if ((el = q('[data-target]'))) {
+      let v = el.dataset.target;
+      if (v === 'c') { const r = prompt('عدد مخصص — اكتب العدد', S.tas.target || ''); if (r === null) return; v = parseInt(String(r).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10); if (!(v >= 1 && v <= 9999)) { toast('اكتب عددًا من 1 إلى 9999.'); return; } }
+      S.tas.target = +v; S.tas.msg = ''; save(); return render();
+    }
+    if (q('[data-flow]')) return tapFlow();
+    if (q('[data-fnext]')) { const F = S.flow; F.i++; if (F.i > 3) finishFlow(); save(); return render(); }
+    if (q('[data-fprev]')) { S.flow.i = Math.max(0, S.flow.i - 1); save(); return render(); }
+    if ((el = q('[data-fstep]'))) { S.flow.i = +el.dataset.fstep; save(); return render(); }
+    if (q('[data-frestart]')) { S.flow = { i: 0, c: [0, 0, 0, 0], skip: 0 }; save(); return render(); }
+    if ((el = q('[data-per]'))) { period = el.dataset.per; return render(); }
+    if (q('[data-goal]')) { const r = prompt('تعديل الهدف — اكتب العدد', S.goal); if (r === null) return; const v = parseInt(String(r).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10); if (!(v >= 1 && v <= 9999)) { toast('اكتب عددًا من 1 إلى 9999.'); return; } S.goal = v; save(); return render(); }
+    if (q('[data-clear]')) { if (!confirm('مسح كل الإحصاءات؟ لا يمكن التراجع.')) return; S.log = {}; save(); return render(); }
+    if ((el = q('[data-city]'))) { S.city = +el.dataset.city; save(); calcTimes(); return go('back'); }
+    if (q('details, summary, input, label, a')) return;
+    if ((el = q('.adh-card'))) { const m = V === 'flow' ? 'p' : V; if (m === 'm' || m === 'e' || m === 'p') tapCard(el, m); }
+  }
+  function onChange(ev) { const o = ev.target.dataset && ev.target.dataset.opt; if (!o) return; S[o] = ev.target.checked ? 1 : 0; save(); }
+
+  async function open(view) {
+    A.openSheet('adhkar');
+    const b = body();
+    if (!b._wired) { b._wired = 1; b.addEventListener('click', onClick); b.addEventListener('change', onChange); }
+    if (!D) {
+      b.innerHTML = '<p class="muted c" style="padding:40px 0">…</p>';
+      try { D = await (await fetch('data/adhkar.json')).json(); } catch (e) { b.innerHTML = '<p class="muted c">تعذّر فتح الأذكار. تحقّق من الاتصال ثم أعد المحاولة.</p>'; return; }
+    }
+    await loadAdhan(); calcTimes();
+    if (!V || view) { V = view || autoTab(); if (V === 'm' || V === 'e') last = V; }
+    render();
+  }
+  window.ADHKAR = { open, go, state: () => S, _reset: () => { S = def(); save(); } };
+})();

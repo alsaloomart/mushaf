@@ -1,0 +1,120 @@
+/* أذكاري — هادئ وفاتح؛ لوحة فهد: فحمي #1F2120، ذهبي #F2C230، رمادي #EAEAEA، أبيض */
+@font-face{font-family:'KFGQPC Hafs';src:url(../fonts/UthmanicHafs_V22.ttf) format('truetype');font-display:swap}
+#sh-adhkar{--a-ink:#1F2120;--a-sub:#6E706F;--a-line:#EAEAEA;--a-card:#fff;--a-soft:#F6F6F4;--a-gold:#F2C230;--a-gold2:#C99A0A;--a-tr:#EAEAEA}
+html[data-paper="beige"]:not(.dark) #sh-adhkar{--a-card:#FFFDF8;--a-soft:#F7F1E3;--a-line:#E9E1CE;--a-tr:#EDE6D4}
+html.dark #sh-adhkar{--a-ink:#ECEBE7;--a-sub:#A3A4A2;--a-line:#333534;--a-card:#232524;--a-soft:#1C1E1D;--a-tr:#333534;--a-gold2:#F2C230}
+html.glass #sh-adhkar{--a-ink:#F2F2F7;--a-sub:#AEAEB2;--a-line:rgba(255,255,255,.12);--a-card:var(--gl,rgba(255,255,255,.07));--a-soft:rgba(255,255,255,.04);--a-tr:rgba(255,255,255,.14)}
+#adhBody{color:var(--a-ink);padding-bottom:28px}
+.adh-tabs{position:sticky;top:0;z-index:2;margin:0 0 12px!important}
+html:not(.glass) .adh-tabs{box-shadow:0 0 0 6px var(--sheet,#fff)}
+.adh-city{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;color:var(--a-sub);margin:0 2px 10px}
+.adh-city b{color:var(--a-ink)}
+#sh-adhkar .lnk{background:none;border:0;color:var(--a-gold2);font-weight:700;font-size:.86rem;padding:6px 2px;white-space:nowrap}
+.adh-prog{background:var(--a-card);border:1px solid var(--a-line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.adh-prog .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.92rem}
+.adh-prog .ok{color:var(--a-gold2);font-size:.85rem;font-weight:700}
+.adh-bar{height:6px;border-radius:6px;background:var(--a-tr);overflow:hidden}
+.adh-bar i{display:block;height:100%;background:var(--a-gold);border-radius:6px;transition:width .25s}
+.adh-list{display:flex;flex-direction:column;gap:10px}
+.adh-card{position:relative;background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:14px 14px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .2s,border-color .2s}
+.adh-card.fin{opacity:.62}
+.adh-card.fin .adh-tap{background:var(--a-soft)}
+.adh-card:active{border-color:var(--a-gold)}
+.adh-x{font-size:1.1rem;line-height:2.05;margin:0 0 8px;font-family:'Thmanyah Sans',system-ui,sans-serif}
+.adh-pre{font-size:1rem;color:var(--a-sub)}
+.adh-q{margin:0 0 6px}
+.adh-bas{font-family:'KFGQPC Hafs';font-size:1.45rem;text-align:center;margin:2px 0 4px;line-height:2}
+.adh-qt{font-family:'KFGQPC Hafs';font-size:1.5rem;line-height:2.15;margin:0;text-align:justify}
+.adh-an{font-family:'KFGQPC Hafs';color:var(--a-gold2);font-size:1.1rem;white-space:nowrap}
+.adh-read{display:inline-flex;align-items:center;gap:6px;margin:4px 0 8px;padding:6px 12px;border-radius:999px;border:1px solid var(--a-gold);background:none;color:var(--a-ink);font-size:.84rem;font-weight:700}
+.adh-meta{border-top:1px dashed var(--a-line);padding-top:8px;margin-top:2px}
+.adh-src{font-size:.8rem;color:var(--a-sub);margin:0 0 4px;line-height:1.7}
+.adh-v{font-size:.85rem;margin:0 0 4px;line-height:1.8}
+.adh-v.weak{color:var(--a-sub);font-style:normal}
+.adh-g{font-size:.8rem;color:var(--a-sub);margin-top:2px}
+.adh-g summary{cursor:pointer;color:var(--a-sub)}
+.adh-g p{margin:6px 0 0;line-height:1.8}
+.adh-tag{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;margin:0 0 8px 6px}
+.adh-tag.d{background:var(--a-soft);color:var(--a-sub);border:1px solid var(--a-line)}
+.adh-tag.t{background:rgba(242,194,48,.18);color:var(--a-ink)}
+.adh-tap{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:9px 14px;border-radius:12px;border:0;background:rgba(242,194,48,.16);color:var(--a-ink);font:inherit}
+.adh-tap .cn{display:flex;align-items:baseline;gap:5px}
+.adh-tap .cn b{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.adh-tap .cn span{font-size:.8rem;color:var(--a-sub)}
+.adh-tap small{margin-inline-start:auto;font-size:.8rem;color:var(--a-sub)}
+.adh-tap svg.ok{width:20px;height:20px;fill:none;stroke:var(--a-gold2);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.adh-note{font-size:.78rem;color:var(--a-sub);line-height:1.8;margin:14px 2px 0}
+/* المسبحة */
+.adh-chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.adh-chips::-webkit-scrollbar{display:none}
+.adh-chips button{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.84rem}
+.adh-chips button.on{background:var(--a-ink);color:#fff;border-color:var(--a-ink)}
+html.dark .adh-chips button.on,html.glass .adh-chips button.on{background:var(--a-gold);color:#1F2120;border-color:var(--a-gold)}
+.adh-tas{display:flex;flex-direction:column;align-items:center;text-align:center}
+.adh-dh{font-size:1.2rem;line-height:1.9;margin:4px 6px 10px;min-height:2.2em}
+.adh-big{position:relative;width:min(260px,72vw);aspect-ratio:1;border-radius:50%;border:0;background:var(--a-card);box-shadow:0 8px 30px rgba(31,33,32,.10),inset 0 0 0 1px var(--a-line);padding:0;color:var(--a-ink);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s}
+.adh-big:active{transform:scale(.975)}
+html.dark .adh-big{box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 0 0 1px var(--a-line)}
+.adh-ring{position:absolute;inset:0;width:100%;height:100%}
+.adh-ring .rt{fill:none;stroke:var(--a-tr);stroke-width:9}
+.adh-ring .rf{fill:none;stroke:var(--a-gold);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .2s}
+.adh-big .in,.adh-goal .in,.adh-end .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.adh-big .in b{font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums;font-weight:700}
+.adh-big .in span{font-size:.92rem;color:var(--a-sub)}
+.adh-big .in small{font-size:.78rem;color:var(--a-sub);margin-top:6px;max-width:70%}
+.adh-big.fin .in small{color:var(--a-gold2);font-weight:700}
+.adh-ctl{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0 6px;flex-wrap:wrap}
+.adh-ctl>button{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.82rem}
+.adh-ctl>button:disabled{opacity:.4}
+.adh-ctl svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-tg{margin:0!important}
+.adh-tg button{flex:none;padding:7px 10px;font-size:.8rem}
+.adh-src.c,.adh-v.c,.c{text-align:center}
+.adh-today{font-size:.9rem;font-weight:700;margin:10px 0 4px}
+.adh-tog{display:flex;flex-direction:column;gap:6px;align-items:center;margin:6px 0 4px;font-size:.84rem;color:var(--a-sub)}
+.adh-tog label,.adh-tog1{display:flex;align-items:center;gap:6px;font-size:.84rem;color:var(--a-sub)}
+.adh-tog input,.adh-tog1 input{accent-color:#F2C230;width:17px;height:17px}
+.adh-entry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.adh-entry button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:start;padding:14px;border-radius:14px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink)}
+.adh-entry b{font-size:.95rem}.adh-entry span{font-size:.76rem;color:var(--a-sub);line-height:1.6}
+/* التدفق */
+.adh-sub{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+.adh-sub b{font-family:'Thmanyah Serif Display';font-size:1.1rem}
+.adh-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.adh-steps button{padding:7px 4px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-sub);font-size:.74rem;line-height:1.4}
+.adh-steps button.ok{color:var(--a-ink);border-color:var(--a-gold)}
+.adh-steps button.on{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120;font-weight:700}
+.adh-nav{display:flex;gap:10px;justify-content:center;margin:14px 0 8px}
+.adh-nav button{min-width:110px;padding:10px 16px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-weight:700}
+.adh-nav button.pri{background:var(--a-ink);color:#fff;border-color:var(--a-ink)}
+html.dark .adh-nav button.pri,html.glass .adh-nav button.pri{background:var(--a-gold);color:#1F2120;border-color:var(--a-gold)}
+.adh-nav button:disabled{opacity:.4}
+.adh-h4{font-size:.95rem;margin:22px 2px 10px;color:var(--a-sub)}
+.adh-end{text-align:center;padding:6px 0}
+.adh-end h3{font-family:'Thmanyah Serif Display';margin:12px 0 4px}
+.adh-ring.sm{position:absolute}
+.adh-end>.adh-ring.sm,.adh-end .in{position:relative}
+.adh-end{display:flex;flex-direction:column;align-items:center}
+.adh-end>svg{position:static!important;width:120px;height:120px}
+.adh-end>.in{margin-top:-120px;height:120px;width:120px}
+.adh-end .in b{font-size:1.8rem}.adh-end .in span{font-size:.75rem;color:var(--a-sub)}
+/* الإحصاءات */
+.adh-goal{display:flex;align-items:center;gap:16px;background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:14px;margin-bottom:12px;position:relative}
+.adh-goal>svg{position:static!important;width:112px;height:112px;flex:none}
+.adh-goal>.in{position:absolute!important;inset:auto!important;right:14px;top:14px;width:112px;height:112px}
+.adh-goal .in b{font-size:1.7rem}.adh-goal .in span{font-size:.75rem;color:var(--a-sub)}
+.adh-goal>div b{font-size:1rem}
+.adh-per{margin:0 0 12px!important}
+.adh-empty{font-size:.85rem;color:var(--a-sub);text-align:center;margin:4px 0 10px}
+.adh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.adh-st{display:flex;flex-direction:column;gap:4px;background:var(--a-card);border:1px solid var(--a-line);border-radius:14px;padding:12px}
+.adh-st.w{grid-column:span 2}
+.adh-st span{font-size:.78rem;color:var(--a-sub)}
+.adh-st b{font-size:1.15rem}
+.adh-st small{font-size:.76rem;color:var(--a-sub);line-height:1.6}
+.adh-clear{display:block;margin:12px auto 0;background:none;border:0;color:#B3261E;font-size:.84rem}
+html.dark .adh-clear,html.glass .adh-clear{color:#FF8A80}
+.adh-cities{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.adh-cities button{padding:10px 6px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.86rem}
+.adh-cities button.on{border-color:var(--a-gold);background:rgba(242,194,48,.16);font-weight:700}
+html.glass #sh-adhkar .adh-card,html.glass #sh-adhkar .adh-prog,html.glass #sh-adhkar .adh-st,html.glass #sh-adhkar .adh-goal,html.glass #sh-adhkar .adh-big,html.glass #sh-adhkar .adh-entry button{-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-color:var(--glb,rgba(255,255,255,.14))}

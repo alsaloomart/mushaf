@@ -654,3 +654,5 @@ html.dark .phimg,html.dark .pnimg{filter:invert(1) brightness(.9)}
 .ph.prt .phz{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:11px;font-weight:600;line-height:1;letter-spacing:0;white-space:nowrap;color:inherit;opacity:.78;pointer-events:none;z-index:1}
 .ph.prt .phz::before,.ph.prt .phz::after{content:"";display:inline-block;width:5px;height:5px;margin:0 6px;transform:rotate(45deg) translateY(-1px);border:1px solid currentColor;opacity:.7}
 .ph.prt .pnote:not([hidden]) ~ .phz{left:34%}
+/* v26w: ستة أزرار في الشريط العلوي (أذكاري) — على الشاشات الضيقة تصير الأيقونة فوق الاسم */
+@media (max-width:520px){.tbar button{flex-direction:column;gap:1px;font-size:10.5px;min-width:0}.tbar svg{width:17px;height:17px}}
