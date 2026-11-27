@@ -293,8 +293,7 @@ html.dark svg.tx{background:none!important;box-shadow:none!important}
 html.dark svg.tx{filter:invert(1) hue-rotate(180deg) brightness(.92)}
 html.dark svg.tx .pimg{mix-blend-mode:normal;filter:none}
 /* v26z3: زخارف الإطار وعلامات الآيات بلا بنّي في الليلي والزجاجي (مرشّح لا يمسّ بكسلات الحروف)، وخط ذهبي رفيع على حدّ إطار اسم السورة فقط */
-html.dark:not(.vfull) svg.tx .pimg{filter:url(#fNightOrn)}
-html.glass:not(.vfull) svg.tx .pimg{filter:url(#fGlassOrn)}
+/* (أُلغي في v26z5: مرشّح الزخارف على صور الأسطر كان يُعاد حسابه مع كل إطار من شريط التتبع فيُبطئ WebKit إلى 1–2 إطار/ث) */
 /* الخط الذهبي في طبقة SVG مستقلة فوق الصفحة (خارج مرشّح العكس)، فيظهر بلونه #F2C230 تمامًا */
 svg.sfr-ov{display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
 html.dark:not(.vfull) svg.sfr-ov{display:block}
