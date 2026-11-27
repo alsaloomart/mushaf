@@ -1,23 +1,30 @@
-/* Service worker — مصحف الحفظ
+/* Service worker — المصحف الذكي
  * - واجهة التطبيق وبيانات مواضع الآيات: تُخزن للعمل بدون إنترنت.
  * - صور صفحات المصحف (ملفات المجمع الرسمية، مسموح استخدامها في البرامج والمواقع): تُخزن دائمًا بعد أول فتح.
  * - خرائط التلاوات من Quran Foundation: 7 أيام كحد أقصى (التزامًا بشروطهم).
- * - ملفات التلاوة نفسها: بث مباشر فقط، لا تُخزن.
+ * - ملفات التلاوة: بث مباشر، إلا السور التي يحمّلها المستخدم بطلبه للاستماع بدون إنترنت
+ *   (كاش mushaf-audio-<القارئ>، لا يُحذف عند تحديث الإصدار، ويُحذف متى حذفها المستخدم).
  */
-const SHELL = 'mushaf-shell-v25';
+const SHELL = 'mushaf-shell-v26z12';
+const V = '26z12';   // يطابق ?v= في index.html
 const TAFSIR = 'mushaf-tafsir-v1';
 const PAGES = 'mushaf-pages-v2';
-const DATA = 'mushaf-data-v1';
+const DATA = 'mushaf-data-v3';
 const MAX_AGE = 7 * 24 * 3600 * 1000;
-const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js', 'manifest.json',
-  'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/quran-simple-clean.txt',
+const ASSETS = ['./', 'index.html', 'privacy.html', 'terms.html', ...['css/app.css', 'js/config.js', 'js/esc.js', 'js/quran-data.js', 'js/audio.js', 'js/store.js', 'js/tmatch.js', 'js/app.js', 'js/cloud.js', 'css/adhkar.css', 'js/adhkar.js'].map(f => f + '?v=' + V), 'manifest.json',
+  'data/ayah-map.json', 'data/meta.json', 'data/crop.json', 'data/lines.json', 'data/tmk.json', 'data/wl.json', 'data/timings/1102.json', 'data/timings/1254.json', 'data/timings/1133w.json', 'data/quran-simple-clean.txt', 'data/adhkar.json', 'js/adhan.js', 'fonts/UthmanicHafs_V22.ttf',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
-  'fonts/thmanyah-sans-Regular.woff2', 'fonts/thmanyah-sans-Bold.woff2', 'fonts/thmanyah-serif-display-Bold.woff2'];
+  'fonts/thmanyah-sans-Regular.woff2', 'fonts/thmanyah-sans-Bold.woff2', 'fonts/thmanyah-sans-Light.woff2', 'fonts/thmanyah-sans-Medium.woff2', 'fonts/thmanyah-serif-display-Bold.woff2'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (![SHELL, PAGES, DATA, TAFSIR].includes(k)) await caches.delete(k);
+    /* نمس فقط كاشات النسخة الحيّة القديمة — لا نحذف كاشات المعاينة ولا التلاوة المحمّلة أبدًا */
+    const keep = [SHELL, PAGES, DATA, TAFSIR];
+    for (const k of await caches.keys()) {
+      if (!k.startsWith('mushaf-') || k.startsWith('mushaf-preview-') || k.startsWith(AUDIO)) continue;   // كاشات المعاينة والتلاوة المحمّلة تبقى
+      if (!keep.includes(k)) await caches.delete(k);
+    }
     await purge();
     await self.clients.claim();
   })());
@@ -33,9 +40,36 @@ async function stamp(res) {
   const h = new Headers(res.headers); h.set('x-sw-time', String(Date.now()));
   return new Response(await res.clone().blob(), { status: res.status, statusText: res.statusText, headers: h });
 }
+/* السور المحمّلة: تُقدَّم من التخزين أولًا، مع دعم طلبات المقاطع (Range) التي يحتاجها مشغّل Safari */
+const AUDIO = 'mushaf-audio-';
+let DLSET = new Set();
+async function loadSet() {
+  const s = new Set();
+  for (const k of await caches.keys()) {
+    if (!k.startsWith(AUDIO)) continue;
+    for (const r of await (await caches.open(k)).keys()) if (/\.mp3(\?|$)/.test(r.url)) s.add(r.url);
+  }
+  DLSET = s;
+}
+const setReady = loadSet().catch(() => {});
+self.addEventListener('message', e => { if (e.data && e.data.type === 'dl-changed') e.waitUntil(loadSet().catch(() => {})); });
+async function audioHit(req) {
+  let r = null;
+  for (const k of await caches.keys()) { if (!k.startsWith(AUDIO)) continue; r = await (await caches.open(k)).match(req.url); if (r) break; }
+  if (!r) return fetch(req);
+  const range = req.headers.get('range');
+  if (!range) return r;
+  const b = await r.blob(), n = b.size, m = /bytes=(\d*)-(\d*)/.exec(range) || [];
+  let a = m[1] ? +m[1] : 0, z = m[2] ? +m[2] : n - 1;
+  if (!m[1] && m[2]) { a = Math.max(0, n - +m[2]); z = n - 1; }
+  z = Math.min(z, n - 1);
+  if (a > z) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${n}` } });
+  return new Response(b.slice(a, z + 1), { status: 206, headers: { 'Content-Type': 'audio/mpeg', 'Content-Range': `bytes ${a}-${z}/${n}`, 'Content-Length': String(z - a + 1), 'Accept-Ranges': 'bytes' } });
+}
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);
+  if (DLSET.has(req.url)) { e.respondWith(audioHit(req)); return; }
   if (u.origin === location.origin && u.pathname.includes('/tafsir/')) {
     // التفسير: يُحمَّل لكل سورة عند أول فتح ثم يبقى بدون إنترنت
     e.respondWith((async () => {
@@ -48,7 +82,7 @@ self.addEventListener('fetch', e => {
     })());
     return;
   }
-  if (u.origin === location.origin && (u.pathname.includes('/pages/') || u.pathname.includes('/lines/'))) {
+  if (u.origin === location.origin && (u.pathname.includes('/pages/') || u.pathname.includes('/lines/') || u.pathname.includes('/phdr/') || u.pathname.includes('/pnum/'))) {
     e.respondWith((async () => {
       const c = await caches.open(PAGES);
       const hit = await c.match(req.url);
@@ -64,9 +98,12 @@ self.addEventListener('fetch', e => {
       const c = await caches.open(SHELL);
       // الشبكة أولًا (التحديثات تظهر مباشرة)، والنسخة المخزنة بدون إنترنت
       // مع مهلة: إن كانت الشبكة ضعيفة جدًا تُعرض النسخة المخزنة بعد 4 ثوانٍ بدل الانتظار الطويل
-      const netP = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
-      const cached = await c.match(req, { ignoreSearch: true });
-      if (!cached) return (await netP) || (await c.match('index.html')) || Response.error();
+      // no-cache: يتحقق من الخادم دائمًا (لا يأخذ نسخة قديمة من كاش المتصفح)
+      const netP = fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
+      // الملفات تحمل رقم الإصدار (?v=): لا نعرض ملفًا من إصدار آخر بسبب المهلة، فلا تختلط ملفات قديمة بجديدة
+      const nav = req.mode === 'navigate';
+      const cached = await c.match(req, { ignoreSearch: nav });
+      if (!cached) return (await netP) || (await c.match(req, { ignoreSearch: true })) || (await c.match('index.html')) || Response.error();
       return (await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 4000))])) || cached;
     })());
     return;

@@ -1,0 +1,306 @@
+/* أذكاري — هادئ وفاتح؛ لوحة فهد: فحمي #1F2120، ذهبي #F2C230، رمادي #EAEAEA، أبيض */
+@font-face{font-family:'KFGQPC Hafs';src:url(../fonts/UthmanicHafs_V22.ttf) format('truetype');font-display:swap}
+#sh-adhkar{--a-ink:#1F2120;--a-sub:#6E706F;--a-line:#EAEAEA;--a-card:#fff;--a-soft:#F6F6F4;--a-gold:#F2C230;--a-gold2:#C99A0A;--a-tr:#EAEAEA}
+html[data-paper="beige"]:not(.dark) #sh-adhkar{--a-card:#FFFDF8;--a-soft:#F7F1E3;--a-line:#E9E1CE;--a-tr:#EDE6D4}
+html.dark #sh-adhkar{--a-ink:#ECEBE7;--a-sub:#A3A4A2;--a-line:#333534;--a-card:#232524;--a-soft:#1C1E1D;--a-tr:#333534;--a-gold2:#F2C230}
+html.glass #sh-adhkar{--a-ink:#F2F2F7;--a-sub:#AEAEB2;--a-line:rgba(255,255,255,.12);--a-card:var(--gl,rgba(255,255,255,.07));--a-soft:rgba(255,255,255,.04);--a-tr:rgba(255,255,255,.14)}
+#adhBody{color:var(--a-ink);padding-bottom:28px}
+.adh-tabs{position:sticky;top:0;z-index:2;margin:0 0 12px!important}
+html:not(.glass) .adh-tabs{box-shadow:0 0 0 6px var(--sheet,#fff)}
+.adh-city{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;color:var(--a-sub);margin:0 2px 10px}
+.adh-city b{color:var(--a-ink)}
+#sh-adhkar .lnk{background:none;border:0;color:var(--a-gold2);font-weight:700;font-size:.86rem;padding:6px 2px;white-space:nowrap}
+.adh-prog{background:var(--a-card);border:1px solid var(--a-line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.adh-prog .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.92rem}
+.adh-prog .ok{color:var(--a-gold2);font-size:.85rem;font-weight:700}
+.adh-bar{height:6px;border-radius:6px;background:var(--a-tr);overflow:hidden}
+.adh-bar i{display:block;height:100%;background:var(--a-gold);border-radius:6px;transition:width .25s}
+.adh-list{display:flex;flex-direction:column;gap:10px}
+.adh-card{position:relative;background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:14px 14px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .2s,border-color .2s}
+.adh-card.fin{opacity:.62}
+.adh-card.fin .adh-tap{background:var(--a-soft)}
+.adh-card:active{border-color:var(--a-gold)}
+.adh-x{font-size:1.1rem;line-height:2.05;margin:0 0 8px;font-family:'Thmanyah Sans',system-ui,sans-serif}
+.adh-pre{font-size:1rem;color:var(--a-sub)}
+.adh-q{margin:0 0 6px}
+.adh-bas{font-family:'KFGQPC Hafs';font-size:1.45rem;text-align:center;margin:2px 0 4px;line-height:2}
+.adh-qt{font-family:'KFGQPC Hafs';font-size:1.5rem;line-height:2.15;margin:0;text-align:justify}
+.adh-an{font-family:'KFGQPC Hafs';color:var(--a-gold2);font-size:1.1rem;white-space:nowrap}
+.adh-read{display:inline-flex;align-items:center;gap:6px;margin:4px 0 8px;padding:6px 12px;border-radius:999px;border:1px solid var(--a-gold);background:none;color:var(--a-ink);font-size:.84rem;font-weight:700}
+.adh-meta{border-top:1px dashed var(--a-line);padding-top:8px;margin-top:2px}
+.adh-src{font-size:.8rem;color:var(--a-sub);margin:0 0 4px;line-height:1.7}
+.adh-v{font-size:.85rem;margin:0 0 4px;line-height:1.8}
+.adh-v.weak{color:var(--a-sub);font-style:normal}
+.adh-g{font-size:.8rem;color:var(--a-sub);margin-top:2px}
+.adh-g summary{cursor:pointer;color:var(--a-sub)}
+.adh-g p{margin:6px 0 0;line-height:1.8}
+.adh-tag{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;margin:0 0 8px 6px}
+.adh-tag.d{background:var(--a-soft);color:var(--a-sub);border:1px solid var(--a-line)}
+.adh-tag.t{background:rgba(242,194,48,.18);color:var(--a-ink)}
+.adh-tap{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:9px 14px;border-radius:12px;border:0;background:rgba(242,194,48,.16);color:var(--a-ink);font:inherit}
+.adh-tap .cn{display:flex;align-items:baseline;gap:5px}
+.adh-tap .cn b{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.adh-tap .cn span{font-size:.8rem;color:var(--a-sub)}
+.adh-tap small{margin-inline-start:auto;font-size:.8rem;color:var(--a-sub)}
+.adh-tap svg.ok{width:20px;height:20px;fill:none;stroke:var(--a-gold2);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.adh-note{font-size:.78rem;color:var(--a-sub);line-height:1.8;margin:14px 2px 0}
+/* المسبحة */
+.adh-chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.adh-chips::-webkit-scrollbar{display:none}
+.adh-chips button{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.84rem}
+.adh-chips button.on{background:var(--a-ink);color:#fff;border-color:var(--a-ink)}
+html.dark .adh-chips button.on,html.glass .adh-chips button.on{background:var(--a-gold);color:#1F2120;border-color:var(--a-gold)}
+.adh-tas{display:flex;flex-direction:column;align-items:center;text-align:center}
+.adh-dh{font-size:1.2rem;line-height:1.9;margin:4px 6px 10px;min-height:2.2em}
+.adh-big{position:relative;width:min(260px,72vw);aspect-ratio:1;border-radius:50%;border:0;background:var(--a-card);box-shadow:0 8px 30px rgba(31,33,32,.10),inset 0 0 0 1px var(--a-line);padding:0;color:var(--a-ink);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s}
+.adh-big:active{transform:scale(.975)}
+html.dark .adh-big{box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 0 0 1px var(--a-line)}
+.adh-ring{position:absolute;inset:0;width:100%;height:100%}
+.adh-ring .rt{fill:none;stroke:var(--a-tr);stroke-width:9}
+.adh-ring .rf{fill:none;stroke:var(--a-gold);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .2s}
+.adh-big .in,.adh-goal .in,.adh-end .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.adh-big .in b{font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums;font-weight:700}
+.adh-big .in span{font-size:.92rem;color:var(--a-sub)}
+.adh-big .in small{font-size:.78rem;color:var(--a-sub);margin-top:6px;max-width:70%}
+.adh-big.fin .in small{color:var(--a-gold2);font-weight:700}
+.adh-ctl{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0 6px;flex-wrap:wrap}
+.adh-ctl>button{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.82rem}
+.adh-ctl>button:disabled{opacity:.4}
+.adh-ctl svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-tg{margin:0!important}
+.adh-tg button{flex:none;padding:7px 10px;font-size:.8rem}
+.adh-src.c,.adh-v.c,.c{text-align:center}
+.adh-today{font-size:.9rem;font-weight:700;margin:10px 0 4px}
+.adh-tog{display:flex;flex-direction:column;gap:6px;align-items:center;margin:6px 0 4px;font-size:.84rem;color:var(--a-sub)}
+.adh-tog label,.adh-tog1{display:flex;align-items:center;gap:6px;font-size:.84rem;color:var(--a-sub)}
+.adh-tog input,.adh-tog1 input{accent-color:#F2C230;width:17px;height:17px}
+.adh-entry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.adh-entry button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:start;padding:14px;border-radius:14px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink)}
+.adh-entry b{font-size:.95rem}.adh-entry span{font-size:.76rem;color:var(--a-sub);line-height:1.6}
+/* التدفق */
+.adh-sub{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+.adh-sub b{font-family:'Thmanyah Serif Display';font-size:1.1rem}
+.adh-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.adh-steps button{padding:7px 4px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-sub);font-size:.74rem;line-height:1.4}
+.adh-steps button.ok{color:var(--a-ink);border-color:var(--a-gold)}
+.adh-steps button.on{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120;font-weight:700}
+.adh-nav{display:flex;gap:10px;justify-content:center;margin:14px 0 8px}
+.adh-nav button{min-width:110px;padding:10px 16px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-weight:700}
+.adh-nav button.pri{background:var(--a-ink);color:#fff;border-color:var(--a-ink)}
+html.dark .adh-nav button.pri,html.glass .adh-nav button.pri{background:var(--a-gold);color:#1F2120;border-color:var(--a-gold)}
+.adh-nav button:disabled{opacity:.4}
+.adh-h4{font-size:.95rem;margin:22px 2px 10px;color:var(--a-sub)}
+.adh-end{text-align:center;padding:6px 0}
+.adh-end h3{font-family:'Thmanyah Serif Display';margin:12px 0 4px}
+.adh-ring.sm{position:absolute}
+.adh-end>.adh-ring.sm,.adh-end .in{position:relative}
+.adh-end{display:flex;flex-direction:column;align-items:center}
+.adh-end>svg{position:static!important;width:120px;height:120px}
+.adh-end>.in{margin-top:-120px;height:120px;width:120px}
+.adh-end .in b{font-size:1.8rem}.adh-end .in span{font-size:.75rem;color:var(--a-sub)}
+/* الإحصاءات */
+.adh-goal{display:flex;align-items:center;gap:16px;background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:14px;margin-bottom:12px;position:relative}
+.adh-goal>svg{position:static!important;width:112px;height:112px;flex:none}
+.adh-goal>.in{position:absolute!important;inset:auto!important;right:14px;top:14px;width:112px;height:112px}
+.adh-goal .in b{font-size:1.7rem}.adh-goal .in span{font-size:.75rem;color:var(--a-sub)}
+.adh-goal>div b{font-size:1rem}
+.adh-per{margin:0 0 12px!important}
+.adh-empty{font-size:.85rem;color:var(--a-sub);text-align:center;margin:4px 0 10px}
+.adh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.adh-st{display:flex;flex-direction:column;gap:4px;background:var(--a-card);border:1px solid var(--a-line);border-radius:14px;padding:12px}
+.adh-st.w{grid-column:span 2}
+.adh-st span{font-size:.78rem;color:var(--a-sub)}
+.adh-st b{font-size:1.15rem}
+.adh-st small{font-size:.76rem;color:var(--a-sub);line-height:1.6}
+.adh-clear{display:block;margin:12px auto 0;background:none;border:0;color:#B3261E;font-size:.84rem}
+html.dark .adh-clear,html.glass .adh-clear{color:#FF8A80}
+.adh-cities{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.adh-cities button{padding:10px 6px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.86rem}
+.adh-cities button.on{border-color:var(--a-gold);background:rgba(242,194,48,.16);font-weight:700}
+html.glass #sh-adhkar .adh-card,html.glass #sh-adhkar .adh-prog,html.glass #sh-adhkar .adh-st,html.glass #sh-adhkar .adh-goal,html.glass #sh-adhkar .adh-big,html.glass #sh-adhkar .adh-entry button{-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-color:var(--glb,rgba(255,255,255,.14))}
+/* v26x: المسبحة شاشة عدّ فقط — صف واحد صغير تحت الدائرة */
+.adh-ctl{gap:14px;margin:14px 0 4px;flex-wrap:nowrap}
+.adh-ctl>button.ib{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+.adh-ctl>button.ib svg{width:18px;height:18px}
+.adh-tsel{position:relative}
+.adh-tsel .chip{display:inline-flex;align-items:center;gap:4px;padding:8px 12px 8px 8px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.84rem;font-weight:700;font-variant-numeric:tabular-nums}
+.adh-tsel .chip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-menu{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;min-width:128px;padding:4px;border-radius:12px;background:var(--a-card);border:1px solid var(--a-line);box-shadow:0 8px 24px rgba(31,33,32,.16)}
+html.glass .adh-menu{background:#2a2c2b}
+.adh-menu button{padding:9px 12px;border:0;background:none;color:var(--a-ink);font-size:.86rem;text-align:start;border-radius:8px}
+.adh-menu button[aria-checked="true"]{background:rgba(242,194,48,.2);font-weight:700}
+.adh-goal .in span.met{display:inline-flex;align-items:center;gap:3px;color:var(--a-gold2);font-weight:700}
+.adh-goal .in span.met svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.adh-step{margin:0 0 6px;padding-inline-start:10px;border-inline-start:3px solid transparent}
+.adh-step.on{border-inline-start-color:var(--a-gold)}
+.adh-sc{font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:.78rem;color:var(--a-sub);white-space:nowrap}
+/* v26x: اختيار الذكر — زر واحد يفتح قائمة بأسماء كاملة (لا قطع للكلمات) */
+.adh-psel{position:relative;display:flex;justify-content:center;margin:0 0 6px}
+.adh-psel .chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:8px 12px 8px 8px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.9rem;font-weight:700;white-space:normal;text-align:center}
+.adh-psel .chip svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-menu.wide{min-width:min(300px,86vw);max-height:60vh;overflow:auto}
+.adh-menu.wide button{white-space:normal;line-height:1.7}
+.adh-st b.s{font-size:.95rem;font-weight:700;line-height:1.6}
+#adhBody{padding-bottom:calc(40px + var(--sab,0px))}
+.adh-entry span.lnk2{color:var(--a-gold2);font-weight:700}
+/* v26z — أذكار الصباح والمساء في صفحة واحدة: بطاقات أخف، شريط الإنجاز ثابت أعلى القائمة، والبطاقة المكتملة تنطوي بهدوء */
+.adh-view[data-view="m"] .adh-prog,.adh-view[data-view="e"] .adh-prog{position:sticky;top:42px;z-index:1;padding:9px 14px;margin-bottom:10px;box-shadow:0 6px 14px -10px rgba(31,33,32,.25)}
+.adh-view[data-view="m"] .adh-prog .row,.adh-view[data-view="e"] .adh-prog .row{margin-bottom:6px}
+html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[data-view="e"] .adh-prog{background:var(--a-card)}
+html.glass #sh-adhkar .adh-view[data-view="m"] .adh-prog,html.glass #sh-adhkar .adh-view[data-view="e"] .adh-prog{background:rgba(30,30,32,.72)}
+.adh-view[data-view="m"] .adh-list,.adh-view[data-view="e"] .adh-list{gap:8px}
+.adh-view[data-view="m"] .adh-card,.adh-view[data-view="e"] .adh-card{padding:11px 13px 9px;border-radius:14px;transition:opacity .35s,border-color .2s}
+.adh-view[data-view="m"] .adh-x,.adh-view[data-view="e"] .adh-x{font-size:1.02rem;line-height:1.95;margin-bottom:6px}
+.adh-view[data-view="m"] .adh-pre,.adh-view[data-view="e"] .adh-pre{font-size:.92rem;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-bas,.adh-view[data-view="e"] .adh-bas{font-size:1.22rem;line-height:1.9;margin:0 0 2px}
+.adh-view[data-view="m"] .adh-qt,.adh-view[data-view="e"] .adh-qt{font-size:1.26rem;line-height:2}
+.adh-view[data-view="m"] .adh-an,.adh-view[data-view="e"] .adh-an{font-size:.95rem}
+.adh-view[data-view="m"] .adh-read,.adh-view[data-view="e"] .adh-read{margin:2px 0 6px;padding:5px 11px;font-size:.8rem}
+.adh-view[data-view="m"] .adh-meta,.adh-view[data-view="e"] .adh-meta{padding-top:6px}
+.adh-view[data-view="m"] .adh-src,.adh-view[data-view="e"] .adh-src{font-size:.76rem;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-v,.adh-view[data-view="e"] .adh-v{font-size:.8rem;line-height:1.75;margin-bottom:2px}
+.adh-view[data-view="m"] .adh-tap,.adh-view[data-view="e"] .adh-tap{margin-top:8px;padding:7px 12px}
+.adh-view[data-view="m"] .adh-tap .cn b,.adh-view[data-view="e"] .adh-tap .cn b{font-size:1.12rem}
+/* البطاقة المكتملة: تنطوي إلى سطرين خافتين مع علامة الإتمام، وتنفتح بلمسة لإعادة القراءة */
+.adh-card.fin{opacity:.58}
+.adh-card.shut{padding-top:8px;padding-bottom:7px}
+.adh-card.shut .adh-meta,.adh-card.shut .adh-read,.adh-card.shut .adh-bas,.adh-card.shut .adh-pre{display:none}
+.adh-shut-t{margin:0;font-size:.95rem;font-weight:700;line-height:1.7;color:var(--a-ink)}
+.adh-card.shut .adh-tap{margin-top:6px;padding:5px 12px}
+.adh-card.shut .adh-tap .cn b{font-size:1rem}
+@media (prefers-reduced-motion:reduce){.adh-card{transition:none}}
+/* المسبحة: مجموع اليوم أوضح (نحو 1.35 ضعفًا) والرقم أثقل */
+.adh-today{font-size:1.2rem;font-weight:700;margin:14px 0 6px;line-height:1.5;display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap}
+.adh-today .n{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--a-ink);line-height:1}
+html.dark .adh-today .n,html.glass .adh-today .n{color:var(--a-gold)}
+/* v26z — أربع تبويبات: «متابعة الفجر» */
+#sh-adhkar .adh-tabs button{font-size:.8rem;padding:8px 2px;white-space:nowrap;min-width:0}
+html.glass #sh-adhkar .adh-tabs{gap:5px}
+html.glass #sh-adhkar .adh-tabs button{padding:8px 4px}
+@media (max-width:370px){#sh-adhkar .adh-tabs button{font-size:.74rem}}
+.adh-fdate{text-align:center;font-size:.86rem;color:var(--a-sub);margin:2px 0 2px;line-height:1.7}
+.adh-fday{text-align:center;font-size:.95rem;font-weight:700;margin:0 0 12px}
+.adh-big .in em.adh-fcta{font-style:normal;font-size:1.05rem;font-weight:800;color:var(--a-ink);margin-top:6px}
+html.dark .adh-big .in em.adh-fcta,html.glass .adh-big .in em.adh-fcta{color:var(--a-gold)}
+.adh-big .in em.adh-fcta+small{margin-top:2px}
+.adh-big[aria-disabled="true"]:active{transform:none}
+.adh-fy{font-size:.82rem}
+.adh-fgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;width:100%;max-width:340px;margin:14px auto 8px;direction:rtl}
+.fd{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:50%;font-size:.7rem;font-variant-numeric:tabular-nums;border:1.5px solid var(--a-line);color:var(--a-sub);background:transparent}
+.fd.f-done{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120;font-weight:700}
+.fd.f-miss{background:var(--a-soft);border-color:var(--a-line);color:var(--a-sub);text-decoration:line-through;text-decoration-thickness:1px}
+.fd.f-today{border-color:var(--a-gold);color:var(--a-ink);font-weight:700;box-shadow:0 0 0 2px rgba(242,194,48,.25)}
+.fd.f-up{opacity:.7}
+.adh-fleg{display:flex;justify-content:center;gap:14px;font-size:.76rem;color:var(--a-sub);margin:2px 0 4px}
+.adh-fleg span{display:inline-flex;align-items:center;gap:5px}
+.adh-fleg i.fd{width:12px;height:12px;font-size:0;border-width:1.5px;text-decoration:none}
+.adh-entry.one{grid-template-columns:1fr}
+html:not(.glass) .adh-view[data-view="m"] .adh-prog,html:not(.glass) .adh-view[data-view="e"] .adh-prog{box-shadow:0 -6px 0 0 var(--sheet,#fff),0 6px 14px -10px rgba(31,33,32,.25)}
+
+/* v26z3 — «متابعة الصلاة»: الصلوات الخمس وتقويم بدوائر (هجري / اليوم / ميلادي) */
+.adh-pday{background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:12px;margin:0 0 12px}
+.adh-pdh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.adh-pdh b{font-size:.98rem}.adh-pdh span{font-size:.84rem;color:var(--a-sub);font-variant-numeric:tabular-nums}
+.adh-pdd{margin:2px 0 0;font-size:.78rem;color:var(--a-sub)}
+.adh-pbtns{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 6px}
+.adh-pbtns button{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:58px;padding:8px 2px;border-radius:14px;border:1.5px solid var(--a-line);background:var(--a-soft);color:var(--a-ink);font:inherit;font-size:.8rem;font-weight:700;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.adh-pbtns button svg{width:20px;height:20px;fill:none;stroke:var(--a-line);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;border-radius:50%;border:1.5px solid var(--a-line);padding:2px;box-sizing:border-box}
+.adh-pbtns button.on{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120}
+.adh-pbtns button.on svg{stroke:#1F2120;border-color:#1F2120}
+.adh-phint{display:block;font-size:.74rem;color:var(--a-sub);line-height:1.6}
+.adh-pday .lnk{margin-top:2px}
+#sh-adhkar .adh-pf{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:4px 0 10px}
+#sh-adhkar .adh-pf button{font-size:.76rem;padding:7px 0;min-width:0;white-space:nowrap}
+.adh-cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;direction:rtl;margin:0 0 8px}
+.pd{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;aspect-ratio:1;border-radius:50%;border:1.5px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font:inherit;padding:0;line-height:1.25;font-variant-numeric:tabular-nums;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pd .h{font-size:.72rem;font-weight:700}
+.pd b{font-size:.68rem;font-weight:600;color:var(--a-sub)}
+.pd .g{font-size:.66rem;color:var(--a-sub)}
+.pd em{position:absolute;top:-4px;inset-inline-start:50%;transform:translateX(50%);font-style:normal;font-size:.62rem;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--a-card);border:1px solid var(--a-line);color:var(--a-ink);direction:ltr}
+.pd.p-done{background:var(--a-gold);border-color:var(--a-gold);color:#1F2120}
+.pd.p-done b,.pd.p-done .g{color:#1F2120}
+.pd.p-done em{background:#1F2120;color:#F2C230;border-color:#1F2120}
+.pd.p-part{border-color:var(--a-gold);background:rgba(242,194,48,.14)}
+.pd.p-miss{background:var(--a-soft);color:var(--a-sub)}
+.pd.p-miss .h{font-weight:600}
+.pd.p-up{opacity:.55}
+.pd.is-t{box-shadow:0 0 0 2px var(--a-card),0 0 0 4px var(--a-gold)}
+.pd.sel:not(.is-t){box-shadow:0 0 0 2px var(--a-card),0 0 0 4px var(--a-ink)}
+.pd:disabled{cursor:default}
+.adh-fleg{flex-wrap:wrap;row-gap:4px}
+.adh-fleg i.pdl{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--a-line)}
+.adh-fleg i.p-done{background:var(--a-gold);border-color:var(--a-gold)}
+.adh-fleg i.p-part{background:rgba(242,194,48,.14);border-color:var(--a-gold)}
+.adh-fleg i.p-miss{background:var(--a-soft)}
+.adh-fleg i.p-up{opacity:.55}
+.adh-pper{background:var(--a-card);border:1px solid var(--a-line);border-radius:16px;padding:12px 14px;margin-top:12px}
+.adh-pph{display:block;font-size:.92rem;margin-bottom:6px}
+.adh-prow{display:grid;grid-template-columns:52px 1fr auto 40px;align-items:center;gap:8px;padding:6px 0;font-size:.82rem}
+.adh-prow b{font-weight:700}.adh-prow span{color:var(--a-sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.adh-prow em{font-style:normal;font-weight:800;text-align:end;font-variant-numeric:tabular-nums}
+.adh-prow .adh-bar{margin:0}
+@media (max-width:370px){.adh-cal{grid-template-columns:repeat(3,1fr);gap:7px}.adh-pbtns button{font-size:.74rem}#sh-adhkar .adh-pf button{font-size:.7rem}}
+/* v26z3: الزجاجي: شريط التبويبات الثابت بخلفية معتمة حتى لا تظهر الدوائر من خلاله عند التمرير */
+html.glass #sh-adhkar .adh-tabs{background:#1F2120;box-shadow:0 6px 0 0 #1F2120}
+
+/* v26z7 — التقويم: دوائر أصغر رمادية فاتحة، حلقة ذهبية رفيعة تمتلئ بعدد الصلوات، نقطة ذهبية لليوم فقط، بلا تعبئة صفراء */
+#sh-adhkar{--a-pd:#F1F1EF;--a-pdt:#E2E2DF}
+html[data-paper="beige"]:not(.dark) #sh-adhkar{--a-pd:#F4F1EA;--a-pdt:#E4DFD3}
+html.dark #sh-adhkar{--a-pd:#262827;--a-pdt:#3A3C3B}
+.adh-cal{grid-template-columns:repeat(4,1fr);gap:8px 6px}
+.pd,.pd.p-done,.pd.p-part,.pd.p-miss,.pd.p-today{background:var(--a-pd);border:0;color:var(--a-ink);box-shadow:none}
+.pd .pr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pd .pr .tr{fill:none;stroke:var(--a-pdt);stroke-width:2.5}
+.pd .pr .fl{fill:none;stroke:var(--a-gold);stroke-width:3.2;stroke-linecap:round}
+.pd .h{font-size:.68rem;font-weight:700;position:relative}
+.pd b{font-size:.6rem;font-weight:600;color:var(--a-sub);position:relative;white-space:nowrap}
+.pd .g{font-size:.6rem;color:var(--a-sub);position:relative}
+.pd.p-done b,.pd.p-done .g{color:var(--a-sub)}
+.pd.p-miss .h{color:var(--a-sub)}
+.pd.p-up{opacity:.45}
+.pd .tdot{position:absolute;bottom:9%;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--a-gold)}
+.pd.is-t{box-shadow:none}
+.pd.is-t .h{color:var(--a-ink)}
+.pd.sel:not(.is-t){box-shadow:0 0 0 1.5px var(--a-sub)}
+.pd em{display:none}
+/* أزرار الصلوات: بلا تعبئة صفراء — إطار ذهبي رفيع وعلامة ذهبية صغيرة */
+.adh-pbtns button.on{background:var(--a-card);border-color:var(--a-gold);color:var(--a-ink)}
+.adh-pbtns button.on svg{stroke:#1F2120;border-color:var(--a-gold);background:var(--a-gold)}
+/* مفتاح الألوان على شكل الحلقات نفسها */
+.adh-fleg i.pdl{background:var(--a-pd);border:2px solid var(--a-pdt)}
+.adh-fleg i.p-done{background:var(--a-pd);border-color:var(--a-gold)}
+.adh-fleg i.p-part{background:var(--a-pd);border-color:var(--a-gold) var(--a-gold) var(--a-pdt) var(--a-pdt)}
+.adh-fleg i.p-miss{background:var(--a-pd)}
+.adh-fleg i.p-up{opacity:.45}
+html.dark .pd.p-part,html.dark .adh-fleg i.p-part{background:var(--a-pd)}
+@media (max-width:370px){.adh-cal{grid-template-columns:repeat(4,1fr);gap:7px 5px}.pd .h{font-size:.64rem}.pd b,.pd .g{font-size:.56rem}}
+
+/* v26z9 (سفيان) — التقويم الأسبوعي: 7 أعمدة تبدأ بالأحد، دائرة نحو 40px، حلقة ذهبية نحو 2px، رقم هجري وتحته الميلادي باهتًا، الشهران في الرأس */
+.adh-cal2{margin:4px 0 8px}
+.adh-calh{display:flex;flex-direction:column;align-items:center;gap:1px;margin:0 0 8px;text-align:center}
+.adh-calh b{font-size:.95rem;font-weight:700;color:var(--a-ink)}
+.adh-calh span{font-size:.78rem;color:var(--a-sub)}
+.adh-wdays,.adh-wk{display:grid;grid-template-columns:repeat(7,1fr);direction:rtl;justify-items:center}
+.adh-wdays{margin:0 0 4px}
+.adh-wdays span{font-size:.72rem;color:var(--a-sub);line-height:1.6}
+.adh-wk{row-gap:6px}
+.pc{position:relative;width:40px;height:40px;border-radius:50%;border:0;padding:0;background:transparent;color:var(--a-ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;cursor:pointer}
+.pc-e{cursor:default}
+.pc .pr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pc .pr .tr{fill:none;stroke:var(--a-pdt);stroke-width:2}
+.pc .pr .fl{fill:none;stroke:var(--a-gold);stroke-width:2;stroke-linecap:round}
+.pc .h{position:relative;font-size:.86rem;font-weight:700}
+.pc .g{position:relative;font-size:.56rem;color:var(--a-sub);opacity:.75;margin-top:2px}
+.pc.p-miss .h{color:var(--a-sub);font-weight:600}
+.pc.p-up{opacity:.4;cursor:default}
+.pc .tdot{position:absolute;bottom:-5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--a-gold)}
+.pc.sel:not(.is-t){box-shadow:0 0 0 1.5px var(--a-sub)}
+.pc:disabled{cursor:default}
+.adh-fleg i.pdl{width:11px;height:11px;border-width:1.5px;background:transparent}
+.adh-fleg i.p-done,.adh-fleg i.p-part{background:transparent}
+
+/* v26z10: زر «المصدر» — صغير، خط رفيع بأسلوب الأيقونات، بلا تعبئة ذهبية */
+.adh-slink{position:relative;display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:3px 9px;min-height:24px;border:1px solid var(--a-line);border-radius:999px;color:var(--a-ink);text-decoration:none;font-size:.76rem;line-height:1;vertical-align:middle;background:none}
+.adh-slink svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.adh-slink::after{content:"";position:absolute;inset:-10px -4px}
+.adh-slink:active{opacity:.6}

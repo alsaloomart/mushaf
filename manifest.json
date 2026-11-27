@@ -1,13 +1,13 @@
 {
-  "name": "مصحف الحفظ — مصحف المدينة النبوية",
-  "short_name": "مصحف الحفظ",
+  "name": "المصحف الذكي (معاينة) — مصحف المدينة النبوية",
+  "short_name": "المصحف الذكي (معاينة)",
   "description": "مصحف المدينة النبوية (مجمع الملك فهد) بتجربة تفاعلية للحفظ والمراجعة",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/mushaf/",
+  "scope": "/mushaf/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#1F2120",
   "theme_color": "#1F2120",
   "icons": [
