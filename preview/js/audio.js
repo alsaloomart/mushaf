@@ -6,7 +6,7 @@ const AU = (() => {
   const API = 'https://api.quran.com/api/v4';
   const RECITERS = [
     { id: 6, name: 'محمود خليل الحصري', style: 'مرتّل' },
-    { id: 12, name: 'محمود خليل الحصري', style: 'المصحف المعلّم' },
+    { id: 12, name: 'محمود خليل الحصري', style: 'المصحف المعلّم، تلاوة متأنية للتعلّم' },
     { id: 7, name: 'مشاري راشد العفاسي', style: 'مرتّل' },
     { id: 9, name: 'محمد صديق المنشاوي', style: 'مرتّل' },
     { id: 3, name: 'عبد الرحمن السديس', style: 'مرتّل' },
@@ -18,10 +18,10 @@ const AU = (() => {
     { id: 1254, name: 'بدر التركي', style: 'مرتّل', src: 'mp3quran', mq: 254, server: 'https://cdn.mp3quran.net/audio/badr-turki/r1/', tfile: 'data/timings/1254.json' },
     // MP3Quran: القارئ 102 «ماهر المعيقلي». مصحف 133 «حفص عن عاصم - المصحف المجود» له توقيت آيات منشور (ayat_timing read=133)،
     // ومصحف 102 «حفص عن عاصم - مرتل» بلا توقيت: السورة كاملة فقط.
-    { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=', wfile: 'data/timings/1133w.json' },
+    { id: 1133, name: 'ماهر المعيقلي', style: 'مجوّد، تلاوة متأنية', src: 'mp3quran', mq: 133, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r3/', timing: 'https://www.mp3quran.net/api/v3/ayat_timing?read=133&surah=', wfile: 'data/timings/1133w.json' },
     { id: 1102, name: 'ماهر المعيقلي', style: 'مرتّل', src: 'mp3quran', mq: 102, server: 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/', tfile: 'data/timings/1102.json' }
   ];
-  const NOTIME_MSG = 'هذه السورة متاحة بهذا الصوت للتلاوة كاملة فقط حاليًا، بلا تحديد آية أو تكرار.';
+  const NOTIME_MSG = 'هذا الصوت متاح لتلاوة السورة كاملة فقط، دون تحديد آية أو تكرار.';
   const maps = new Map();
   function chapterMap(rid, s) {
     const id = rid + ':' + s;

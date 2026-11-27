@@ -831,12 +831,12 @@
   const openHub = openWirdPanel;
   function openTilawa() {
     openList('التلاوة',
-      `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ من أول آية في هذه الصفحة، أو اضغط على آية في الصفحة أولًا.'}</p>` +
+      `<p class="muted sm">${sel ? 'الآية المحددة: ' + esc(rangeLabel(sel.a, sel.b)) : 'تبدأ التلاوة من أول آية في هذه الصفحة، أو اضغط على آية لتبدأ منها.'}</p>` +
       `<div class="seg" id="lMode" role="radiogroup" aria-label="طريقة الاستماع">${[['surah', 'السورة كاملة'], ['ayah', 'الآية أو المقطع']].map(([v, n]) => `<button data-lm="${v}" role="radio" aria-checked="${listenMode() === v}" class="${listenMode() === v ? 'on' : ''}">${n}</button>`).join('')}</div>` +
       tdlHTML() +
-      hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'من الآية المحددة إلى آخر السورة بلا توقف، والصفحة تتقلب مع التلاوة' : 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
-      hi('repeat', 'repeat', 'التكرار', 'كرّر الآية أو المقطع بعدد تختاره') +
-      hi('range', 'range', 'تحديد مقطع', 'اختر أول آية ثم آخر آية'), 'tilawa');
+      hi('play', 'listen', 'استماع', listenMode() === 'surah' ? 'تستمر التلاوة حتى آخر السورة، وتتقلب الصفحات معها' : 'تلاوة الآية أو المقطع المحدد مرة واحدة') +
+      hi('repeat', 'repeat', 'تكرار', 'كرّر الآية أو المقطع بالعدد الذي تختاره') +
+      hi('range', 'range', 'تحديد مقطع', 'اختر أول آية في المقطع، ثم آخر آية'), 'tilawa');
     tdlPaint();
   }
   /* «تنزيل السورة» في لوحة التلاوة: اختصار لتحميل السورة الحالية بصوت القارئ الحالي، بنفس منطق سهم الفهرس وحالاته */
@@ -844,7 +844,7 @@
   function tdlHTML() {
     const sNo = tdlSurah(); if (!sNo) return '';
     const c = chapters[sNo - 1], r = AU.reciter(ST.get().reciter);
-    return `<button class="li hub tdl" data-h="tdl" data-s="${sNo}" data-rid="${r.id}" data-name="${c.name_arabic}"><span class="n tdlic" data-ic="dl">${IXI.dl}</span><span class="m"><b>تنزيل السورة</b><small>سورة ${c.name_arabic} بصوت ${r.name}، لتعمل بدون إنترنت</small></span></button>`;
+    return `<button class="li hub tdl" data-h="tdl" data-s="${sNo}" data-rid="${r.id}" data-name="${c.name_arabic}"><span class="n tdlic" data-ic="dl">${IXI.dl}</span><span class="m"><b>تنزيل السورة</b><small>سورة ${c.name_arabic} بصوت ${r.name}، للاستماع دون إنترنت</small></span></button>`;
   }
   async function tdlPaint() {
     const b = document.querySelector('#hubBody .tdl'); if (!b) return;
@@ -853,10 +853,10 @@
     const stt = j ? null : (await AU.dl.status(rid)).get(sNo);
     if (!b.isConnected) return;
     const ic = b.querySelector('.tdlic'), sm = b.querySelector('.m small'), bb = b.querySelector('.m b');
-    let k = 'dl', lab = 'تنزيل السورة', sub = `سورة ${nm} بصوت ${r.name}، لتعمل بدون إنترنت`;
+    let k = 'dl', lab = 'تنزيل السورة', sub = `سورة ${nm} بصوت ${r.name}، للاستماع دون إنترنت`;
     if (j) { const f = j.total ? j.got / j.total : 0; k = 'run'; lab = 'جارٍ تنزيل السورة'; sub = (j.state === 'queued' ? 'في الانتظار' : j.total ? `${Math.floor(f * 100)}% · ${MB(j.total)}` : 'جارٍ التنزيل') + ' · اضغط للإلغاء'; ic.innerHTML = IXI.run(f); ic.dataset.ic = 'run'; }
-    else if (stt === 'done') { k = 'done'; lab = 'تم تنزيل السورة'; sub = `سورة ${nm} بصوت ${r.name} تعمل بدون إنترنت · اضغط لحذفها`; }
-    else if (stt === 'part') { sub = 'تنزيل لم يكتمل · اضغط للمتابعة'; }
+    else if (stt === 'done') { k = 'done'; lab = 'السورة متاحة دون إنترنت'; sub = `بصوت ${r.name} · اضغط لإزالة التنزيل`; }
+    else if (stt === 'part') { sub = 'التنزيل لم يكتمل · اضغط للمتابعة'; }
     if (k !== 'run' && ic.dataset.ic !== k) { ic.innerHTML = IXI[k]; ic.dataset.ic = k; }
     b.classList.toggle('done', k === 'done'); b.classList.toggle('run', k === 'run');
     bb.textContent = lab; sm.textContent = sub;
@@ -893,7 +893,7 @@
        <div class="swatches" id="sPaper">${PAPERS.map(([k, n, c]) => `<button data-paper="${k}" class="${k === cur ? 'on' : ''}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
        <p class="muted sm">لون الخلفية للعرض فقط؛ نص المصحف كما هو.</p>
        <label class="lbl">القارئ</label>` +
-      `<div class="rgrid">${AU.RECITERS.map(r => `<button class="rcard${r.id === rid ? ' on' : ''}" data-r="${r.id}" aria-pressed="${r.id === rid}"><span class="rc-h"><b>${r.name}</b>${r.id === rid ? CK : ''}</span><small>${r.style}</small><span class="rbadge${r.notime ? ' off' : ''}">${r.notime ? 'السورة كاملة فقط' : 'تتبّع الآيات مع التظليل المتحرك'}</span></button>`).join('')}</div>` +
+      `<div class="rgrid">${AU.RECITERS.map(r => `<button class="rcard${r.id === rid ? ' on' : ''}" data-r="${r.id}" aria-pressed="${r.id === rid}"><span class="rc-h"><b>${r.name}</b>${r.id === rid ? CK : ''}</span><small>${r.style}</small><span class="rbadge${r.notime ? ' off' : ''}">${r.notime ? 'السورة كاملة فقط' : 'تظليل الآية أثناء التلاوة'}</span></button>`).join('')}</div>` +
       `<label class="lbl">التنزيلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
@@ -2375,7 +2375,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26y2';
+  window.__BUILD = '26y3';
   window.__app = { closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
