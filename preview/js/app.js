@@ -459,10 +459,30 @@
      لا مرشّح يُعاد حسابه مع كل إطار من شريط التتبع (هذا ما أبطأ v26z4). الصورة الأصلية وبكسلات الحروف كما هي. */
   const ORN = new Map(), ORNQ = [];
   let ornBusy = false;
-  const ornOn = () => document.documentElement.classList.contains('dark') && !viewFull();
-  function ornHref(p) { const u = ORN.get(p); return typeof u === 'string' ? u : ''; }
+  /* v26z17: وفي «الصفحة بإطارها» (صور pages/) في الليلي والزجاجي: الإطار وإطارات أسماء السور وعلامات الآيات بالأبيض.
+     الطريقة نفسها (صورة شفافة تُحسب مرة لكل صفحة وتُخزَّن): البكسلات الخضراء فقط (G أكبر بوضوح من R وB؛ الحروف محايدة فلا تُؤخذ أبدًا)،
+     حدودها مع الورق ← خط أبيض ناعم (#EBEBEB بعد العكس)، وداخلها ← لون الورق. المفتاح السالب = صورة الصفحة الكاملة. */
+  const ornOn = () => document.documentElement.classList.contains('dark');
+  const ornKey = p => viewFull() ? -p : p;
+  function ornHref(p) { const u = ORN.get(ornKey(p)); return typeof u === 'string' ? u : ''; }
   function ornApply(p) { const el = leaves.get(p), u = ornHref(p); if (el && u) el.querySelectorAll('image.porn').forEach(i => { if (i.getAttribute('href') !== u) i.setAttribute('href', u); }); }
-  function ornMake(src) {
+  function ornFull(a, w, h) {
+    const n = w * h, M = new Float32Array(n), P = new Uint8Array(n);
+    for (let i = 0, j = 0; j < n; i += 4, j++) {
+      const r = a[i], g = a[i + 1], b = a[i + 2], ch = g - (r > b ? r : b), lum = (r + g + b) / 3;
+      M[j] = ch <= 12 ? 0 : ch >= 32 ? 1 : (ch - 12) / 20;      // درجة الخضرة (المحايد = 0)
+      P[j] = (ch < 10 && lum > 200) ? 1 : 0;                    // ورق
+    }
+    const R2 = 2, T = new Uint8Array(n), E = new Uint8Array(n);  // تمديد الورق بنصف قطر 2px (أفقي ثم رأسي)
+    for (let y = 0; y < h; y++) { const o = y * w; let last = -1e9; for (let x = 0; x < w; x++) { if (P[o + x]) last = x; T[o + x] = x - last <= R2 ? 1 : 0; } last = 1e9; for (let x = w - 1; x >= 0; x--) { if (P[o + x]) last = x; if (last - x <= R2) T[o + x] = 1; } }
+    for (let x = 0; x < w; x++) { let last = -1e9; for (let y = 0; y < h; y++) { if (T[y * w + x]) last = y; E[y * w + x] = y - last <= R2 ? 1 : 0; } last = 1e9; for (let y = h - 1; y >= 0; y--) { if (T[y * w + x]) last = y; if (last - y <= R2) E[y * w + x] = 1; } }
+    for (let i = 0, j = 0; j < n; i += 4, j++) {
+      const m = M[j]; if (!m) { a[i + 3] = 0; continue; }
+      const v = E[j] ? 0 : 255;                                 // قبل العكس: 0 ← أبيض ناعم، 255 ← لون الورق الليلي
+      a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = Math.round(255 * m);
+    }
+  }
+  function ornMake(src, full) {
     return new Promise((res, rej) => {
       const im = new Image(); im.decoding = 'async';
       im.onload = () => {
@@ -470,7 +490,7 @@
           const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
           const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
           const d = x.getImageData(0, 0, w, h), a = d.data;
-          for (let i = 0; i < a.length; i += 4) {
+          if (full) ornFull(a, w, h); else for (let i = 0; i < a.length; i += 4) {
             const A = a[i + 3];
             if (A < 64) { a[i + 3] = 0; continue; }
             const m = (12 * (a[i] - a[i + 2])) / 255 - 0.6;
@@ -487,18 +507,19 @@
   }
   function ornPump() {
     if (ornBusy || !ORNQ.length) return;
-    const [p, src] = ORNQ.shift(); if (ORN.has(p)) return ornPump();
-    ornBusy = true; ORN.set(p, 0);
-    const go = () => ornMake(src).then(u => {
-      ORN.set(p, u);
+    const [k, src, full] = ORNQ.shift(); if (ORN.has(k)) return ornPump();
+    const p = Math.abs(k);
+    ornBusy = true; ORN.set(k, 0);
+    const go = () => ornMake(src, full).then(u => {
+      ORN.set(k, u);
       // أحدث 12 صفحة فقط في الذاكرة
-      const ks = [...ORN.keys()]; while (ks.length > 12) { const k = ks.shift(); if (Math.abs(k - cur) > 3) { const v = ORN.get(k); if (typeof v === 'string') URL.revokeObjectURL(v); ORN.delete(k); } }
+      const ks = [...ORN.keys()]; while (ks.length > 12) { const k = ks.shift(); if (Math.abs(Math.abs(k) - cur) > 3) { const v = ORN.get(k); if (typeof v === 'string') URL.revokeObjectURL(v); ORN.delete(k); } }
       ornApply(p);
-    }).catch(() => ORN.delete(p)).finally(() => { ornBusy = false; setTimeout(ornPump, 30); });
+    }).catch(() => ORN.delete(k)).finally(() => { ornBusy = false; setTimeout(ornPump, 30); });
     (window.requestIdleCallback ? requestIdleCallback(go, { timeout: 400 }) : setTimeout(go, 30));
   }
-  function ornWant(p) { const pd = pageData.get(p); if (!ornOn() || !pd || !pd.lines || viewFull() || ORN.has(p)) return; if (!ORNQ.some(q => q[0] === p)) ORNQ.push([p, pd.timg]); ornPump(); }
-  function ornAll() { if (!ornOn()) return; const ps = [...leaves.keys()].sort((a, b) => Math.abs(a - cur) - Math.abs(b - cur)); for (const p of ps) { if (ORN.has(p) && typeof ORN.get(p) === 'string') ornApply(p); else ornWant(p); } }
+  function ornWant(p) { const pd = pageData.get(p), full = viewFull(), k = ornKey(p); if (!ornOn() || !pd || (!full && !pd.lines) || ORN.has(k)) return; if (!ORNQ.some(q => q[0] === k)) ORNQ.push([k, full ? pd.img : pd.timg, full]); ornPump(); }
+  function ornAll() { if (!ornOn()) return; const ps = [...leaves.keys()].sort((a, b) => Math.abs(a - cur) - Math.abs(b - cur)); for (const p of ps) { if (typeof ORN.get(ornKey(p)) === 'string') ornApply(p); else ornWant(p); } }
   // v26z3: الحدود الخارجية لإطارات أسماء السور (بوحدات الصفحة، مستخرجة من صور الأسطر بـ tools/build_frames.py)؛ خط ذهبي رفيع فوقها في الليلي والزجاجي فقط
   const SFR = {"50":[[89.211,70.452,250.619,29.664]],"77":[[42.751,70.452,250.619,29.664]],"106":[[89.211,259.562,250.619,28.356]],"128":[[89.211,70.452,250.619,29.664]],"151":[[42.751,70.452,250.619,29.664]],"177":[[42.751,70.452,250.619,29.446]],"187":[[42.751,70.452,250.619,29.664]],"208":[[89.211,70.452,250.619,29.664]],"221":[[42.751,289.226,250.619,28.574]],"235":[[42.751,343.974,250.619,28.574]],"249":[[42.751,70.452,250.619,29.664]],"255":[[42.751,132.398,250.619,28.356]],"262":[[89.211,70.452,250.619,29.446]],"267":[[42.751,265.451,250.619,28.356]],"282":[[89.211,70.452,250.619,29.664]],"293":[[42.751,377.565,250.619,28.574]],"305":[[42.751,70.452,250.619,29.664]],"312":[[89.211,217.465,250.619,28.356]],"322":[[89.211,70.452,250.619,29.664]],"332":[[89.211,70.452,250.619,29.228]],"342":[[89.211,70.452,250.619,29.01]],"350":[[89.211,70.452,250.619,29.664]],"359":[[42.751,413.773,250.619,28.356]],"367":[[42.751,70.452,250.619,29.664]],"377":[[42.751,70.452,250.619,29.664]],"385":[[42.751,295.988,250.619,28.792]],"396":[[89.648,336.777,250.838,28.137]],"404":[[89.211,397.85,250.619,28.792]],"411":[[42.751,70.452,250.619,29.664]],"415":[[42.751,70.452,250.619,29.664]],"418":[[89.211,70.452,250.619,29.664]],"428":[[89.211,70.452,250.619,29.01]],"434":[[89.211,323.035,250.619,28.792]],"440":[[89.211,181.039,250.619,28.574]],"446":[[89.211,70.452,250.619,29.664]],"453":[[42.751,70.452,250.619,29.228]],"458":[[89.211,170.569,250.619,28.792]],"467":[[42.751,144.613,250.619,28.792]],"477":[[42.751,70.452,250.619,29.664]],"483":[[42.751,70.452,250.619,29.664]],"489":[[42.751,219.646,250.619,28.792]],"496":[[89.211,70.452,250.619,29.664]],"499":[[42.751,70.452,250.619,29.664]],"502":[[89.211,266.324,250.619,28.792]],"507":[[42.751,70.452,250.619,29.664]],"511":[[42.751,70.452,250.619,29.228]],"515":[[42.751,262.398,250.619,28.356]],"518":[[89.211,70.452,250.619,29.446]],"520":[[89.211,479.645,250.619,28.792]],"523":[[42.751,316.055,250.619,28.574]],"526":[[89.211,70.452,250.619,29.228]],"528":[[89.211,383.454,250.619,28.356]],"531":[[42.751,205.469,250.619,28.792]],"534":[[89.211,274.831,250.619,28.792]],"537":[[42.751,397.414,250.619,28.792]],"542":[[89.211,70.452,250.619,29.664]],"545":[[42.751,263.488,250.619,28.356]],"549":[[42.751,70.452,250.619,29.228]],"551":[[42.751,282.901,250.619,28.574]],"553":[[42.751,70.452,250.619,29.228]],"554":[[89.211,283.992,250.619,28.792]],"556":[[89.211,70.452,250.619,29.664]],"558":[[89.211,70.452,250.619,29.664]],"560":[[89.211,70.452,250.619,29.664]],"562":[[89.211,70.452,250.619,29.664]],"564":[[90.084,255.418,249.093,28.574]],"566":[[89.211,385.417,250.619,28.356]],"568":[[89.211,371.676,250.619,28.792]],"570":[[89.211,211.14,250.619,28.137]],"572":[[89.211,70.452,250.619,29.664]],"574":[[89.211,70.452,250.619,29.446]],"575":[[42.751,323.253,250.619,28.137]],"577":[[42.751,249.311,250.619,28.356]],"578":[[89.211,360.988,250.619,28.356]],"580":[[89.211,269.159,250.619,28.137]],"582":[[89.211,70.452,250.619,29.228]],"583":[[42.751,296.643,250.619,28.574]],"585":[[42.751,70.452,250.619,29.664]],"586":[[89.211,109.06,250.619,28.137]],"587":[[42.751,70.452,250.619,29.446],[42.751,452.38,250.619,28.574]],"589":[[42.751,133.489,250.619,28.137]],"590":[[89.211,105.57,250.619,28.792]],"591":[[42.751,70.452,250.619,29.228],[42.751,369.494,250.619,28.574]],"592":[[89.211,198.052,250.619,28.792]],"593":[[42.751,136.106,250.619,28.792]],"594":[[89.211,232.297,250.619,28.356]],"595":[[42.751,103.607,250.619,28.356],[42.751,374.947,250.619,28.356]],"596":[[89.211,225.317,250.619,28.574],[89.211,440.383,250.619,28.137]],"597":[[42.751,138.724,250.619,28.792],[42.751,331.105,250.619,28.356]],"598":[[89.211,185.62,250.619,28.137],[89.211,373.857,250.619,28.792]],"599":[[42.751,242.767,250.619,28.137],[42.751,445.836,250.619,28.137]],"600":[[89.211,172.751,250.619,28.792],[89.211,406.793,250.619,28.137]],"601":[[42.751,70.452,250.619,29.664],[42.751,223.354,250.619,28.356],[42.751,450.199,250.619,28.792]],"602":[[89.211,70.452,250.619,29.664],[89.211,235.351,250.619,28.792],[89.211,426.206,250.619,28.356]],"603":[[42.751,70.016,250.619,29.664],[42.751,252.364,250.619,28.574],[42.751,431.44,250.619,28.356]],"604":[[89.211,70.234,250.619,29.664],[89.211,199.579,250.619,28.356],[89.211,359.025,250.619,28.792]]};
   function leafHTML(p, pd) {
@@ -520,7 +541,7 @@
     } else {
       const im = `<image href="${img}" x="${full ? 0 : vb[0]}" y="${full ? 0 : vb[1]}" width="${full ? pd.w : vb[2]}" height="${full ? pd.h : vb[3]}" class="pimg" preserveAspectRatio="none"/>`;
       // الصفحتان 1 و2: ورقة الصورة نفسها (#FFFBF7) تُرسم فوق حبر الآيات المخفية فقط، داخل مجموعة تمتزج بالورق مثل الصورة تمامًا
-      body = full ? `${clip}${im}` : `${clip}<g class="p12">${im}<rect class="tm-paper" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#FFFBF7" style="display:none"/></g>`;
+      body = full ? `${clip}${im}<image class="porn pfr"${ornHref(p) ? ` href="${ornHref(p)}"` : ''} x="0" y="0" width="${pd.w}" height="${pd.h}" preserveAspectRatio="none"/>` : `${clip}<g class="p12">${im}<rect class="tm-paper" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#FFFBF7" style="display:none"/></g>`;
     }
     const ss = pd.surahs;
     return `<div class="pg${(!full && p <= 2) ? ' short' : ''}">
@@ -2537,7 +2558,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD='26z16';
+  window.__BUILD='26z17';
   window.__app = { ask, closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
