@@ -649,3 +649,8 @@ body.immersive:not(.imm-show) .tbar,body.immersive:not(.imm-show) .bbar,body.imm
 .pf.prt{align-items:center;padding-bottom:0}
 .pf.prt .pnimg{display:block;width:18%;max-width:96px;height:auto;pointer-events:none}
 html.dark .phimg,html.dark .pnimg{filter:invert(1) brightness(.9)}
+
+/* v26v: علامة الحزب/الربع في صف الترويسة — صغيرة بلون الترويسة، لا تمس عرض النص */
+.ph.prt .phz{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:11px;font-weight:600;line-height:1;letter-spacing:0;white-space:nowrap;color:inherit;opacity:.78;pointer-events:none;z-index:1}
+.ph.prt .phz::before,.ph.prt .phz::after{content:"";display:inline-block;width:5px;height:5px;margin:0 6px;transform:rotate(45deg) translateY(-1px);border:1px solid currentColor;opacity:.7}
+.ph.prt .pnote:not([hidden]) ~ .phz{left:34%}
