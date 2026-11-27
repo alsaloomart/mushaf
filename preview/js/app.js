@@ -43,7 +43,21 @@
   /* ---------- أدوات ---------- */
   const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
   const TM = { on: false, p: 0, keys: [], i: 0, rv: new Map(), rec: null, listening: false, acc: [], sess: [], skip: 0, sessBase: 0, sessGone: false, En: null, log: [], empty: 0, everGot: false, drain: null, heardTxt: '', restarts: [], wd: 0, E: [], prog: 0, why: '', mode: 'ayah', flush: false };
-  function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
+  function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); requestAnimationFrame(() => toastPad(true)); t._h = setTimeout(() => { t.classList.remove('show'); toastPad(false); }, ms); }
+  /* الرسالة لا تغطي نصًا: في اللوحات تُضاف مسافة سفلية بقدر الرسالة، وإن كان آخر المحتوى تحتها رُفع فوقها */
+  function toastPad(on) {
+    document.querySelectorAll('.sh-b.tpad').forEach(b => { b.style.paddingBottom = ''; b.classList.remove('tpad'); });
+    if (!on || !document.body.classList.contains('sheet-open')) return;
+    const t = $('#toast'), th = t.offsetHeight, ttop = innerHeight - (parseFloat(getComputedStyle(t).bottom) || 0) - th - 10;
+    document.querySelectorAll('.sheet:not([hidden]) > .sh-b').forEach(b => {
+      const br = b.getBoundingClientRect(); if (!br.height) return;
+      const pb = parseFloat(getComputedStyle(b).paddingBottom) || 0;
+      b.classList.add('tpad'); b.style.paddingBottom = (pb + Math.max(0, br.bottom - ttop)) + 'px';
+      const last = [...b.children].reverse().find(x => x.offsetHeight); if (!last) return;
+      const lr = last.getBoundingClientRect();
+      if (lr.bottom > ttop && lr.top < br.bottom) b.scrollTop += Math.ceil(lr.bottom - ttop);
+    });
+  }
   const sName = s => chapters[s - 1] ? chapters[s - 1].name_arabic : ('سورة ' + s);
   function keyLabel(k) { const [s, a] = k.split(':'); return sName(+s) + ' ' + ar(a); }
   function rangeLabel(a, b) {
@@ -2375,7 +2389,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26z';
+  window.__BUILD = '26z2';
   window.__app = { closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();

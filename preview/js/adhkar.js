@@ -224,14 +224,14 @@
     return `<p class="adh-fdate">${esc(fDate())}</p>
       <p class="adh-fday">${!F.start ? 'تحدّي 30 يومًا يبدأ من أول تسجيل.' : ended ? 'انتهت الأيام الثلاثون.' : `اليوم ${fmt(st.ti + 1)} من ${FN}`}</p>
       <div class="adh-tas">
-        <button class="adh-big${tOn || ended ? ' fin' : ''}" data-fajr aria-label="صليت الفجر" ${tOn || ended ? 'aria-disabled="true"' : ''}>${ring(st.n / FN, `<span class="in"><b>${fmt(st.n)}</b><span>من ${FN}</span>${tOn || ended ? '' : '<em class="adh-fcta">صليت الفجر</em>'}<small>${small}</small></span>`)}</button>
+        <button class="adh-big${tOn || ended ? ' fin' : ''}" data-fajr aria-label="صلّيت الفجر" ${tOn || ended ? 'aria-disabled="true"' : ''}>${ring(st.n / FN, `<span class="in"><b>${fmt(st.n)}</b><span>من ${FN}</span>${tOn || ended ? '' : '<em class="adh-fcta">صلّيت الفجر</em>'}<small>${small}</small></span>`)}</button>
         <div class="adh-ctl">
           <button class="ib" data-fundo aria-label="تراجع عن تسجيل اليوم" title="تراجع عن تسجيل اليوم" ${tOn ? '' : 'disabled'}><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
           ${canY ? '<button class="chip adh-fy" data-fyest>سجّل فجر أمس</button>' : ''}
           ${ended ? '<button class="chip adh-fy" data-fnew>بدء تحدٍّ جديد</button>' : ''}
         </div>
         <div class="adh-fgrid" role="list" aria-label="أيام التحدي">${grid.map(x => `<span role="listitem" class="fd f-${x.st}" title="اليوم ${x.i + 1}">${x.i + 1}</span>`).join('')}</div>
-        <div class="adh-fleg"><span><i class="fd f-done"></i>صليت</span><span><i class="fd f-miss"></i>لم يُسجَّل</span><span><i class="fd f-up"></i>قادم</span></div>
+        <div class="adh-fleg"><span><i class="fd f-done"></i>صلّيت</span><span><i class="fd f-miss"></i>لم يُسجَّل</span><span><i class="fd f-up"></i>قادم</span></div>
       </div>
       <div class="adh-entry one">
         <button data-v="freport"><b>التقرير</b><span class="lnk2">عرض الأيام والنسبة والسلسلة</span></button>
@@ -244,10 +244,10 @@
     const pct = elapsed ? Math.round(st.n / elapsed * 100) : 0, left = st.ti < 0 ? FN : Math.max(0, FN - st.ti - 1);
     const prev = (st.F.hist || [])[st.F.hist.length - 1];
     return `<div class="adh-sub"><button class="lnk back" data-v="f">رجوع</button><b>تقرير متابعة الفجر</b><span></span></div>
-      <div class="adh-goal">${ring(st.n / FN, `<span class="in"><b>${fmt(st.n)}</b><span>من ${FN}</span></span>`)}<div><b>${st.n ? `صليت الفجر ${cnt(st.n, 'day', 'acc')} من ${FN}` : 'لم تسجّل أي يوم بعد.'}</b></div></div>
+      <div class="adh-goal">${ring(st.n / FN, `<span class="in"><b>${fmt(st.n)}</b><span>من ${FN}</span></span>`)}<div><b>${st.n ? `صلّيت الفجر ${cnt(st.n, 'day', 'acc')} من ${FN}` : 'لم تسجّل أي يوم بعد.'}</b></div></div>
       <div class="adh-grid">
-        <div class="adh-st"><span>الأيام التي صليت فيها</span><b>${cnt(st.n, 'day')}</b><small>من ${FN}</small></div>
-        <div class="adh-st"><span>نسبة الالتزام حتى اليوم</span><b>${fmt(pct)}%</b><small>${elapsed ? `من ${cnt(elapsed, 'day', true)} مضت` : 'تبدأ مع أول تسجيل.'}</small></div>
+        <div class="adh-st"><span>الأيام التي صلّيت فيها</span><b>${cnt(st.n, 'day')}</b><small>من ${FN}</small></div>
+        <div class="adh-st"><span>نسبة الالتزام حتى اليوم</span><b>${fmt(pct)}%</b><small>${elapsed ? `خلال ${cnt(elapsed, 'day', true)} منذ البدء` : 'تبدأ مع أول تسجيل.'}</small></div>
         <div class="adh-st"><span>أيام متتالية</span><b>${cnt(cur, 'day')}</b></div>
         <div class="adh-st"><span>أطول سلسلة</span><b>${cnt(best, 'day')}</b></div>
         <div class="adh-st w"><span>الأيام المتبقية</span><b>${st.ti >= FN ? 'انتهى التحدي' : cnt(left, 'day')}</b>${prev ? `<small>التحدي السابق: ${fmt(prev.n)} من ${FN}</small>` : ''}</div>
@@ -263,9 +263,9 @@
     if (!F.start) F.start = t;
     const ti = diffD(F.start, t); if (ti >= FN) return;
     if (what === 'undo') { delete F.d[t]; if (!Object.keys(F.d).length && F.start === t) F.start = null; save(); return render(); }
-    if (what === 'yest') { const y = kday(t, -1); if (ti >= 1 && !F.d[y]) { F.d[y] = 1; buzz(false); tick(); save(); toast('سُجِّل فجر أمس.'); } return render(); }
+    if (what === 'yest') { const y = kday(t, -1); if (ti >= 1 && !F.d[y]) { F.d[y] = 1; buzz(false); tick(); save(); render(); toast('سُجِّل فجر أمس.'); return; } return render(); }
     if (F.d[t]) return;
-    F.d[t] = 1; buzz(true); tick(); save(); render();
+    F.d[t] = 1; buzz(true); tick(); save(); render(); toast('سُجِّل فجر اليوم. تقبّل الله منك.');
   }
 
   /* ---------- الإحصاءات ---------- */
