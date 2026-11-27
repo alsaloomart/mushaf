@@ -1344,11 +1344,11 @@
       if (ixPlaying(sNo)) { AU.el.paused ? AU.resume() : AU.pause(); ixPaint(); return; }
       AU.prime();   // داخل اللمسة نفسها: يفتح عنصر الصوت على iOS قبل جلب الروابط
       const c = chapters[sNo - 1];
-      // بدون إنترنت: نشغّل المحمّل فقط (بصوت القارئ الحالي، أو بصوت قارئ آخر حمّلت له هذه السورة)
+      // دون إنترنت: نشغّل المحمّل فقط (بصوت القارئ الحالي، أو بصوت قارئ آخر حمّلت له هذه السورة)
       let rid = ST.get().reciter;
       if (navigator.onLine === false && !(await AU.dl.has(rid, sNo))) {
         let alt = null; for (const r of AU.RECITERS) if (await AU.dl.has(r.id, sNo)) { alt = r; break; }
-        if (!alt) { toast('لا يوجد اتصال بالإنترنت، وسورة ' + c.name_arabic + ' لم تُنزَّل بعد. نزّلها بزر التنزيل لتستمع إليها بدون إنترنت.', 4200); return; }
+        if (!alt) { toast('لا يوجد اتصال بالإنترنت، وسورة ' + c.name_arabic + ' لم تُنزَّل بعد. نزّلها بزر التنزيل لتستمع إليها دون إنترنت.', 4200); return; }
         rid = alt.id; toast('تُشغَّل بصوت ' + alt.name + '، لأنك نزّلت هذه السورة بصوته.', 3200);
       }
       closeSheets(); if (sel) clearSel();
@@ -1370,7 +1370,7 @@
     done: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.6 3.6 7.4-7.6"/></svg>',
     run: (f) => `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="rg0" cx="12" cy="12" r="9"/><circle class="rg1" cx="12" cy="12" r="9" pathLength="100" stroke-dasharray="${Math.max(2, f * 100).toFixed(1)} 100" transform="rotate(-90 12 12)"/><rect class="rgs" x="9.2" y="9.2" width="5.6" height="5.6" rx="1.2"/></svg>`
   };
-  /* ---------- تحميل السور للاستماع بدون إنترنت ---------- */
+  /* ---------- تحميل السور للاستماع دون إنترنت ---------- */
   let dlRid = 6, dlStat = new Map();
   const MB = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' جيجابايت' : (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' ميجابايت';
   async function dlRefresh() { dlStat = await AU.dl.status(dlRid); dlPaint(); }
@@ -1408,7 +1408,7 @@
       if (j && j.state === 'run' && j.got) dlPaint(sNo);   // تحديث التقدم فقط
       else await dlRefresh();
     }
-    if (rid !== undefined && !AU.dl.job(rid, sNo) && !err) { const st2 = (await AU.dl.status(rid)).get(sNo); if (st2 === 'done') toast('اكتمل تنزيل سورة ' + chapters[sNo - 1].name_arabic + '، وأصبحت متاحة بدون إنترنت.', 3600); }
+    if (rid !== undefined && !AU.dl.job(rid, sNo) && !err) { const st2 = (await AU.dl.status(rid)).get(sNo); if (st2 === 'done') toast('اكتمل تنزيل سورة ' + chapters[sNo - 1].name_arabic + '، وأصبحت متاحة دون إنترنت.', 3600); }
   });
   /* قسم «التحميلات» في الإعدادات */
   async function dlBox() {
@@ -1419,7 +1419,7 @@
     const by = new Map(); items.forEach(x => { if (!by.has(x.rid)) by.set(x.rid, []); by.get(x.rid).push(x); });
     box.innerHTML = (items.length ? [...by].map(([rid, xs]) => { const r = AU.reciter(rid); return `<div class="dlg"><b>${r.name}<small> · ${r.style}</small></b>${xs.map(x => `<div class="dlr"><span>سورة ${chapters[x.s - 1].name_arabic}</span><small>${MB(x.bytes || 0)}</small><button class="dlx" data-rid="${rid}" data-s="${x.s}" aria-label="حذف سورة ${chapters[x.s - 1].name_arabic} من الجهاز"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('')}</div>`; }).join('') +
       `<p class="muted sm">المجموع: ${cnt(items.length, 'surah')} · ${MB(tot)}</p>`
-      : `<p class="muted sm">لم تُنزّل أي سورة بعد. اضغط سهم التنزيل بجانب زر التشغيل في الفهرس لتستمع إلى السورة بدون إنترنت.</p>`) +
+      : `<p class="muted sm">لم تُنزّل أي سورة بعد. اضغط سهم التنزيل بجانب زر التشغيل في الفهرس لتستمع إلى السورة دون إنترنت.</p>`) +
       (est && est.quota ? `<p class="muted sm">مساحة التطبيق المستخدمة ${MB(est.usage || 0)} من نحو ${MB(est.quota)} متاحة له على هذا الجهاز.${per ? ' التخزين محمي من الحذف التلقائي.' : ''}</p>` : '') +
       (items.length ? `<button class="btn full" id="dlAll">حذف كل التنزيلات</button>` : '');
   }
@@ -1536,7 +1536,7 @@
     const s = ST.get(), rid = s.reciter;
     const seg = (id, opts, val) => `<div class="seg" id="${id}">${opts.map(([v, n]) => `<button data-v="${v}" class="${val === v ? 'on' : ''}">${n}</button>`).join('')}</div>`;
     $('#moreBody').innerHTML = `
-       <button class="btn full dl" id="mDl"><b>تنزيل المصحف كاملًا</b><small>نحو ${viewFull() ? 61 : 89} ميجابايت، للقراءة بدون إنترنت</small></button>
+       <button class="btn full dl" id="mDl"><b>تنزيل المصحف كاملًا</b><small>نحو ${viewFull() ? 61 : 89} ميجابايت، للقراءة دون إنترنت</small></button>
        <div class="bar" id="dlBar" hidden><i style="width:0%"></i></div>
        <button class="btn full" id="mSrc">المصادر</button>
        <button class="btn full" id="mInst">طريقة التثبيت على الآيفون</button>
@@ -1558,7 +1558,7 @@
     const urls = p => [viewFull() ? `../pages/${pad(p)}.webp` : `../lines/${pad(p)}.webp`];
     const worker = async () => { while (ps.length) { const p = ps.shift(); for (const rel of urls(p)) { const u = new URL(rel, location.href).href; if (!(await c.match(u))) { try { const r = await fetch(u); if (r.ok) await c.put(u, r); } catch (e) {} } } done++; bar.firstElementChild.style.width = (done / N * 100).toFixed(1) + '%'; btn.innerHTML = `<b>جارٍ التنزيل… ${ar(done)}/${ar(N)}</b>`; } };
     await Promise.all([1, 2, 3, 4].map(worker));
-    btn.innerHTML = '<b>تم تنزيل المصحف كاملًا.</b>'; toast('أصبح المصحف كاملًا متاحًا بدون إنترنت.');
+    btn.innerHTML = '<b>تم تنزيل المصحف كاملًا.</b>'; toast('أصبح المصحف كاملًا متاحًا دون إنترنت.');
   }
   const L = t => `<bdi dir="ltr">${t}</bdi>`;
   function openSources() {
@@ -1573,7 +1573,7 @@
       <p>مواضع الآيات طبقة شفافة فوق الصورة، من مشروع ${L('quran-ws/quran-svg')} المستخرج من ملفات المجمع (رخصة ${L('CC BY 4.0')}). التظليل لا يغيّر صورة المصحف.</p>
       <p>أسماء السور والأجزاء والأحزاب من بيانات ${L('Tanzil')} (رخصة ${L('CC BY 3.0')}).</p>
       <h4>التلاوات</h4>
-      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تنزّل سورة بطلبك للاستماع بدون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
+      <p>التسجيلات من ${L('Quran Foundation')} ومرآة ${L('EveryAyah')}، وحقوقها لأصحابها. الاستماع بالبث، ولك أن تنزّل سورة بطلبك للاستماع دون إنترنت: تبقى في تخزين التطبيق الخاص على جهازك، ولا تُصدَّر لتطبيقات أخرى، وتُحذف متى حذفتها. لا إعادة نشر. التلاوة المتصلة من ملف السورة كاملًا مع توقيت كل آية من ${L('Quran Foundation')}.</p>
       <p>تلاوة الشيخ ماهر المعيقلي من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم: «المصحف المجود» برواية حفص عن عاصم (رقم 133) مع توقيت الآيات المنشور في واجهة الموقع، فيعمل معه تتبع الآيات والتكرار والتلاوة المتصلة؛ و«المرتّل» (رقم 102)، ولأن المصدر لا ينشر توقيت آياته فقد ولّدنا التوقيت آليًا من ملفات السور نفسها بمواءمة نص الآيات مع الصوت بنموذج تعرّف كلام عربي مفتوح المصدر، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
       <p>تلاوة الشيخ بدر التركي (رواية حفص عن عاصم، مرتّل) من ${L('MP3Quran.net')}، المكتبة الصوتية للقرآن الكريم، القارئ رقم 254. وينص موقع MP3Quran على أن حقوق مواده متاحة للجميع، ويأذن لأي زائر أو مطور باستخدام روابطه: ${L('<a href="https://www.mp3quran.net/privacy-en.html" target="_blank" rel="noopener">mp3quran.net/privacy-en.html</a>')}. المصدر لا ينشر توقيت الآيات لهذه التلاوة، فولّدناه آليًا من ملفات السور نفسها بالطريقة ذاتها، فقد تتقدم حدود بعض الآيات أو تتأخر قليلًا.</p>
       <p>القارئ الحالي: ${AU.reciter(ST.get().reciter).name}.</p>
