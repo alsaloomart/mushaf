@@ -118,3 +118,27 @@ html.dark .adh-clear,html.glass .adh-clear{color:#FF8A80}
 .adh-cities button{padding:10px 6px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.86rem}
 .adh-cities button.on{border-color:var(--a-gold);background:rgba(242,194,48,.16);font-weight:700}
 html.glass #sh-adhkar .adh-card,html.glass #sh-adhkar .adh-prog,html.glass #sh-adhkar .adh-st,html.glass #sh-adhkar .adh-goal,html.glass #sh-adhkar .adh-big,html.glass #sh-adhkar .adh-entry button{-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-color:var(--glb,rgba(255,255,255,.14))}
+/* v26x: المسبحة شاشة عدّ فقط — صف واحد صغير تحت الدائرة */
+.adh-ctl{gap:14px;margin:14px 0 4px;flex-wrap:nowrap}
+.adh-ctl>button.ib{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+.adh-ctl>button.ib svg{width:18px;height:18px}
+.adh-tsel{position:relative}
+.adh-tsel .chip{display:inline-flex;align-items:center;gap:4px;padding:8px 12px 8px 8px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.84rem;font-weight:700;font-variant-numeric:tabular-nums}
+.adh-tsel .chip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-menu{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;min-width:128px;padding:4px;border-radius:12px;background:var(--a-card);border:1px solid var(--a-line);box-shadow:0 8px 24px rgba(31,33,32,.16)}
+html.glass .adh-menu{background:#2a2c2b}
+.adh-menu button{padding:9px 12px;border:0;background:none;color:var(--a-ink);font-size:.86rem;text-align:start;border-radius:8px}
+.adh-menu button[aria-checked="true"]{background:rgba(242,194,48,.2);font-weight:700}
+.adh-goal .in span.met{display:inline-flex;align-items:center;gap:3px;color:var(--a-gold2);font-weight:700}
+.adh-goal .in span.met svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.adh-step{margin:0 0 6px;padding-inline-start:10px;border-inline-start:3px solid transparent}
+.adh-step.on{border-inline-start-color:var(--a-gold)}
+.adh-sc{font-family:'Thmanyah Sans',system-ui,sans-serif;font-size:.78rem;color:var(--a-sub);white-space:nowrap}
+/* v26x: اختيار الذكر — زر واحد يفتح قائمة بأسماء كاملة (لا قطع للكلمات) */
+.adh-psel{position:relative;display:flex;justify-content:center;margin:0 0 6px}
+.adh-psel .chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:8px 12px 8px 8px;border-radius:999px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-size:.9rem;font-weight:700;white-space:normal;text-align:center}
+.adh-psel .chip svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adh-menu.wide{min-width:min(300px,86vw);max-height:60vh;overflow:auto}
+.adh-menu.wide button{white-space:normal;line-height:1.7}
+.adh-st b.s{font-size:.95rem;font-weight:700;line-height:1.6}
+#adhBody{padding-bottom:calc(40px + var(--sab,0px))}

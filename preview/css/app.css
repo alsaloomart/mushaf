@@ -656,3 +656,8 @@ html.dark .phimg,html.dark .pnimg{filter:invert(1) brightness(.9)}
 .ph.prt .pnote:not([hidden]) ~ .phz{left:34%}
 /* v26w: ستة أزرار في الشريط العلوي (أذكاري) — على الشاشات الضيقة تصير الأيقونة فوق الاسم */
 @media (max-width:520px){.tbar button{flex-direction:column;gap:1px;font-size:10.5px;min-width:0}.tbar svg{width:17px;height:17px}}
+/* v26x: الزر النشط وحده عريض وذهبي؛ بقية الأزرار وزن واحد */
+.tbar button,.tbar button.tbnote{font-weight:400}
+.tbar button.on{font-weight:700;color:#B98A00}
+.tbar button.on svg{stroke-width:2}
+html.dark .tbar button.on,html.glass .tbar button.on{color:#F2C230}

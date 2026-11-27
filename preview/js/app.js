@@ -15,7 +15,7 @@
     aya:  { one: 'آية واحدة', two: ['آيتان', 'آيتين'], pl: 'آيات', acc: 'آية', sg: 'آية' },
     page: { one: 'صفحة واحدة', two: ['صفحتان', 'صفحتين'], pl: 'صفحات', acc: 'صفحة', sg: 'صفحة' },
     line: { one: 'سطر واحد', two: ['سطران', 'سطرين'], pl: 'أسطر', acc: 'سطرًا', sg: 'سطر' },
-    day:  { one: 'يوم واحد', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
+    day:  { one: 'يوم واحد', oneAcc: 'يومًا واحدًا', two: ['يومان', 'يومين'], pl: 'أيام', acc: 'يومًا', sg: 'يوم' },
     note: { one: 'ملاحظة واحدة', two: ['ملاحظتان', 'ملاحظتين'], pl: 'ملاحظات', acc: 'ملاحظة', sg: 'ملاحظة' },
     word: { one: 'كلمة واحدة', two: ['كلمتان', 'كلمتين'], pl: 'كلمات', acc: 'كلمة', sg: 'كلمة' },
     surah: { one: 'سورة واحدة', two: ['سورتان', 'سورتين'], pl: 'سور', acc: 'سورة', sg: 'سورة' },
@@ -25,10 +25,10 @@
     step: { one: 'خطوة واحدة', two: ['خطوتان', 'خطوتين'], pl: 'خطوات', acc: 'خطوة', sg: 'خطوة' },
     minute: { one: 'دقيقة واحدة', two: ['دقيقتان', 'دقيقتين'], pl: 'دقائق', acc: 'دقيقة', sg: 'دقيقة' }
   };
-  /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(15)='15 آية'، cnt(100)='100 آية' */
+  /* cnt(5)='5 آيات'، cnt(2)='آيتان'، cnt(2,'aya',true)='آيتين' (بعد حرف جر أو مفعول)، cnt(1,'day','acc')='يومًا واحدًا'، cnt(2,'day','acc')='يومين'، cnt(15)='15 آية'، cnt(100)='100 آية' */
   function cnt(n, w = 'aya', gen = false) {
     const f = NOUN[w]; n = +n;
-    if (n === 1) return f.one;
+    if (n === 1) return (gen === 'acc' && f.oneAcc) || f.one;   // gen='acc': مفعول به («أتممتها يومًا واحدًا من 7»)
     if (n === 2) return f.two[gen ? 1 : 0];
     const r = n % 100;
     const t = n >= 1000 ? n.toLocaleString('en-US') : ar(n);   // فاصلة الآلاف الغربية: 1,240
@@ -897,6 +897,7 @@
       `<label class="lbl">التنزيلات</label><div id="dlBox"><p class="muted sm">…</p></div>` +
       `<label class="lbl">عرض الصفحة</label><div class="seg" id="mView">${[['screen', 'ملء الشاشة'], ['full', 'الصفحة بإطارها']].map(([v, n]) => `<button data-v="${v}" class="${(s.view === 'full' ? 'full' : 'screen') === v ? 'on' : ''}">${n}</button>`).join('')}</div>
        <div class="sw-row" id="sFlipRow" role="presentation"><b>تقليب ثلاثي الأبعاد</b><button class="switch" id="sFlip" role="switch" aria-checked="${wantFlip()}" aria-label="تقليب ثلاثي الأبعاد"></button></div>
+       ${window.ADHKAR ? ADHKAR.settingsHTML() : ''}
        <label class="lbl">التذكير</label>` + hi('bell', 'rem', 'تذكير الورد', remSub()) + (window.CLOUD ? `<label class="lbl">الحساب والمزامنة</label><div id="clBox">${CLOUD.html()}</div>` : '') + creditHTML(), 'settings');
     if (window.CLOUD) CLOUD.prep();
     dlBox();
@@ -935,6 +936,7 @@
   $('#hubBody').onclick = async e => {
     const sn = e.target.closest('#sNightRow'); if (sn) { setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'); openSettings(); return; }
     const sf = e.target.closest('#sFlipRow'); if (sf) { ST.set('flip3d', !wantFlip()); openSettings(); return; }
+    const sa = e.target.closest('[data-adhopt]'); if (sa && window.ADHKAR) { if (sa.getAttribute('aria-disabled') !== 'true') ADHKAR.toggle(sa.dataset.adhopt); const y = e.target.closest('.sh-b'), t = y && y.scrollTop; openSettings(); if (y) y.scrollTop = t; return; }
     const sp = e.target.closest('#sPaper [data-paper]');
     if (sp) { const k = sp.dataset.paper; if (k === 'glass') setTheme('glass'); else if (k === 'night') setTheme('dark'); else { ST.set('paper', k); setTheme('light'); } openSettings(); return; }
     const lm = e.target.closest('#lMode [data-lm]'); if (lm) { ST.set('listen', lm.dataset.lm); openTilawa(); return; }
@@ -1582,7 +1584,7 @@
       <p><b>تيسير الكريم الرحمن في تفسير كلام المنان (تفسير السعدي)</b>، للشيخ عبد الرحمن بن ناصر السعدي. منقول كما ورد دون تعديل من صفحات ${L('QuranEnc.com')} (${L('arabic_saadi')})، الإصدار V1.0.3، وتاريخ النقل 21 نوفمبر 2026.<br>${L('<a href="https://quranenc.com/ar/browse/arabic_saadi" target="_blank" rel="noopener">quranenc.com/ar/browse/arabic_saadi</a>')}</p>
       <p>شروط ${L('QuranEnc.com')} لإعادة النشر: عدم التعديل أو الإضافة أو الحذف، والإشارة إلى الناشر والمصدر، وذكر الإصدار، وتحديث النص وفق الإصدارات الجديدة، وعدم عرض إعلانات. التطبيق مجاني وبلا إعلانات.</p>
       <h4>الأذكار</h4>
-      <p>النصوص من «حصن المسلم» لسعيد بن علي بن وهف القحطاني، مع تخريج كل ذكر وحكمه منسوبًا إلى قائله.</p>
+      <p>لا يدخل في الأذكار والمسبحة إلا القرآن الكريم وما رواه البخاري أو مسلم، بالرجوع إلى صحيحي البخاري ومسلم في ${L('sunnah.com')} والدرر السنية.</p>
       <p>نص الآيات في الأذكار: نص مجمع الملك فهد لطباعة المصحف الشريف (حفص) عبر ${L('Quran Foundation')}، بخط ${L('KFGQPC HAFS Uthmanic Script')} (الإصدار 2.2) من المجمع، يُستخدم مجانًا ولا يُعدَّل ولا يُباع.</p>
       <p>${L('Tanzil Quran Text (Uthmani, Version 1.1) Copyright (C) 2007-2026 Tanzil Project. License: Creative Commons Attribution 3.0.')} استُعمل للمطابقة فقط ولا يُعرض. ${L('<a href="https://tanzil.net" target="_blank" rel="noopener">tanzil.net</a>')}</p>
       <p>أوقات الشروق والغروب: ${L('adhan-js (MIT)')}، بطريقة أم القرى.</p>
@@ -2373,7 +2375,7 @@
   }
   $('#tfSeg').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; ST.set('tafsir', b.dataset.t); $('#sh-tafsir .sh-b').scrollTop = 0; tfRender(); };
   $('#aTafsir').onclick = () => { if (sel) openTafsir(sel.list.slice()); };
-  window.__BUILD = '26w';
+  window.__BUILD = '26x';
   window.__app = { closeSheets, openSheet, esc, hzLabel, snk: SNK, imm: () => ({ on: IMM.on, show: document.body.classList.contains('imm-show') }), immShow, snkKnots, snkPath, hlPieces, wl: () => WL, leaves, listenMode, playSurah, surahKeys, isWide, wantSpread, spreadPair, nextPage, creditHTML, tmFlush, tmSetMode, tmPaintOverlay, openTafsir, tfState: () => ({ keys: tfKeys.slice(), which: tfWhich(), scope: tfScope }), reloadData: () => { applyTheme(); refreshToday(); notesPaintVisible(cur); updateTitle(); }, toast, tmStart, tmEnd, tmFeed, tmReveal, TM: () => ({ on: TM.on, p: TM.p, keys: TM.keys.slice(), i: TM.i, rv: [...TM.rv], E: TM.E.slice(), prog: TM.prog, why: TM.why, listening: TM.listening, sr: !!SRC, acc: TM.acc.slice(), sess: TM.sess.slice(), skip: TM.skip, heardTxt: TM.heardTxt, log: TM.log.slice(), debug: TM.debug, lang: TM.lang || 'ar-SA', needSafari: !!TM.needSafari, mode: TM.mode, flush: !!TM.flush }), openSettings, openTilawa, navOn, notesAll, notesPaint, noteNew, noteOpen, noteClose, openNotes, openHub, openRem, openWird, rem, refit, LS: () => LS, goPage, flip, wantFlip, setAngle, prepFlip, showOnly, select, clearSel, chrome, state: () => ({ cur, sel, playingKey, busy, play: AU.state() && AU.state().kind }), keyPage, pageData, cnt, after };
   boot();
 })();
