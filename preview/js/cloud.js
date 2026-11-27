@@ -1,6 +1,6 @@
 /* الدخول بحساب Google (اختياري) ومزامنة الملاحظات والورد والإعدادات.
    الجهاز هو الأصل: التطبيق يعمل كاملًا بدون دخول، وإن تعذّر تحميل Firebase يبقى كل شيء على الجهاز.
-   إعداد Firebase في js/config.js (APP.FIREBASE)؛ إن كان null فالتطبيق محلي بالكامل ولا تُحمَّل المكتبة. يُعاد حاليًا استخدام مشروع (english-hub-1d37b). مسار البيانات: users/{uid}/apps/mushaf
+   إعداد Firebase في js/config.js (APP.FIREBASE)؛ إن كان null فالتطبيق محلي بالكامل ولا تُحمَّل المكتبة. يُعاد حاليًا استخدام مشروع (english-hub-1d37b). مسار البيانات: users/{uid}/apps/mushaf
    (مستند مستقل، لا يلمس مستند منصة الإنجليزية users/{uid}). لا تُحمَّل مكتبة Firebase إلا عند فتح الإعدادات أو إن كان الجهاز داخلًا من قبل. */
 const CLOUD = (() => {
   'use strict';
@@ -99,18 +99,18 @@ const CLOUD = (() => {
     if (/cancelled-popup/.test(c)) return;   // أُلغيت لأن محاولة أحدث بدأت
     if (/popup-closed|user-cancelled/.test(c)) {
       // في تطبيق الشاشة الرئيسية على الآيفون تُفتح صفحة Google في نافذة منفصلة؛ إن أغلقها المستخدم بعد صفحة خطأ من Google نعطيه طريقًا واضحًا
-      if (IOS && STANDALONE()) status('', 'أُغلقت نافذة الدخول. إن ظهرت لك صفحة خطأ من Google فحاول مرة ثانية بعد قليل، أو افتح الرابط في Safari وسجّل الدخول منه.');
+      if (IOS && STANDALONE()) status('', 'أُغلِقت نافذة الدخول. إن ظهرت لك صفحة خطأ من Google فحاول مرّة أخرى بعد قليل، أو افتح الرابط في Safari وسجّل الدخول منه.');
       else status('', '');
       return;
     }
     if (c === 'auth/network-request-failed') status('bad', 'لا يوجد اتصال بالإنترنت.');
-    else if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') status('bad', 'منع المتصفح نافذة الدخول. اضغط الزر مرة ثانية، وإن تكرر المنع فاسمح بالنوافذ المنبثقة في إعدادات Safari.');
+    else if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') status('bad', 'منع المتصفح نافذة الدخول. اضغط الزر مرّة أخرى، وإن تكرّر المنع فاسمح بالنوافذ المنبثقة من إعدادات Safari.');
     else if (c === 'auth/unauthorized-domain') status('bad', 'هذا الرابط غير مفعّل لتسجيل الدخول.');
     else if (c === 'auth/operation-not-allowed') status('bad', 'الدخول بحساب Google غير مفعّل في المشروع.');
-    else if (c === 'auth/too-many-requests') status('bad', 'محاولات كثيرة متتالية. حاول بعد دقائق.');
-    else if (c === 'auth/web-storage-unsupported') status('bad', 'المتصفح يمنع التخزين اللازم للدخول. افتح الرابط في Safari خارج التصفح الخاص.');
-    else if (c === 'auth/internal-error') status('bad', 'تعذّر الدخول من جهة Google. حاول بعد قليل.');
-    else status('bad', 'تعذّر تسجيل الدخول، حاول مرة ثانية.' + (c ? ' (' + c + ')' : ''));
+    else if (c === 'auth/too-many-requests') status('bad', 'محاولات كثيرة متتالية. حاول مرّة أخرى بعد دقائق.');
+    else if (c === 'auth/web-storage-unsupported') status('bad', 'يمنع المتصفح التخزين اللازم لتسجيل الدخول. افتح الرابط في Safari خارج وضع التصفح الخاص.');
+    else if (c === 'auth/internal-error') status('bad', 'تعذّر الدخول لخلل لدى Google. حاول مرّة أخرى بعد قليل.');
+    else status('bad', 'تعذّر تسجيل الدخول. حاول مرّة أخرى.', c);   // v26z19: الرمز في عنصر LTR معزول ومُهرَّب
   }
   function signOut() {
     if (!fb) return;
@@ -119,7 +119,7 @@ const CLOUD = (() => {
 
   /* v26z11: «احذف بياناتي من السحابة» — يحذف مستند هذا التطبيق وحده (users/{uid}/apps/mushaf) بعد تأكيد، ولا يمس بيانات الجهاز ولا مستند منصة الإنجليزية users/{uid} */
   async function delCloud() {
-    const ok = await window.__app.ask('ستُحذف نسخة بياناتك المحفوظة في حسابك (الملاحظات، والخطة، والمحفوظ، والإعدادات) نهائيًّا، وتبقى كما هي على هذا الجهاز. ثم تخرج من حسابك.', 'احذف');
+    const ok = await window.__app.ask('ستُحذف نسخة بياناتك المحفوظة في حسابك (الملاحظات، والخطة، والمحفوظ، والإعدادات) نهائيًّا، وتبقى كما هي على هذا الجهاز. ثم تخرج من حسابك.', 'احذف');
     if (!ok) return;
     if (!user || !fb) { say('سجّل الدخول أوّلًا.'); return; }
     clearTimeout(upT);
@@ -193,12 +193,12 @@ const CLOUD = (() => {
   });
 
   /* ---------- الواجهة (داخل الإعدادات) ---------- */
-  function status(c, t) { st = { c, t }; render(); }
+  function status(c, t, code) { st = { c, t, code: code || '' }; render(); }
   function html(mock) {   // mock: للاختبار واللقطات فقط (لا دخول حقيقي)
     if (!ON) return '';
     const user = mock || USER();
     if (failed && !user) return `<p class="muted sm cl-st bad">خدمة الدخول غير متاحة الآن. التطبيق يعمل كاملًا بدونها، وبياناتك على جهازك.</p>`;
-    const s = st.t ? `<p class="cl-st ${st.c}" role="status">${esc(st.t)}</p>` : '';
+    const s = st.t ? `<p class="cl-st ${st.c}" role="status"><span>${esc(st.t)}${st.code ? ` (رمز الخطأ: <bdi dir="ltr">${esc(st.code)}</bdi>)` : ''}</span></p>` : '';
     if (!user) return `<button class="cl-g" data-cl-in type="button">${G}<span>الدخول بحساب Google</span></button><p class="muted sm">اختياري: يحفظ ملاحظاتك وخطة الورد والمحفوظ والإعدادات في حسابك لتنتقل معك إلى أي جهاز. التطبيق يعمل كاملًا دون تسجيل دخول.</p>${s}`;
     const av = user.photoURL ? `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="cl-av">${esc(((user.displayName || user.email || '?').trim()[0]) || '?')}</span>`;
     return `<div class="cl-u">${av}<div><b>${esc(user.displayName || 'حسابي')}</b><small>${esc(user.email || '')}</small></div></div>${s || '<p class="cl-st ok">متصل بحسابك</p>'}<button class="cl-out" data-cl-out type="button">تسجيل الخروج</button><button class="cl-del" data-cl-del type="button">احذف بياناتي من السحابة</button><p class="muted sm">الخروج لا يحذف نسختك في السحابة. الحذف يمسح نسخة هذا التطبيق من حسابك فقط، وتبقى بياناتك على هذا الجهاز.</p>`;

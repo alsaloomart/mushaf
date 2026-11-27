@@ -731,3 +731,4 @@ html.dark #cfYes.red,html.glass #cfYes.red{background:#B3261E;color:#fff}
 
 /* v26z17: «الصفحة بإطارها» في الليلي والزجاجي — طبقة الإطار الأبيض المحسوبة (تحت مرشّح العكس نفسه، فلا تمسّ الحروف) */
 html.dark.vfull svg.tx .porn.pfr{display:inline;mix-blend-mode:normal}
+.cl-st bdi{white-space:nowrap}

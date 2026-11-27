@@ -6,7 +6,7 @@
   'use strict';
   const A = window.__app; if (!A) return;
   const esc = A.esc, cnt = A.cnt, toast = A.toast;
-  // v26z10: زر «المصدر» — رابط عميق متحقَّق منه لصفحة الحديث أو الآية (data/adhkar.json → url)؛ بلا رابط مؤكد لا زر
+  // v26z10: زر «المصدر» — رابط عميق متحقّق منه لصفحة الحديث أو الآية (data/adhkar.json → url)؛ بلا رابط مؤكد لا زر
   const LNK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>';
   const $ = s => document.querySelector(s);
   const KEY = /\/preview\//.test(location.pathname) ? 'mushaf.preview.adhkar' : 'mushaf.adhkar';
@@ -470,7 +470,7 @@
   }
   function settingsHTML() {
     const row = (k, l, on) => `<div class="sw-row" data-adhopt="${k}" role="presentation"><b>${l}</b><button class="switch" role="switch" aria-checked="${!!on}" aria-label="${l}"></button></div>`;
-    const note = VOK ? '' : `<p class="muted sm">${IOS ? 'الاهتزاز غير مدعوم على الآيفون، فاستخدم النقرة الصوتية. وتُسمَع النقرة إذا لم يكن الجهاز على الوضع الصامت.' : 'الاهتزاز غير مدعوم في هذا المتصفح، فاستخدم النقرة الصوتية.'}</p>`;
+    const note = VOK ? '' : `<p class="muted sm">${IOS ? 'الاهتزاز غير مدعوم في الآيفون، فاستخدم النقرة الصوتية بدلًا منه. وتُسمَع النقرة ما لم يكن الجهاز على الوضع الصامت.' : 'الاهتزاز غير مدعوم في هذا المتصفح، فاستخدم النقرة الصوتية بدلًا منه.'}</p>`;
     return `<label class="lbl">أذكاري</label>${VOK ? row('vib', 'اهتزاز عند كل تسبيحة', S.vib) : ''}${row('snd', 'نقرة صوتية خفيفة', S.snd)}${note}`;
   }
   const toggle = k => {   // v26z16: يُستدعى داخل نقرة المستخدم، فنجرّب الإحساس فورًا عند التفعيل
